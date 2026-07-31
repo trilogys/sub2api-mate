@@ -1,7 +1,7 @@
 [**English**](README.md) | [简体中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon-v5.png" alt="sub2api app icon" width="120" />
+  <img src="assets/icon.png" alt="sub2api app icon" width="120" />
 </p>
 
 <h1 align="center">sub2api</h1>
