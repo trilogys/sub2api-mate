@@ -1,0 +1,92 @@
+name: Native Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: Android build variant
+        required: true
+        default: release
+        type: choice
+        options:
+          - release
+          - debug
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-android-${{ github.ref }}-${{ inputs.variant }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build ${{ inputs.variant }} APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CI: '1'
+      GRADLE_TASK: ${{ inputs.variant == 'debug' && 'assembleDebug' || 'assembleRelease' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Android project
+        run: npx expo prebuild --platform android
+
+      - name: Configure Gradle for GitHub runner
+        working-directory: android
+        run: |
+          sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8/' gradle.properties
+          grep -q '^org.gradle.jvmargs=' gradle.properties || echo 'org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1536m -Dfile.encoding=UTF-8' >> gradle.properties
+          sed -i '/^org.gradle.workers.max=/d' gradle.properties
+          sed -i '/^org.gradle.parallel=/d' gradle.properties
+          echo 'org.gradle.workers.max=2' >> gradle.properties
+          echo 'org.gradle.parallel=false' >> gradle.properties
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Build APK with Gradle
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          if [ "$GRADLE_TASK" = "assembleRelease" ]; then
+            ./gradlew "$GRADLE_TASK" -x lintVitalAnalyzeRelease --max-workers=2 --no-daemon --stacktrace
+          else
+            ./gradlew "$GRADLE_TASK" --max-workers=2 --no-daemon --stacktrace
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub2api-mobile-${{ inputs.variant }}-apk-${{ github.run_number }}
+          path: android/app/build/outputs/apk/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload Gradle reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-android-gradle-reports-${{ github.run_number }}
+          path: |
+            android/build/reports/**
+            android/app/build/reports/**
+          if-no-files-found: ignore
+          retention-days: 7

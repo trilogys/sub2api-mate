@@ -1,0 +1,21 @@
+{
+  "extends": "expo/tsconfig.base",
+  "exclude": [
+    "dist",
+    "node_modules",
+    ".agents",
+    "skills"
+  ],
+  "compilerOptions": {
+    "strict": true,
+    "baseUrl": ".",
+    "types": [
+      "uniwind/types"
+    ],
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  }
+}

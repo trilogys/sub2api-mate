@@ -1,0 +1,104 @@
+import { adminConfigState, saveAdminConfig } from '@/src/store/admin-config';
+import type { ApiEnvelope } from '@/src/types/admin';
+import { trimServerUrl } from '@/src/lib/server-url';
+
+export function buildRequestUrl(baseUrl: string, path: string) {
+  const normalizedBase = trimServerUrl(baseUrl);
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  const basePrefix = ['/api/v1', '/v1', '/api'].find((prefix) => normalizedBase.toLowerCase().endsWith(prefix));
+  const pathHasApiPrefix = ['/api/v1/', '/v1/', '/api/'].some((prefix) => normalizedPath.toLowerCase().startsWith(prefix));
+  if (basePrefix && pathHasApiPrefix) {
+    return `${normalizedBase.slice(0, -basePrefix.length)}${normalizedPath}`;
+  }
+  return `${normalizedBase}${normalizedPath}`;
+}
+
+function getAuthHeaders(): Record<string, string> {
+  const adminApiKey = adminConfigState.adminApiKey.trim();
+  const accessToken = adminConfigState.accessToken.trim();
+  if (!adminApiKey && !accessToken) throw new Error('AUTH_REQUIRED');
+  if (adminConfigState.authMode === 'password' && accessToken) return { Authorization: `Bearer ${accessToken}` };
+  return { 'x-api-key': adminApiKey };
+}
+
+export async function publicFetch<T>(baseUrl: string, path: string, init: RequestInit = {}): Promise<T> {
+  const headers = new Headers(init.headers);
+  headers.set('Content-Type', 'application/json');
+  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  const rawText = await response.text();
+  let json: unknown;
+  try { json = rawText ? JSON.parse(rawText) : undefined; } catch { throw new Error('INVALID_SERVER_RESPONSE'); }
+  if (typeof json === 'object' && json !== null && 'code' in json) {
+    const envelope = json as ApiEnvelope<T>;
+    if (!response.ok || envelope.code !== 0) throw new Error(envelope.reason || envelope.message || 'REQUEST_FAILED');
+    return envelope.data as T;
+  }
+  if (!response.ok) {
+    const rawError = json as { reason?: string; message?: string; error?: string } | undefined;
+    throw new Error(rawError?.reason || rawError?.message || rawError?.error || 'REQUEST_FAILED');
+  }
+  return json as T;
+}
+
+export async function adminFetch<T>(path: string, init: RequestInit = {}, options?: { idempotencyKey?: string; skipRefresh?: boolean }): Promise<T> {
+  const baseUrl = adminConfigState.baseUrl.trim().replace(/\/$/, '');
+  if (!baseUrl) throw new Error('BASE_URL_REQUIRED');
+  const headers = new Headers(init.headers);
+  headers.set('Content-Type', 'application/json');
+  Object.entries(getAuthHeaders()).forEach(([name, value]) => headers.set(name, value));
+  if (options?.idempotencyKey) headers.set('Idempotency-Key', options.idempotencyKey);
+  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  if (response.status === 401 && !options?.skipRefresh && adminConfigState.authMode === 'password' && adminConfigState.refreshToken.trim()) {
+    const refreshed = await publicFetch<{ access_token: string; refresh_token?: string }>(baseUrl, '/api/v1/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refresh_token: adminConfigState.refreshToken }),
+    });
+    await saveAdminConfig({
+      baseUrl,
+      authMode: 'password',
+      accessToken: refreshed.access_token,
+      refreshToken: refreshed.refresh_token || adminConfigState.refreshToken,
+      user: adminConfigState.user,
+    });
+    return adminFetch<T>(path, init, { ...options, skipRefresh: true });
+  }
+  const rawText = await response.text();
+  let json: unknown;
+  try { json = rawText ? JSON.parse(rawText) : undefined; } catch { throw new Error('INVALID_SERVER_RESPONSE'); }
+  if (typeof json === 'object' && json !== null && 'code' in json) {
+    const envelope = json as ApiEnvelope<T>;
+    if (!response.ok || envelope.code !== 0) throw new Error(envelope.reason || envelope.message || 'REQUEST_FAILED');
+    return envelope.data as T;
+  }
+  if (!response.ok) {
+    const rawError = json as { reason?: string; message?: string; error?: string } | undefined;
+    throw new Error(rawError?.reason || rawError?.message || rawError?.error || 'REQUEST_FAILED');
+  }
+  return json as T;
+}
+
+export type AdminRawResponse = { status: number; ok: boolean; contentType: string; contentDisposition: string; body: string; durationMs: number };
+
+export async function adminRawFetch(path: string, init: RequestInit = {}): Promise<AdminRawResponse> {
+  const baseUrl = adminConfigState.baseUrl.trim().replace(/\/$/, '');
+  if (!baseUrl) throw new Error('BASE_URL_REQUIRED');
+  const headers = new Headers(init.headers);
+  if (adminConfigState.authMode === 'password' && adminConfigState.accessToken.trim()) {
+    headers.set('Authorization', `Bearer ${adminConfigState.accessToken.trim()}`);
+  } else {
+    headers.set('x-api-key', adminConfigState.adminApiKey.trim());
+  }
+  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const startedAt = Date.now();
+  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  const body = await response.text();
+  return { status: response.status, ok: response.ok, contentType: response.headers.get('content-type') || '', contentDisposition: response.headers.get('content-disposition') || '', body, durationMs: Date.now() - startedAt };
+}
+
+export function createAdminWebSocket(path: string) {
+  const baseUrl = adminConfigState.baseUrl.trim().replace(/\/$/, '');
+  if (!baseUrl) throw new Error('BASE_URL_REQUIRED');
+  const websocketUrl = buildRequestUrl(baseUrl, path).replace(/^http:/, 'ws:').replace(/^https:/, 'wss:');
+  const NativeWebSocket = WebSocket as unknown as new (url: string, protocols?: string[], options?: { headers?: Record<string, string> }) => WebSocket;
+  return new NativeWebSocket(websocketUrl, [], { headers: getAuthHeaders() });
+}

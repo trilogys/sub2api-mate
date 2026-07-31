@@ -1,0 +1,79 @@
+name: Sync Sub2API Interface Manifest
+
+on:
+  schedule:
+    - cron: '41 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-sub2api-interface-manifest
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      SYNC_BRANCH: automation/sub2api-api-sync
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Checkout upstream API client metadata
+        uses: actions/checkout@v4
+        with:
+          repository: Wei-Shaw/sub2api
+          path: .upstream-sub2api
+          sparse-checkout: |
+            frontend/src/api/admin
+            backend/internal/handler/admin
+
+      - name: Extract upstream API parameters
+        run: node .github/scripts/extract-upstream-api-metadata.mjs .upstream-sub2api
+
+      - name: Generate latest route manifest
+        run: |
+          node .github/scripts/sync-sub2api-routes.mjs
+          node .github/scripts/generate-app-api-knowledge.mjs
+          node .github/scripts/audit-api-coverage.mjs
+
+      - name: Stop when no interface changed
+        id: changes
+        run: |
+          if git diff --quiet -- src/generated/sub2api-admin-routes.json src/generated/sub2api-upstream-client.json src/generated/app-api-knowledge.json src/generated/api-coverage.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit manifest update
+        if: steps.changes.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$SYNC_BRANCH"
+          git add src/generated/sub2api-admin-routes.json src/generated/sub2api-upstream-client.json src/generated/app-api-knowledge.json src/generated/api-coverage.json
+          git commit -m "Sync latest Sub2API admin interface manifest"
+          git push --force-with-lease origin "HEAD:$SYNC_BRANCH"
+
+      - name: Open or update pull request
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if gh pr view "$SYNC_BRANCH" --json url >/dev/null 2>&1; then
+            gh pr edit "$SYNC_BRANCH" --title "Sync latest Sub2API admin interfaces" --body "Automated route-manifest update from Wei-Shaw/sub2api. Review the route diff, then use AI or manual implementation for new request fields, service methods, UI, and tests."
+          else
+            gh pr create --base "$BASE_BRANCH" --head "$SYNC_BRANCH" --title "Sync latest Sub2API admin interfaces" --body "Automated route-manifest update from Wei-Shaw/sub2api. Review the route diff, then use AI or manual implementation for new request fields, service methods, UI, and tests."
+          fi
