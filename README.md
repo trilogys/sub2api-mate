@@ -1,7 +1,7 @@
 [**English**](README.md) | [简体中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon-v4.png" alt="sub2api app icon" width="120" />
+  <img src="assets/icon.png" alt="sub2api app icon" width="120" />
 </p>
 
 <h1 align="center">sub2api</h1>
@@ -18,6 +18,9 @@ The maintained repository is [trilogys/sub2api-mobile](https://github.com/trilog
 ## Overview
 
 sub2api brings the day-to-day administration, diagnostics, and build workflows of a Sub2API deployment to Android, iOS, and the web. It provides role-aware access, a responsive blue-and-white card interface, full access to generated administration routes, mobile-friendly dedicated pages, an optional AI assistant, and cloud APK builds that can be started from a phone.
+
+> [!NOTE]
+> **Testing scope:** The current release has only been tested on Android. Expo includes iOS and Web targets, but those targets have not yet been fully verified.
 
 Generated API coverage currently contains **382 administration routes**:
 

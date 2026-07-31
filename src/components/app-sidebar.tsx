@@ -13,6 +13,7 @@ import {
   Globe2,
   GripVertical,
   KeyRound,
+  Languages,
   LogOut,
   Moon,
   Network,
@@ -35,7 +36,7 @@ import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
 import { listUsers } from '@/src/services/admin';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
-import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
+import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 
 const { useSnapshot } = require('valtio/react');
@@ -146,6 +147,7 @@ export function AppSidebar() {
   );
   const visibleItems = allowed.filter((item) => !prefs.hiddenMenuIds.includes(item.id));
   const dark = prefs.colorMode === 'dark';
+  const language = prefs.language;
   const identity = config.user?.email || defaultAdmin?.email || (defaultAdminQuery.isLoading ? '正在查找管理员…' : 'Admin Key');
 
   if (path === '/login' || !config.baseUrl) return null;
@@ -161,6 +163,12 @@ export function AppSidebar() {
     const colorMode = dark ? 'light' : 'dark';
     Uniwind.setTheme(colorMode);
     update({ ...prefsRef.current, colorMode });
+  };
+
+  const selectLanguage = (nextLanguage: 'zh' | 'en') => {
+    if (nextLanguage === prefsRef.current.language) return;
+    applyAppLanguage(nextLanguage);
+    update({ ...prefsRef.current, language: nextLanguage });
   };
 
   const openWebsite = async () => {
@@ -402,6 +410,16 @@ export function AppSidebar() {
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
                 </View>
                 <Pressable accessibilityRole="switch" accessibilityState={{ checked: dark }} onPress={toggleColorMode} style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: dark ? '#1A2638' : '#EEF3F9', paddingHorizontal: 12, paddingVertical: 9 }}><View style={{ width: 26 }}>{dark ? <Moon size={17} color="#69A0FF" /> : <Sun size={17} color="#2F6DF6" />}</View><Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: dark ? '#F4F7FB' : '#344054' }}>深色模式</Text><View style={{ width: 42, height: 24, borderRadius: 12, padding: 3, backgroundColor: dark ? '#2F6DF6' : '#CBD5E1' }}><View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff', alignSelf: dark ? 'flex-end' : 'flex-start' }} /></View></Pressable>
+                <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: dark ? '#1A2638' : '#EEF3F9', paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <View style={{ width: 26 }}><Languages size={17} color={dark ? '#69A0FF' : '#2F6DF6'} /></View>
+                  <Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: dark ? '#F4F7FB' : '#344054' }}>语言</Text>
+                  <View style={{ flexDirection: 'row', borderRadius: 10, backgroundColor: dark ? '#111B2B' : '#DDE5EF', padding: 2 }}>
+                    {([['zh', '中文'], ['en', 'English']] as const).map(([value, label]) => {
+                      const selected = language === value;
+                      return <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected }} accessibilityLabel={value === 'zh' ? '切换为中文' : 'Switch to English'} onPress={() => selectLanguage(value)} style={{ minWidth: 48, alignItems: 'center', borderRadius: 8, backgroundColor: selected ? '#2F6DF6' : 'transparent', paddingHorizontal: 7, paddingVertical: 5 }}><Text style={{ fontSize: 9, fontWeight: '800', color: selected ? '#FFFFFF' : dark ? '#9EABC0' : '#607086' }}>{label}</Text></Pressable>;
+                    })}
+                  </View>
+                </View>
               </View>
 
               <View ref={menuViewportRef} style={{ flex: 1 }}>

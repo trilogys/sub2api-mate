@@ -5,33 +5,33 @@
     "owner": "trilogys",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon-v4.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon-v4.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "icon": "./assets/icon-v4.png",
+      "icon": "./assets/icon.png",
       "bundleIdentifier": "com.ppx.sub2apimobile",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "icon": "./assets/icon-v4.png",
+      "icon": "./assets/icon.png",
       "package": "com.ppx.sub2apimobile",
       "adaptiveIcon": {
         "backgroundColor": "#2F6DF6",
-        "foregroundImage": "./assets/android-icon-foreground-v4.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon-v4.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",

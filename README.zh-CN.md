@@ -1,7 +1,7 @@
 [English](README.md) | [**简体中文**](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon-v4.png" alt="sub2api 应用图标" width="120" />
+  <img src="assets/icon.png" alt="sub2api 应用图标" width="120" />
 </p>
 
 <h1 align="center">sub2api</h1>
@@ -18,6 +18,9 @@
 ## 项目简介
 
 sub2api 把 Sub2API 部署的日常管理、诊断和构建流程带到 Android、iOS 与 Web。项目提供按角色区分的权限、适配手机的蓝白卡片界面、完整的管理接口入口、移动端专用页面、可选 AI 助手，以及可以在手机上触发的云端 APK 构建。
+
+> [!NOTE]
+> **测试范围：** 当前版本仅在 Android 平台进行了测试。项目通过 Expo 包含 iOS 和 Web 目标，但这两个平台尚未经过完整验证。
 
 当前生成的 API 覆盖报告包含 **382 条管理路由**：
 
