@@ -205,6 +205,7 @@ export type AuthUser = {
   username?: string;
   role: 'admin' | 'user';
   status?: string;
+  balance?: number;
 };
 
 export type AuthResponse = {

@@ -64,7 +64,7 @@ const items: MenuItem[] = [
   { id: 'errors', title: '错误中心', route: '/ops-errors', icon: RadioTower, admin: true },
   { id: 'audit', title: '审计日志', route: '/audit-logs', icon: ScrollText, admin: true },
   { id: 'about', title: '关于应用', route: '/about', icon: Info },
-  { id: 'manage', title: '更多管理', route: '/manage', icon: SlidersHorizontal, admin: true },
+  { id: 'manage', title: '更多管理', route: '/manage', icon: SlidersHorizontal },
 ];
 
 export function AppSidebar() {
