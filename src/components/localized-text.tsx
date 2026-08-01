@@ -1,7 +1,8 @@
 import { forwardRef, type ReactNode } from 'react';
-import { Alert, Text as NativeText, TextInput as NativeTextInput, type AlertButton, type AlertOptions, type TextInputProps, type TextProps } from 'react-native';
+import { Text as NativeText, TextInput as NativeTextInput, type AlertButton, type AlertOptions, type TextInputProps, type TextProps } from 'react-native';
 
 import { languageState } from '@/src/store/ui-preferences';
+import { showThemedAlert } from '@/src/store/themed-alert';
 import { staticChineseUICopy, staticChineseUITemplateFragments } from '@/src/generated/ui-copy';
 
 const { useSnapshot } = require('valtio/react');
@@ -85,6 +86,19 @@ const exactEnglish: Record<string, string> = {
   'AI 助手': 'AI assistant',
   'AI 配置': 'AI settings',
   '悬浮助手': 'Floating assistant',
+  '管理悬浮助手、模型与修复配置': 'Manage the floating assistant, models, and repair settings.',
+  '加载当前账号配置': 'Load current account configuration',
+  '从当前登录的 Sub2API 服务器加载 OpenAI Base URL 和当前用户的活动密钥；多个密钥可选择其中一个。': 'Load the OpenAI Base URL and active keys for the current user from the signed-in Sub2API server. Select one when multiple keys are available.',
+  '当前服务器 OpenAI Base URL': 'Current server OpenAI Base URL',
+  '尚未连接 Sub2API 服务器': 'No Sub2API server connected',
+  '正在加载当前账号密钥…': 'Loading current account keys…',
+  '当前账号没有可用的活动密钥': 'No active keys are available for this account',
+  '当前登录模式无法加载用户密钥': 'The current sign-in mode cannot load user keys',
+  '刷新当前账号密钥': 'Refresh current account keys',
+  '已选择': 'Selected',
+  '选择': 'Select',
+  '使用悬浮助手当前会话中的最新问题生成修复方案；创建 Draft PR 前仍会确认。': 'Generate a fix from the latest issue in the floating conversation. Draft PR creation still requires confirmation.',
+  '删除历史对话': 'Delete conversation',
   '助手设置': 'Assistant settings',
   '收起助手设置': 'Hide assistant settings',
   '悬浮助手外观': 'Floating assistant appearance',
@@ -94,13 +108,49 @@ const exactEnglish: Record<string, string> = {
   '狐狸': 'Fox',
   '兔子': 'Rabbit',
   '小精灵': 'Sprite',
-  '电击小子': 'Electric Kid',
   '迪迦奥特曼': 'Ultraman Tiga',
   '猪猪侠': 'GG Bond',
-  '哆啦A梦': 'Doraemon',
   '推理强度': 'Reasoning effort',
   '显示悬浮助手': 'Show floating assistant',
   'GitHub 配置': 'GitHub settings',
+  '关于': 'About',
+  '关于应用': 'About app',
+  '版本、在线更新与开源信息': 'Version, online updates, and open-source information',
+  '版本': 'Version',
+  '升级提示': 'Update status',
+  '自动检查 GitHub Release；下拉页面也可以重新检查。': 'Checks GitHub Releases automatically. Pull down to check again.',
+  '正在检查 GitHub Release…': 'Checking GitHub Releases…',
+  '暂时无法检查新版本': 'Unable to check for updates',
+  '仓库尚未发布正式版本': 'No release is available yet',
+  '当前已是最新版本': 'You are up to date',
+  '重新检查版本': 'Check again',
+  '正在检查…': 'Checking…',
+  '打开 Release 页面': 'Open release page',
+  'Expo 在线更新': 'Expo online update',
+  '仅更新 JavaScript 与资源；原生依赖、权限或 Expo SDK 变化仍需安装新 APK。': 'Updates JavaScript and assets only. Native dependencies, permissions, or Expo SDK changes require a new APK.',
+  '正式包启用 EAS Update 后，可以在这里下载在线更新并重启应用完成升级。': 'With EAS Update enabled, production builds can download an update here and restart to apply it.',
+  '检查 Expo 在线更新': 'Check Expo update',
+  '已是最新版本': 'You are up to date',
+  '没有可用的 Expo 在线更新。': 'No Expo update is available.',
+  '更新已下载': 'Update downloaded',
+  '是否立即重新启动并应用更新？': 'Restart now to apply the update?',
+  '稍后': 'Later',
+  '立即重启': 'Restart now',
+  '当前开发环境未启用 Expo 在线更新': 'Expo online updates are disabled in this development environment',
+  '开源项目': 'Open source',
+  '代码、发布版本、问题反馈与许可证信息。': 'Source code, releases, issue reporting, and license information.',
+  '开源仓库': 'Source repository',
+  '版本与 APK': 'Releases and APKs',
+  '查看全部 GitHub Releases': 'View all GitHub Releases',
+  '问题反馈': 'Issue tracker',
+  '提交 Bug、建议或兼容性问题': 'Report bugs, suggestions, or compatibility issues',
+  '查看本项目开源许可证': 'View the project license',
+  '灵感来源': 'Acknowledgements',
+  '感谢 ckken/sub2api-mobile 的开源成果': 'Thanks to the open-source work of ckken/sub2api-mobile',
+  '更新与安全说明': 'Update and security notes',
+  '请只从本项目 GitHub Releases 或你信任的构建渠道安装 APK。更新前建议保留服务器地址与登录信息。': 'Install APKs only from this project\'s GitHub Releases or a trusted build channel. Keep your server and sign-in details before updating.',
+  '查看安全策略': 'View security policy',
+  '无法打开链接': 'Unable to open link',
   '更多管理': 'More administration',
   '当前登录、语言与 Sub2API 高级管理功能': 'Session, language, and advanced Sub2API management',
   '系统设置': 'System settings',
@@ -218,6 +268,9 @@ const exactEnglish: Record<string, string> = {
   '创建成功': 'Created',
   '登录失败': 'Sign-in failed',
   '恢复默认': 'Restore defaults',
+  '账号状态已恢复。': 'Account status restored.',
+  '账号状态恢复失败，请稍后重试。': 'Could not restore the account status. Try again later.',
+  '知道了': 'Got it',
   '自定义状态显示': 'Customize displayed fields',
   '自定义菜单': 'Customize menu',
   '设为默认启动页面': 'Set as default start page',
@@ -496,10 +549,10 @@ export const TextInput = forwardRef<any, TextInputProps>(function LocalizedTextI
 
 export function localizedAlert(title: string, message?: string, buttons?: AlertButton[], options?: AlertOptions) {
   const language = languageState.value;
-  return Alert.alert(
-    translateText(title, language),
-    message ? translateText(message, language) : message,
-    buttons?.map((button) => ({ ...button, text: button.text ? translateText(button.text, language) : button.text })),
+  showThemedAlert({
+    title: translateText(title, language),
+    message: message ? translateText(message, language) : message,
+    buttons: buttons?.map((button) => ({ ...button, text: button.text ? translateText(button.text, language) : button.text })),
     options,
-  );
+  });
 }

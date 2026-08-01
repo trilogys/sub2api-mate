@@ -13,21 +13,9 @@ import { getUser, getUsageStats, listUserApiKeys, listUsers } from '@/src/servic
 import { adminConfigState, hasAuthenticatedAdminSession } from '@/src/store/admin-config';
 import type { AdminUser, UsageStats } from '@/src/types/admin';
 import { Text, TextInput } from '@/src/components/localized-text';
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 const { useSnapshot } = require('valtio/react');
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  mutedCard: '#F1F5FA',
-  primary: '#2F6DF6',
-  text: '#172033',
-  subtext: '#667085',
-  dangerBg: '#FFF5F7',
-  danger: '#E05A47',
-  accentBg: '#FFF7E7',
-  accentText: '#8c5a22',
-};
 
 type SortOrder = 'desc' | 'asc';
 type RangeKey = '24h' | '7d' | '30d';
@@ -104,14 +92,13 @@ function getErrorMessage(error: unknown) {
   return '当前无法加载页面数据，请检查服务地址、Token 和网络。';
 }
 
-function MetricTile({ title, value, tone = 'default' }: { title: string; value: string; tone?: 'default' | 'accent' }) {
-  const backgroundColor = tone === 'accent' ? colors.accentBg : colors.mutedCard;
-  const valueColor = tone === 'accent' ? colors.accentText : colors.text;
+function MetricTile({ title, value }: { title: string; value: string }) {
+  const colors = useUserManagementColors();
 
   return (
-    <View style={{ flex: 1, minWidth: 0, backgroundColor, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 12 }}>
+    <View style={{ flex: 1, minWidth: 0, backgroundColor: colors.mutedCard, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 12 }}>
       <Text style={{ fontSize: 11, color: colors.subtext }}>{title}</Text>
-      <Text numberOfLines={1} style={{ marginTop: 6, fontSize: 16, fontWeight: '800', color: valueColor }}>
+      <Text numberOfLines={1} style={{ marginTop: 6, fontSize: 16, fontWeight: '800', color: colors.text }}>
         {value}
       </Text>
     </View>
@@ -119,7 +106,9 @@ function MetricTile({ title, value, tone = 'default' }: { title: string; value: 
 }
 
 function UserCard({ user, usage }: { user: AdminUser; usage?: UsageStats }) {
+  const colors = useUserManagementColors();
   const isAdmin = user.role?.trim().toLowerCase() === 'admin';
+  const isDisabled = user.status === 'inactive' || user.status === 'disabled';
   const userNameLabel = getUserNameLabel(user);
   const statusLabel = `${isAdmin ? 'admin · ' : ''}${user.status || 'active'} · ${userNameLabel}`;
   const totalCost = Number(usage?.total_account_cost ?? usage?.total_actual_cost ?? usage?.total_cost ?? 0);
@@ -127,19 +116,18 @@ function UserCard({ user, usage }: { user: AdminUser; usage?: UsageStats }) {
   const totalRequests = Number(usage?.total_requests ?? 0);
 
   return (
-    <View style={{ backgroundColor: colors.card, borderRadius: 18, padding: 14 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>{user.email}</Text>
-          <Text style={{ marginTop: 4, fontSize: 12, color: colors.subtext }}>最近使用 {formatActivityTime(user.last_used_at || user.updated_at || user.created_at)}</Text>
-        </View>
-        <View style={{ alignSelf: 'flex-start', backgroundColor: user.status === 'inactive' || user.status === 'disabled' ? '#cfc5b7' : colors.primary, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: '#fff' }}>{statusLabel}</Text>
-        </View>
+    <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 14 }}>
+      <Text numberOfLines={1} style={{ fontSize: 16, fontWeight: '800', color: colors.text }}>{user.email}</Text>
+      <View style={{ alignSelf: 'flex-start', marginTop: 6, backgroundColor: colors.mutedCard, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
+        <Text style={{ fontSize: 10, fontWeight: '700', color: isDisabled ? colors.subtext : colors.primary }}>{statusLabel}</Text>
       </View>
 
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ marginTop: 6, fontSize: 12, color: colors.subtext }}>
+        最近使用 {formatActivityTime(user.last_used_at || user.updated_at || user.created_at)}
+      </Text>
+
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
-        <MetricTile title="消费" value={formatCost(totalCost)} tone="accent" />
+        <MetricTile title="消费" value={formatCost(totalCost)} />
         <MetricTile title="总 Token" value={formatTokenValue(totalTokens)} />
         <MetricTile title="总请求" value={formatCompactNumber(totalRequests)} />
       </View>
@@ -148,6 +136,7 @@ function UserCard({ user, usage }: { user: AdminUser; usage?: UsageStats }) {
 }
 
 export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { safeAreaEdges?: Edge[] }) {
+  const colors = useUserManagementColors();
   const config = useSnapshot(adminConfigState);
   const hasAccount = hasAuthenticatedAdminSession(config);
   const [searchText, setSearchText] = useState('');
@@ -191,11 +180,11 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
 
   return (
     <SafeAreaView edges={safeAreaEdges} style={{ flex: 1, backgroundColor: colors.page }}>
-      <View style={{ flex: 1, paddingHorizontal: 16, paddingTop: 14 }}>
-        <View style={{ marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+      <View style={{ flex: 1, paddingHorizontal: 16 }}>
+        <View style={{ marginTop: 16, marginBottom: 10, paddingHorizontal: 4, paddingVertical: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16 }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text }}>用户</Text>
-            <Text style={{ marginTop: 4, fontSize: 12, color: '#7C8AA0' }}>查看用户列表并进入详情页管理账号。</Text>
+            <Text style={{ fontSize: 22, fontWeight: '700', letterSpacing: -0.4, color: colors.text }}>用户管理</Text>
+            <Text numberOfLines={1} style={{ marginTop: 4, fontSize: 11, lineHeight: 16, color: colors.subtext }}>查看用户列表并进入详情页管理账号。</Text>
           </View>
           <Pressable
             onPress={() => router.push('/users/create-user')}
@@ -213,7 +202,7 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
         </View>
 
         <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
-          <View style={{ flex: 1, backgroundColor: colors.card, borderRadius: 16, padding: 10 }}>
+          <View style={{ flex: 1, backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 10 }}>
             <TextInput
               value={searchText}
               onChangeText={setSearchText}
@@ -224,7 +213,7 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
           </View>
           <Pressable
             onPress={() => setSortOrder((value) => (value === 'desc' ? 'asc' : 'desc'))}
-            style={{ backgroundColor: colors.card, borderRadius: 16, paddingHorizontal: 14, paddingVertical: 14, minWidth: 92, alignItems: 'center' }}
+            style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 14, paddingVertical: 14, minWidth: 92, alignItems: 'center' }}
           >
             <Text style={{ fontSize: 11, color: colors.subtext }}>时间</Text>
             <Text style={{ marginTop: 4, fontSize: 13, fontWeight: '700', color: colors.text }}>{sortOrder === 'desc' ? '倒序' : '正序'}</Text>
@@ -232,7 +221,7 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
         </View>
 
         {!hasAccount ? (
-          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 18, padding: 16 }}>
+          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>未连接服务器</Text>
             <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 22, color: colors.subtext }}>请先退出并在登录页选择账号，再查看用户列表。</Text>
             <Pressable
@@ -243,12 +232,12 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
             </Pressable>
           </View>
         ) : usersQuery.isLoading ? (
-          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 18, padding: 16 }}>
+          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>正在加载用户</Text>
             <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 22, color: colors.subtext }}>已连接服务器，正在拉取用户列表。</Text>
           </View>
         ) : usersQuery.error ? (
-          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 18, padding: 16 }}>
+          <View style={{ marginTop: 10, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>加载失败</Text>
             <View style={{ marginTop: 12, borderRadius: 14, backgroundColor: colors.dangerBg, paddingHorizontal: 14, paddingVertical: 12 }}>
               <Text style={{ color: colors.danger, fontSize: 14, lineHeight: 20 }}>{errorMessage}</Text>
@@ -263,7 +252,7 @@ export default function UsersScreen({ safeAreaEdges = ['top', 'bottom'] }: { saf
             refreshControl={<RefreshControl refreshing={usersQuery.isRefetching} onRefresh={() => void usersQuery.refetch()} tintColor="#2F6DF6" />}
             contentContainerStyle={{ paddingBottom: 8, gap: 12, flexGrow: users.length === 0 ? 1 : 0 }}
             ListEmptyComponent={
-              <View style={{ backgroundColor: colors.card, borderRadius: 18, padding: 16 }}>
+              <View style={{ backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
                 <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>暂无用户</Text>
                 <Text style={{ marginTop: 8, fontSize: 14, lineHeight: 22, color: colors.subtext }}>当前搜索条件下没有匹配结果，可以修改关键词后重试。</Text>
               </View>

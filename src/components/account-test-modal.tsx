@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Bot, CheckCircle2, Search, X } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -23,6 +23,7 @@ function modelErrorMessage(error: unknown) {
 }
 
 export function AccountTestModal({ account, visible, onClose }: AccountTestModalProps) {
+  const scrollRef = useRef<ScrollView>(null);
   const [selectedModelId, setSelectedModelId] = useState('');
   const [search, setSearch] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -57,12 +58,18 @@ export function AccountTestModal({ account, visible, onClose }: AccountTestModal
     );
   }, [modelsQuery.data, search]);
 
+  const scrollToResult = () => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+  };
+
   const testMutation = useMutation({
     mutationFn: () => testAccount(account!.id, {
       model_id: selectedModelId,
       prompt: prompt.trim(),
       mode: account?.platform === 'openai' ? mode : undefined,
     }),
+    onSuccess: scrollToResult,
+    onError: scrollToResult,
   });
 
   const close = () => {
@@ -99,7 +106,7 @@ export function AccountTestModal({ account, visible, onClose }: AccountTestModal
             <Pressable accessibilityLabel="关闭" onPress={close} className="h-10 w-10 items-center justify-center rounded-full bg-[#EEF3F9] dark:bg-[#1A2638]"><X size={20} color="#475467" /></Pressable>
           </View>
 
-          <ScrollView className="px-4" contentContainerClassName="gap-4 py-4" keyboardShouldPersistTaps="handled">
+          <ScrollView ref={scrollRef} className="px-4" contentContainerClassName="gap-4 py-4" keyboardShouldPersistTaps="handled">
             <View className="rounded-[22px] border border-[#E2E9F3] dark:border-[#273449] bg-white dark:bg-[#111827] p-4">
               <Text className="text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">选择测试模型</Text>
               <View className="mt-3 flex-row items-center gap-2 rounded-2xl bg-[#F1F5FA] dark:bg-[#182235] px-3 py-2.5">
@@ -174,12 +181,18 @@ export function AccountTestModal({ account, visible, onClose }: AccountTestModal
 
             {testMutation.data ? (
               <View className="rounded-[22px] border border-[#CDE9DA] bg-[#F0FBF5] p-4">
+                <Text className="mb-2 text-[11px] font-semibold text-[#4C7A65]">返回状态</Text>
                 <Text className="text-sm font-bold text-[#16794B]">{testMutation.data.message}</Text>
                 <Text className="mt-1 text-xs text-[#4C7A65]">模型：{testMutation.data.model}</Text>
                 {testMutation.data.output ? <Text selectable className="mt-3 text-xs leading-5 text-[#344054] dark:text-[#D5DDEA]">{testMutation.data.output}</Text> : null}
               </View>
             ) : null}
-            {testMutation.error ? <Text className="rounded-2xl bg-[#FFF0F2] dark:bg-[#3A1720] p-3 text-sm text-[#D9475C]">{(testMutation.error as Error).message}</Text> : null}
+            {testMutation.error ? (
+              <View className="rounded-2xl bg-[#FFF0F2] p-3 dark:bg-[#3A1720]">
+                <Text className="mb-2 text-[11px] font-semibold text-[#D9475C]">返回状态</Text>
+                <Text className="text-sm text-[#D9475C]">{(testMutation.error as Error).message}</Text>
+              </View>
+            ) : null}
           </ScrollView>
 
           <View className="border-t border-[#E2E9F3] dark:border-[#273449] bg-white dark:bg-[#111827] px-4 py-3">

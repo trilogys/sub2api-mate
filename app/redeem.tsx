@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { Copy, Plus, Search, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { copyWithFeedback } from '@/src/lib/clipboard';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { ListCard } from '@/src/components/list-card';
 import { PaginationControls } from '@/src/components/pagination-controls';

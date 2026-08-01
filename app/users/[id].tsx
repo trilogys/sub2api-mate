@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Clipboard from 'expo-clipboard';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LineTrendChart } from '@/src/components/line-trend-chart';
@@ -10,19 +10,7 @@ import { getDashboardSnapshot, getUsageStats, getUser, listUserApiKeys, updateUs
 import type { AdminApiKey, BalanceOperation } from '@/src/types/admin';
 import { Text, TextInput, localizedAlert } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  text: '#172033',
-  subtext: '#667085',
-  border: '#E2E9F3',
-  primary: '#2F6DF6',
-  dark: '#2F6DF6',
-  errorBg: '#FFF0F2',
-  errorText: '#D9475C',
-  muted: '#FFF8EE',
-};
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 type RangeKey = '24h' | '7d' | '30d';
 
@@ -74,7 +62,7 @@ function formatMoney(value?: number | null) {
 
 function formatUsageCost(stats?: { total_account_cost?: number | null; total_actual_cost?: number | null; total_cost?: number | null }) {
   const value = Number(stats?.total_account_cost ?? stats?.total_actual_cost ?? stats?.total_cost ?? 0);
-  return `$${value.toFixed(4)}`;
+  return `$${value.toFixed(2)}`;
 }
 
 function formatTokenValue(value?: number | null) {
@@ -112,12 +100,19 @@ function formatTime(value?: string | null) {
   return `${year}-${month}-${day} ${hours}:${minutes}`;
 }
 
+function maskApiKey(value?: string | null) {
+  if (!value) return '--';
+  if (value.length <= 10) return `${value.slice(0, 3)}••••${value.slice(-2)}`;
+  return `${value.slice(0, 8)}••••••••${value.slice(-4)}`;
+}
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const colors = useUserManagementColors();
   return (
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
+        borderRadius: 22,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
@@ -131,6 +126,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function GridField({ label, value }: { label: string; value: string }) {
+  const colors = useUserManagementColors();
   return (
     <View
       style={{
@@ -144,12 +140,13 @@ function GridField({ label, value }: { label: string; value: string }) {
       }}
     >
       <Text style={{ fontSize: 12, color: colors.subtext }}>{label}</Text>
-      <Text style={{ marginTop: 6, fontSize: 15, fontWeight: '600', color: colors.text }}>{value}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{ marginTop: 6, fontSize: 15, fontWeight: '600', color: colors.text }}>{value}</Text>
     </View>
   );
 }
 
 function MetricCard({ label, value }: { label: string; value: string }) {
+  const colors = useUserManagementColors();
   return (
     <View
       style={{
@@ -163,15 +160,16 @@ function MetricCard({ label, value }: { label: string; value: string }) {
       }}
     >
       <Text style={{ fontSize: 12, color: colors.subtext }}>{label}</Text>
-      <Text style={{ marginTop: 6, fontSize: 16, fontWeight: '700', color: colors.text }}>{value}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ marginTop: 6, fontSize: 13, fontWeight: '700', color: colors.text }}>{value}</Text>
     </View>
   );
 }
 
 function StatusBadge({ text }: { text: string }) {
+  const colors = useUserManagementColors();
   const normalized = text.toLowerCase();
-  const backgroundColor = normalized === 'active' ? '#dff4ea' : normalized === 'inactive' || normalized === 'disabled' ? '#ece5da' : '#FFF0F2';
-  const color = normalized === 'active' ? '#17663f' : normalized === 'inactive' || normalized === 'disabled' ? '#667085' : '#D9475C';
+  const backgroundColor = normalized === 'active' ? colors.muted : normalized === 'inactive' || normalized === 'disabled' ? colors.muted : colors.errorBg;
+  const color = normalized === 'active' ? '#20A66A' : normalized === 'inactive' || normalized === 'disabled' ? colors.subtext : colors.errorText;
 
   return (
     <View style={{ backgroundColor, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
@@ -181,23 +179,25 @@ function StatusBadge({ text }: { text: string }) {
 }
 
 function CopyInlineButton({ copied, onPress }: { copied: boolean; onPress: () => void }) {
+  const colors = useUserManagementColors();
   return (
     <Pressable
       onPress={onPress}
       style={{
-        marginLeft: 8,
-        backgroundColor: copied ? '#dff4ea' : '#E2E9F3',
+        marginLeft: 4,
+        backgroundColor: colors.muted,
         borderRadius: 999,
         paddingHorizontal: 10,
         paddingVertical: 6,
       }}
     >
-      <Text style={{ fontSize: 11, fontWeight: '700', color: copied ? '#17663f' : '#344054' }}>{copied ? '已复制' : '复制'}</Text>
+      <Text style={{ fontSize: 11, fontWeight: '700', color: copied ? '#20A66A' : colors.primary }}>{copied ? '已复制' : '复制'}</Text>
     </Pressable>
   );
 }
 
-function KeyItem({ item, copied, onCopy, onManage }: { item: AdminApiKey; copied: boolean; onCopy: () => void; onManage: () => void }) {
+function KeyItem({ item, copied, visible, onCopy, onManage, onToggleVisibility }: { item: AdminApiKey; copied: boolean; visible: boolean; onCopy: () => void; onManage: () => void; onToggleVisibility: () => void }) {
+  const colors = useUserManagementColors();
   return (
     <View
       style={{
@@ -209,30 +209,45 @@ function KeyItem({ item, copied, onCopy, onManage }: { item: AdminApiKey; copied
         marginBottom: 10,
       }}
     >
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap' }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colors.text }}>{item.name || `Key #${item.id}`}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 4 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: colors.text }}>{item.name || `Key #${item.id}`}</Text>
             <CopyInlineButton copied={copied} onPress={onCopy} />
-            <Pressable onPress={onManage} style={{ marginLeft: 8, backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6 }}>
-              <Text style={{ fontSize: 11, fontWeight: '700', color: '#fff' }}>修改分组</Text>
-            </Pressable>
           </View>
           <Text style={{ marginTop: 4, fontSize: 12, color: colors.subtext }}>{item.group?.name || '未分组'}</Text>
         </View>
-        <StatusBadge text={item.status || '--'} />
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+          <StatusBadge text={item.status || '--'} />
+          <Pressable onPress={onManage} style={{ backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 5 }}>
+            <Text style={{ fontSize: 9, fontWeight: '700', color: '#fff' }}>修改分组</Text>
+          </Pressable>
+        </View>
       </View>
 
-      <Text style={{ marginTop: 10, fontSize: 12, lineHeight: 18, color: colors.text }}>{item.key || '--'}</Text>
+      <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        {visible ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1, minWidth: 0 }} contentContainerStyle={{ alignItems: 'center' }}>
+            <Text selectable numberOfLines={1} style={{ fontSize: 12, color: colors.text }}>{item.key || '--'}</Text>
+          </ScrollView>
+        ) : (
+          <Text numberOfLines={1} ellipsizeMode="middle" style={{ flex: 1, minWidth: 0, fontSize: 12, color: colors.text }}>
+            {maskApiKey(item.key)}
+          </Text>
+        )}
+        <Pressable onPress={onToggleVisibility} hitSlop={8} style={{ borderRadius: 999, backgroundColor: colors.card, paddingHorizontal: 10, paddingVertical: 6 }}>
+          <Text style={{ fontSize: 10, fontWeight: '700', color: colors.primary }}>{visible ? '隐藏' : '查看全部'}</Text>
+        </Pressable>
+      </View>
 
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, marginTop: 12 }}>
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 0.65 }}>
           <Text style={{ fontSize: 11, color: colors.subtext }}>已用额度</Text>
           <Text style={{ marginTop: 4, fontSize: 16, fontWeight: '700', color: colors.text }}>{formatQuotaUsage(item.quota_used, item.quota)}</Text>
         </View>
-        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+        <View style={{ flex: 1.35, minWidth: 0, alignItems: 'flex-end' }}>
           <Text style={{ fontSize: 11, color: colors.subtext }}>最后使用时间</Text>
-          <Text style={{ marginTop: 4, fontSize: 13, color: colors.subtext }}>{formatTime(item.last_used_at || item.updated_at || item.created_at)}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ marginTop: 4, width: '100%', textAlign: 'right', fontSize: 11, color: colors.subtext }}>{formatTime(item.last_used_at || item.updated_at || item.created_at)}</Text>
         </View>
       </View>
     </View>
@@ -240,6 +255,7 @@ function KeyItem({ item, copied, onCopy, onManage }: { item: AdminApiKey; copied
 }
 
 export default function UserDetailScreen() {
+  const colors = useUserManagementColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = Number(id);
   const queryClient = useQueryClient();
@@ -251,6 +267,7 @@ export default function UserDetailScreen() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [searchText, setSearchText] = useState('');
   const [copiedKeyId, setCopiedKeyId] = useState<number | null>(null);
+  const [visibleKeyIds, setVisibleKeyIds] = useState<Set<number>>(() => new Set());
   const [rangeKey, setRangeKey] = useState<RangeKey>('7d');
   const range = getDateRange(rangeKey);
 
@@ -407,30 +424,10 @@ export default function UserDetailScreen() {
                 <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700' }}>编辑用户</Text>
               </Pressable>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 }}>
-                <View
-                  style={{
-                    width: '47%',
-                    justifyContent: 'center',
-                    paddingHorizontal: 4,
-                    paddingVertical: 8,
-                  }}
-                >
-                  <Text style={{ fontSize: 11, color: colors.subtext }}>邮箱</Text>
-                  <Text style={{ marginTop: 4, fontSize: 13, color: colors.subtext }}>{user.email || '--'}</Text>
-                </View>
+                <GridField label="邮箱" value={user.email || '--'} />
                 <GridField label="用户名" value={user.username || '--'} />
                 <GridField label="余额" value={formatMoney(user.balance)} />
-                <View
-                  style={{
-                    width: '47%',
-                    justifyContent: 'center',
-                    paddingHorizontal: 4,
-                    paddingVertical: 8,
-                  }}
-                >
-                  <Text style={{ fontSize: 11, color: colors.subtext }}>最后使用时间</Text>
-                  <Text style={{ marginTop: 4, fontSize: 13, color: colors.subtext }}>{formatTime(user.last_used_at || user.updated_at || user.created_at)}</Text>
-                </View>
+                <GridField label="最后使用时间" value={formatTime(user.last_used_at || user.updated_at || user.created_at)} />
               </View>
 
               <View style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -442,10 +439,10 @@ export default function UserDetailScreen() {
                   disabled={statusMutation.isPending || user.role?.toLowerCase() === 'admin'}
                   onPress={handleToggleUserStatus}
                   style={{
-                    backgroundColor: user.status === 'disabled' ? colors.primary : '#8b3f1f',
-                    borderRadius: 10,
-                    paddingHorizontal: 12,
-                    paddingVertical: 10,
+                    backgroundColor: user.status === 'disabled' ? colors.primary : colors.danger,
+                    borderRadius: 999,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
                     opacity: statusMutation.isPending || user.role?.toLowerCase() === 'admin' ? 0.6 : 1,
                   }}
                 >
@@ -567,8 +564,15 @@ export default function UserDetailScreen() {
                       key={item.id}
                       item={item}
                       copied={copiedKeyId === item.id}
+                      visible={visibleKeyIds.has(item.id)}
                       onCopy={() => copyKey(item)}
                       onManage={() => router.push(`/users/api-key?userId=${userId}&id=${item.id}`)}
+                      onToggleVisibility={() => setVisibleKeyIds((current) => {
+                        const next = new Set(current);
+                        if (next.has(item.id)) next.delete(item.id);
+                        else next.add(item.id);
+                        return next;
+                      })}
                     />
                   ))}
                 </View>

@@ -1,8 +1,8 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { Clock3, KeyRound, Play, Search, ShieldCheck, ShieldOff } from 'lucide-react-native';
+import { CheckCircle2, CircleAlert, Clock3, KeyRound, Play, Search, ShieldCheck, ShieldOff, X } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, View } from 'react-native';
+import { FlatList, Modal, Pressable, RefreshControl, View } from 'react-native';
 import type { Edge } from 'react-native-safe-area-context';
 
 import { AccountQuotaPanel } from '@/src/components/account-quota-panel';
@@ -13,18 +13,20 @@ import { PaginationControls } from '@/src/components/pagination-controls';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { useDebouncedValue } from '@/src/hooks/use-debounced-value';
 import { formatTokenValue } from '@/src/lib/formatters';
-import { getAccountTodayStats, listAccounts, setAccountSchedulable } from '@/src/services/admin';
+import { getAccountTodayStats, listAccounts, recoverAccountState, setAccountSchedulable } from '@/src/services/admin';
 import { accountRefreshState, updateAccountRefresh } from '@/src/store/account-refresh';
 import type { AdminAccount } from '@/src/types/admin';
 import { Text, TextInput } from '@/src/components/localized-text';
 const { useSnapshot } = require('valtio/react');
 
-type AccountStatusFilter = 'all' | 'active' | 'paused' | 'error';
-type UsageSort = 'usage-desc' | 'usage-asc';
+type AccountStatusFilter = 'all' | 'active' | 'limited' | 'paused' | 'error';
+type UsageSort = 'usage-desc' | 'usage-asc' | null;
 type AccountVisualStatus = {
   filterKey: AccountStatusFilter;
-  label: '正常' | '停用' | '异常';
-  badgeTone: 'success' | 'muted' | 'danger';
+  label: '正常' | '限流中' | '过载中' | '临时不可调度' | '配额用尽' | '停用' | '异常';
+  badgeTone: 'success' | 'warning' | 'muted' | 'danger';
+  code?: '429' | '529';
+  detail?: string;
 };
 
 type AccountTodaySummary = {
@@ -33,6 +35,39 @@ type AccountTodaySummary = {
   cost: number;
 };
 
+type RecoverNotice = {
+  tone: 'success' | 'error';
+  title: string;
+  message: string;
+} | null;
+
+function RecoverNoticeModal({ notice, onClose }: { notice: RecoverNotice; onClose: () => void }) {
+  const success = notice?.tone === 'success';
+  return (
+    <Modal visible={Boolean(notice)} transparent statusBarTranslucent animationType="fade" onRequestClose={onClose}>
+      <Pressable onPress={onClose} className="flex-1 items-center justify-center bg-black/40 px-5">
+        <Pressable onPress={(event) => event.stopPropagation()} className="w-full max-w-[360px] rounded-[26px] border border-[#E2E9F3] bg-white p-5 dark:border-[#273449] dark:bg-[#111827]">
+          <View className="flex-row items-start">
+            <View className={`h-11 w-11 items-center justify-center rounded-2xl ${success ? 'bg-[#EAF8F0] dark:bg-[#153326]' : 'bg-[#FFF0F2] dark:bg-[#3A1720]'}`}>
+              {success ? <CheckCircle2 size={22} color="#20A66A" /> : <CircleAlert size={22} color="#D9475C" />}
+            </View>
+            <View className="ml-3 flex-1">
+              <Text className="text-base font-bold text-[#172033] dark:text-[#F4F7FB]">{notice?.title}</Text>
+              <Text className="mt-1 text-xs leading-5 text-[#6B778C] dark:text-[#9EABC0]">{notice?.message}</Text>
+            </View>
+            <Pressable accessibilityLabel="关闭" hitSlop={10} onPress={onClose} className="p-1">
+              <X size={18} color="#7C8AA0" />
+            </Pressable>
+          </View>
+          <Pressable onPress={onClose} className="mt-5 items-center rounded-2xl bg-[#2F6DF6] py-3">
+            <Text className="text-sm font-bold text-white">知道了</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 function formatTime(value?: string | null) {
   if (!value) return '--';
   const date = new Date(value);
@@ -40,22 +75,73 @@ function formatTime(value?: string | null) {
   return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+function futureTimestamp(value?: string | null) {
+  if (!value) return 0;
+  const timestamp = new Date(value).getTime();
+  return Number.isFinite(timestamp) && timestamp > Date.now() ? timestamp : 0;
+}
+
+function formatCountdown(value?: string | null) {
+  const remainingSeconds = Math.max(0, Math.floor((futureTimestamp(value) - Date.now()) / 1000));
+  if (!remainingSeconds) return '';
+  const days = Math.floor(remainingSeconds / 86400);
+  const hours = Math.floor((remainingSeconds % 86400) / 3600);
+  const minutes = Math.floor((remainingSeconds % 3600) / 60);
+  if (days) return `${days}d${hours ? ` ${hours}h` : ''}`;
+  if (hours) return `${hours}h${minutes ? ` ${minutes}m` : ''}`;
+  if (minutes) return `${minutes}m`;
+  return `${remainingSeconds}s`;
+}
+
+function quotaExceeded(used?: number | null, limit?: number | null) {
+  return typeof limit === 'number' && limit > 0 && typeof used === 'number' && used >= limit;
+}
+
 function getAccountError(account: AdminAccount) {
   const normalizedStatus = `${account.status ?? ''}`.toLowerCase();
   const availableStatuses = ['', 'active', 'normal', 'healthy', 'enabled'];
   const pausedStatuses = ['inactive', 'disabled', 'paused', 'stop', 'stopped'];
-  return Boolean(account.error_message || (!availableStatuses.includes(normalizedStatus) && !pausedStatuses.includes(normalizedStatus)));
+  return normalizedStatus === 'error' || (!availableStatuses.includes(normalizedStatus) && !pausedStatuses.includes(normalizedStatus));
 }
 
 function getAccountVisualStatus(account: AdminAccount): AccountVisualStatus {
   const normalizedStatus = `${account.status ?? ''}`.toLowerCase();
   const isPausedStatus = ['inactive', 'disabled', 'paused', 'stop', 'stopped'].includes(normalizedStatus);
+  const rateLimitCountdown = formatCountdown(account.rate_limit_reset_at);
+  const overloadCountdown = formatCountdown(account.overload_until);
+  const tempCountdown = formatCountdown(account.temp_unschedulable_until);
+
+  if (rateLimitCountdown) {
+    return { filterKey: 'limited', label: '限流中', badgeTone: 'warning', code: '429', detail: `${rateLimitCountdown} 自动恢复` };
+  }
+  if (overloadCountdown) {
+    return { filterKey: 'limited', label: '过载中', badgeTone: 'danger', code: '529', detail: `${overloadCountdown} 自动恢复` };
+  }
 
   if (getAccountError(account)) {
-    return { filterKey: 'error', label: '异常', badgeTone: 'danger' };
+    return { filterKey: 'error', label: '异常', badgeTone: 'danger', detail: account.error_message || (normalizedStatus ? `未知状态：${normalizedStatus}` : undefined) };
   }
-  if (isPausedStatus || account.schedulable === false) {
+  if (tempCountdown) {
+    return { filterKey: 'limited', label: '临时不可调度', badgeTone: 'warning', detail: account.temp_unschedulable_reason || `${tempCountdown} 后恢复` };
+  }
+  if (isPausedStatus) {
     return { filterKey: 'paused', label: '停用', badgeTone: 'muted' };
+  }
+  if (
+    quotaExceeded(account.quota_used, account.quota_limit) ||
+    quotaExceeded(account.quota_daily_used, account.quota_daily_limit) ||
+    quotaExceeded(account.quota_weekly_used, account.quota_weekly_limit)
+  ) {
+    const resetAt = quotaExceeded(account.quota_daily_used, account.quota_daily_limit)
+      ? account.quota_daily_reset_at
+      : quotaExceeded(account.quota_weekly_used, account.quota_weekly_limit)
+        ? account.quota_weekly_reset_at
+        : null;
+    const countdown = formatCountdown(resetAt);
+    return { filterKey: 'limited', label: '配额用尽', badgeTone: 'warning', detail: countdown ? `${countdown} 自动恢复` : '已达到账号配额上限' };
+  }
+  if (account.schedulable === false) {
+    return { filterKey: 'paused', label: '停用', badgeTone: 'muted', detail: '已停止参与调度' };
   }
   return { filterKey: 'active', label: '正常', badgeTone: 'success' };
 }
@@ -72,6 +158,8 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
   const [usageSort, setUsageSort] = useState<UsageSort>('usage-desc');
   const [testAccountTarget, setTestAccountTarget] = useState<AdminAccount | null>(null);
   const [togglingAccountId, setTogglingAccountId] = useState<number | null>(null);
+  const [recoveringAccountId, setRecoveringAccountId] = useState<number | null>(null);
+  const [recoverNotice, setRecoverNotice] = useState<RecoverNotice>(null);
   const [runningRefresh, setRunningRefresh] = useState(false);
   const keyword = useDebouncedValue(searchText.trim(), 300);
   const queryClient = useQueryClient();
@@ -85,6 +173,17 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
     mutationFn: ({ accountId, schedulable }: { accountId: number; schedulable: boolean }) =>
       setAccountSchedulable(accountId, schedulable),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['accounts'] }),
+  });
+
+  const recoverMutation = useMutation({
+    mutationFn: (accountId: number) => recoverAccountState(accountId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      setRecoverNotice({ tone: 'success', title: '恢复状态', message: '账号状态已恢复。' });
+    },
+    onError: (error) => {
+      setRecoverNotice({ tone: 'error', title: '恢复失败', message: error instanceof Error ? error.message : '账号状态恢复失败，请稍后重试。' });
+    },
   });
 
   const items = accountsQuery.data?.items ?? [];
@@ -115,10 +214,13 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
       const visualStatus = getAccountVisualStatus(account);
       if (filter === 'all') return true;
       if (filter === 'active') return visualStatus.filterKey === 'active';
+      if (filter === 'limited') return visualStatus.filterKey === 'limited';
       if (filter === 'paused') return visualStatus.filterKey === 'paused';
       if (filter === 'error') return visualStatus.filterKey === 'error';
       return true;
     });
+
+    if (!usageSort) return statusMatched;
 
     const sorted = [...statusMatched].sort((left, right) => {
       const requestsLeft = todayByAccountId.get(left.id)?.requests ?? 0;
@@ -140,9 +242,10 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
   const summary = useMemo(() => {
     const total = items.length;
     const errors = items.filter((item) => getAccountVisualStatus(item).filterKey === 'error').length;
+    const limited = items.filter((item) => getAccountVisualStatus(item).filterKey === 'limited').length;
     const paused = items.filter((item) => getAccountVisualStatus(item).filterKey === 'paused').length;
     const active = items.filter((item) => getAccountVisualStatus(item).filterKey === 'active').length;
-    return { total, active, paused, errors };
+    return { total, active, limited, paused, errors };
   }, [items]);
 
   const listHeader = useMemo(
@@ -164,10 +267,11 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
             />
           </View>
 
-          <View className="mt-3 flex-row gap-2">
+          <View className="mt-3 flex-row flex-wrap gap-1.5">
             {([
               ['all', `全部 ${summary.total}`],
               ['active', `正常 ${summary.active}`],
+              ['limited', `受限 ${summary.limited}`],
               ['paused', `停用 ${summary.paused}`],
               ['error', `异常 ${summary.errors}`],
             ] as const).map(([key, label]) => {
@@ -176,15 +280,12 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
                 <Pressable
                   key={key}
                   onPress={() => setFilter(key)}
-                  className={active ? 'rounded-full bg-[#2F6DF6] px-3 py-2' : 'rounded-full bg-[#E2E9F3] dark:bg-[#273449] px-3 py-2'}
+                  className={active ? 'rounded-full bg-[#2F6DF6] px-2 py-1.5' : 'rounded-full bg-[#E2E9F3] dark:bg-[#273449] px-2 py-1.5'}
                 >
-                  <Text className={active ? 'text-xs font-semibold text-white' : 'text-xs font-semibold text-[#344054] dark:text-[#D5DDEA]'}>{label}</Text>
+                  <Text className={active ? 'text-[10px] font-semibold text-white' : 'text-[10px] font-semibold text-[#344054] dark:text-[#D5DDEA]'}>{label}</Text>
                 </Pressable>
               );
             })}
-          </View>
-
-          <View className="mt-3 flex-row gap-2">
             {([
               ['usage-desc', '请求高→低'],
               ['usage-asc', '请求低→高'],
@@ -193,10 +294,10 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
               return (
                 <Pressable
                   key={key}
-                  onPress={() => setUsageSort(key)}
-                  className={active ? 'rounded-full bg-[#344054] px-3 py-2' : 'rounded-full bg-[#E2E9F3] dark:bg-[#273449] px-3 py-2'}
+                  onPress={() => setUsageSort((current) => current === key ? null : key)}
+                  className={active ? 'rounded-full bg-[#344054] px-2 py-1.5' : 'rounded-full bg-[#E2E9F3] px-2 py-1.5 dark:bg-[#273449]'}
                 >
-                  <Text className={active ? 'text-xs font-semibold text-white' : 'text-xs font-semibold text-[#344054] dark:text-[#D5DDEA]'}>{label}</Text>
+                  <Text className={active ? 'text-[10px] font-semibold text-white' : 'text-[10px] font-semibold text-[#344054] dark:text-[#D5DDEA]'}>{label}</Text>
                 </Pressable>
               );
             })}
@@ -204,7 +305,7 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
         </View>
       </View>
     ),
-    [filter, refreshConfig.enabled, refreshConfig.intervalMinutes, runningRefresh, summary.active, summary.errors, summary.paused, summary.total, usageSort]
+    [filter, refreshConfig.enabled, refreshConfig.intervalMinutes, runningRefresh, summary.active, summary.errors, summary.limited, summary.paused, summary.total, usageSort]
   );
 
   const renderItem = useCallback(
@@ -212,12 +313,14 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
       const isError = getAccountError(account);
       const visualStatus = getAccountVisualStatus(account);
       const statusText = visualStatus.label;
-      const statusIconColor = visualStatus.filterKey === 'active' ? '#20B26B' : visualStatus.filterKey === 'paused' ? '#E5A11A' : '#D9475C';
+      const statusIconColor = visualStatus.filterKey === 'active' ? '#20B26B' : visualStatus.filterKey === 'limited' || visualStatus.filterKey === 'paused' ? '#E5A11A' : '#D9475C';
       const groupsText = account.groups?.map((group) => group.name).filter(Boolean).slice(0, 3).join(' · ');
       const todayStats = todayByAccountId.get(account.id) ?? { requests: 0, tokens: 0, cost: 0 };
       const nextSchedulable = visualStatus.filterKey === 'paused';
       const toggleLabel = nextSchedulable ? '启用' : '停用';
       const isTogglingCurrent = togglingAccountId === account.id && toggleMutation.isPending;
+      const showRecover = visualStatus.filterKey !== 'active' && visualStatus.filterKey !== 'paused';
+      const isRecoveringCurrent = recoveringAccountId === account.id && recoverMutation.isPending;
 
       return (
         <Pressable onPress={() => router.push(`/accounts/${account.id}`)}>
@@ -237,6 +340,13 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
                 <Text className="text-xs text-[#6B778C] dark:text-[#9EABC0]">最近使用 {formatTime(account.last_used_at || account.updated_at)}</Text>
               </View>
 
+              {visualStatus.detail || visualStatus.code ? (
+                <View className="flex-row flex-wrap items-center gap-2">
+                  {visualStatus.detail ? <Text className={`text-[11px] ${visualStatus.filterKey === 'error' ? 'text-[#D9475C]' : 'text-[#B7791F] dark:text-[#F4C15D]'}`}>{visualStatus.detail}</Text> : null}
+                  {visualStatus.code ? <View className={`flex-row items-center rounded-md px-2 py-1 ${visualStatus.code === '529' ? 'bg-[#FFF0F2] dark:bg-[#3A1720]' : 'bg-[#FFF4D6] dark:bg-[#422F12]'}`}><Text className={`text-[10px] font-semibold ${visualStatus.code === '529' ? 'text-[#D9475C]' : 'text-[#B7791F] dark:text-[#F4C15D]'}`}>⚠ {visualStatus.code}</Text></View> : null}
+                </View>
+              ) : null}
+
               <View className="flex-row gap-2">
                 <View className="min-h-[68px] flex-1 justify-between rounded-[14px] bg-[#F1F5FA] dark:bg-[#182235] px-3 py-3">
                   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-[11px] text-[#6B778C] dark:text-[#9EABC0]">请求次数</Text>
@@ -255,22 +365,22 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
               <Text className="text-xs text-[#6B778C] dark:text-[#9EABC0]">优先级 {account.priority ?? 0} · 倍率 {(account.rate_multiplier ?? 1).toFixed(2)}x</Text>
 
               {groupsText ? <Text className="text-xs text-[#6B778C] dark:text-[#9EABC0]">分组 {groupsText}</Text> : null}
-              {account.error_message ? <Text className="text-xs text-[#D9475C]">异常信息：{account.error_message}</Text> : null}
+              {isError && account.error_message && visualStatus.detail !== account.error_message ? <Text className="text-xs text-[#D9475C]">异常信息：{account.error_message}</Text> : null}
 
               <AccountQuotaPanel account={account} compact />
 
               <View className="flex-row gap-2">
                 <Pressable
-                  className="rounded-full bg-[#2F6DF6] px-4 py-2"
+                  className="min-w-0 flex-1 items-center rounded-full bg-[#2F6DF6] px-2 py-2"
                   onPress={(event) => {
                     event.stopPropagation();
                     setTestAccountTarget(account);
                   }}
                 >
-                  <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-[#FFFFFF]">选择模型测试</Text>
+                  <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-[#FFFFFF]">测试连接</Text>
                 </Pressable>
                 <Pressable
-                  className="rounded-full bg-[#E2E9F3] dark:bg-[#273449] px-4 py-2"
+                  className="min-w-0 flex-1 items-center rounded-full bg-[#E2E9F3] dark:bg-[#273449] px-2 py-2"
                   disabled={isTogglingCurrent}
                   onPress={(event) => {
                     event.stopPropagation();
@@ -287,6 +397,21 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
                 >
                   <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-[#344054] dark:text-[#D5DDEA]">{isTogglingCurrent ? '处理中...' : toggleLabel}</Text>
                 </Pressable>
+                {showRecover ? (
+                  <Pressable
+                    className="min-w-0 flex-1 items-center rounded-full bg-[#FFF4D6] dark:bg-[#422F12] px-2 py-2"
+                    disabled={isRecoveringCurrent}
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      setRecoveringAccountId(account.id);
+                      recoverMutation.mutate(account.id, {
+                        onSettled: () => setRecoveringAccountId((current) => (current === account.id ? null : current)),
+                      });
+                    }}
+                  >
+                    <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-[#B7791F] dark:text-[#F4C15D]">{isRecoveringCurrent ? '恢复中...' : '恢复状态'}</Text>
+                  </Pressable>
+                ) : null}
               </View>
 
             </View>
@@ -294,7 +419,7 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
         </Pressable>
       );
     },
-    [todayByAccountId, toggleMutation, togglingAccountId]
+    [recoverMutation, recoveringAccountId, todayByAccountId, toggleMutation, togglingAccountId]
   );
 
   const emptyState = useMemo(
@@ -335,6 +460,7 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
         windowSize={5}
       />
       <AccountTestModal account={testAccountTarget} visible={Boolean(testAccountTarget)} onClose={() => setTestAccountTarget(null)} />
+      <RecoverNoticeModal notice={recoverNotice} onClose={() => setRecoverNotice(null)} />
     </ScreenShell>
   );
 }

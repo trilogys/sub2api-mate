@@ -9,19 +9,7 @@ import { createUser } from '@/src/services/admin';
 import type { CreateUserRequest } from '@/src/types/admin';
 import { Text, TextInput } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  text: '#172033',
-  subtext: '#667085',
-  border: '#E2E9F3',
-  primary: '#2F6DF6',
-  dark: '#2F6DF6',
-  errorBg: '#FFF0F2',
-  errorText: '#D9475C',
-  muted: '#FFF8EE',
-};
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 type JsonValue = string | number | boolean | null | undefined;
 
@@ -77,6 +65,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export default function CreateUserScreen() {
+  const colors = useUserManagementColors();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
@@ -125,7 +114,7 @@ export default function CreateUserScreen() {
           <View
             style={{
               backgroundColor: colors.card,
-              borderRadius: 16,
+              borderRadius: 22,
               padding: 16,
               marginBottom: 12,
               borderWidth: 1,
@@ -213,7 +202,7 @@ export default function CreateUserScreen() {
           <View
             style={{
               backgroundColor: colors.card,
-              borderRadius: 16,
+              borderRadius: 22,
               padding: 16,
               marginBottom: 12,
               borderWidth: 1,
@@ -274,7 +263,7 @@ export default function CreateUserScreen() {
           <View
             style={{
               backgroundColor: colors.card,
-              borderRadius: 16,
+              borderRadius: 22,
               padding: 16,
               marginBottom: 12,
               borderWidth: 1,

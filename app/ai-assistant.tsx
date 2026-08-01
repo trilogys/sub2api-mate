@@ -1,75 +1,285 @@
 import * as SecureStore from 'expo-secure-store';
-import { router, useLocalSearchParams } from 'expo-router';
-import { Bot, Check, ChevronDown, Clock3, ExternalLink, GitPullRequest, History, Pencil, Plus, Send, Settings2, Trash2, Wrench, X } from 'lucide-react-native';
+import { router } from 'expo-router';
+import { ChevronDown, ExternalLink, GitPullRequest, Wrench, X } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+import { Linking, Modal, Platform, Pressable, ScrollView, View } from 'react-native';
+
 import { AdminButton, AdminMessage, AdminSection } from '@/src/components/admin-ui';
 import { AIProviderSettings } from '@/src/components/ai-provider-settings';
 import { AssistantAppearancePicker } from '@/src/components/assistant-appearance-picker';
+import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { MarkdownMessage } from '@/src/components/markdown-message';
 import { ScreenShell } from '@/src/components/screen-shell';
-import { AI_PROVIDER_STORAGE_KEY, createAIFixProposal, createAIResponse, listAIModels } from '@/src/services/ai';
+import { Text, TextInput, localizedAlert } from '@/src/components/localized-text';
+import { AI_PROVIDER_STORAGE_KEY, createAIFixProposal, listAIModels } from '@/src/services/ai';
 import type { AIChatMessage, AIFixProposal, AIProviderConfig, ReasoningEffort } from '@/src/services/ai';
 import { getAppKnowledgeContext } from '@/src/services/app-knowledge';
 import { createGitHubFixPullRequest, findRelevantRepositoryFiles, loadGitHubConfig } from '@/src/services/github';
 import type { GitHubConfig, GitHubSourceFile } from '@/src/services/github';
-import { Text, TextInput, localizedAlert } from '@/src/components/localized-text';
-import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 
 type ChatItem = AIChatMessage & { id: string };
-type Conversation = { id: string; title: string; createdAt: string; updatedAt: string; model: string; reasoningEffort: ReasoningEffort; messages: ChatItem[] };
-const HISTORY_KEY = 'sub2api_ai_conversations_v2'; const efforts: ReasoningEffort[] = ['none','low','medium','high','xhigh','max'];
-const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2,8)}`;
-const welcome = (): ChatItem => ({ id: uid(), role: 'assistant', text: '你好，我可以查找 App 页面、Sub2API API 与参数，也能协助排错、构建和生成受控的 GitHub 修复方案。' });
-const fresh = (config?: AIProviderConfig | null): Conversation => ({ id: uid(), title: '新对话', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), model: config?.model || 'gpt-5.6-terra', reasoningEffort: config?.reasoningEffort || 'medium', messages: [welcome()] });
-async function readStorage(key: string) { return Platform.OS === 'web' ? globalThis.localStorage?.getItem(key) ?? null : SecureStore.getItemAsync(key); }
-async function writeHistory(items: Conversation[]) { const trimmed = items.slice(0,20).map((c) => ({ ...c, messages: c.messages.slice(-30).map((m) => ({ ...m, text: m.text.slice(0,12000) })) })); const raw = JSON.stringify(trimmed); if (Platform.OS === 'web') globalThis.localStorage?.setItem(HISTORY_KEY, raw); else await SecureStore.setItemAsync(HISTORY_KEY, raw); }
-function parseConfig(raw: string | null): AIProviderConfig | null { try { const value = raw ? JSON.parse(raw) as AIProviderConfig : null; return value?.baseUrl && value.apiKey && value.model ? value : null; } catch { return null; } }
+type Conversation = {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  model: string;
+  reasoningEffort: ReasoningEffort;
+  messages: ChatItem[];
+};
 
-export default function AIAssistantScreen() {
-  const params = useLocalSearchParams<{ prompt?: string; settings?: string }>(); const initialPrompt = typeof params.prompt === 'string' ? params.prompt : '';
-  const [config, setConfig] = useState<AIProviderConfig | null>(null); const [conversations, setConversations] = useState<Conversation[]>([]); const [activeId, setActiveId] = useState(''); const [draft, setDraft] = useState(initialPrompt); const [sending, setSending] = useState(false); const [historyOpen, setHistoryOpen] = useState(false); const [modelOpen, setModelOpen] = useState(false); const [settingsOpen, setSettingsOpen] = useState(params.settings === '1'); const [models, setModels] = useState<string[]>([]); const [selected, setSelected] = useState<string[]>([]); const [editingId, setEditingId] = useState(''); const [editText, setEditText] = useState(''); const [error, setError] = useState<unknown>();
-  const [github, setGithub] = useState<GitHubConfig | null>(null); const [proposal, setProposal] = useState<AIFixProposal>(); const [sources, setSources] = useState<GitHubSourceFile[]>([]); const [fixing, setFixing] = useState(false); const [publishing, setPublishing] = useState(false); const [pr, setPr] = useState<{ html_url: string; number: number; title: string }>();
-  const active = conversations.find((c) => c.id === activeId) ?? conversations[0];
-  useEffect(() => { Promise.all([readStorage(AI_PROVIDER_STORAGE_KEY), readStorage(HISTORY_KEY), loadGitHubConfig()]).then(([rawConfig, rawHistory, gh]) => { const parsed = parseConfig(rawConfig); setConfig(parsed); setGithub(gh); let history: Conversation[] = []; try { history = rawHistory ? JSON.parse(rawHistory) : []; } catch {} if (!history.length) history = [fresh(parsed)]; setConversations(history); setActiveId(history[0].id); }); }, []);
-  useEffect(() => { if (params.settings === '1') setSettingsOpen(true); }, [params.settings]);
-  const persist = (next: Conversation[]) => { const sorted = [...next].sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)); setConversations(sorted); writeHistory(sorted).catch(() => undefined); };
-  const updateActive = (fn: (c: Conversation) => Conversation) => { if (!active) return; persist(conversations.map((c) => c.id === active.id ? fn(c) : c)); };
-  const newChat = () => { const next = fresh(config); persist([next, ...conversations]); setActiveId(next.id); setHistoryOpen(false); setDraft(''); setProposal(undefined); setPr(undefined); };
-  const send = async () => { const text = draft.trim(); if (!text || sending || !active) return; if (!config) { setError(new Error('请先配置 AI Base URL、API Key 和模型')); return; } const user: ChatItem = { id: uid(), role: 'user', text }; const pending = { ...active, title: active.title === '新对话' ? text.slice(0,24) : active.title, updatedAt: new Date().toISOString(), messages: [...active.messages, user] }; persist(conversations.map((c) => c.id === active.id ? pending : c)); setDraft(''); setSending(true); setError(undefined); try { const knowledge = getAppKnowledgeContext(text); const runtime = { ...config, model: pending.model, reasoningEffort: pending.reasoningEffort }; const result = await createAIResponse(runtime, pending.messages.map(({role,text}) => ({role,text})), knowledge.text); const assistant: ChatItem = { id: uid(), role: 'assistant', text: result.text }; persist(conversations.map((c) => c.id === active.id ? { ...pending, updatedAt: new Date().toISOString(), messages: [...pending.messages, assistant] } : c)); } catch (reason) { setError(reason); } finally { setSending(false); } };
-  const saveEdit = (messageId: string) => { if (!active || !editText.trim()) return; const index = active.messages.findIndex((m) => m.id === messageId); if (index < 0) return; const messages = active.messages.slice(0,index + 1); messages[index] = { ...messages[index], text: editText.trim() }; updateActive((c) => ({ ...c, updatedAt: new Date().toISOString(), messages })); setEditingId(''); setEditText(''); };
-  const loadModels = async () => { if (!config) return; setError(undefined); try { setModels(await listAIModels({ ...config, model: active?.model || config.model })); } catch (reason) { setError(reason); } };
-  const lastProblem = useMemo(() => [...(active?.messages ?? [])].reverse().find((m) => m.role === 'user')?.text || '', [active]);
-  const generateFix = async () => { if (!lastProblem || !config || !github?.token || !active) return setError(new Error('需要当前问题、AI 配置和 GitHub Token')); setFixing(true); setError(undefined); try { const files = await findRelevantRepositoryFiles(github,lastProblem); const next = await createAIFixProposal({ ...config, model: active.model, reasoningEffort: active.reasoningEffort }, lastProblem, files.map(({path,excerpt}) => ({path,excerpt})), getAppKnowledgeContext(lastProblem).text); setSources(files); setProposal(next); } catch (reason) { setError(reason); } finally { setFixing(false); } };
-  const publish = async () => { if (!github || !proposal || !sources.length) return; setPublishing(true); try { setPr(await createGitHubFixPullRequest(github,sources,proposal)); } catch (reason) { setError(reason); } finally { setPublishing(false); } };
-  return <><LocalizedStackScreen options={{ title: 'AI 助手', headerShown: true }} /><ScreenShell title="AI 助手" subtitle="多会话 · Markdown · 页面级模型与推理设置" safeAreaEdges={['bottom']} bottomInsetClassName="pb-8">
-    <View className="flex-row gap-2"><Pressable onPress={newChat} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#2F6DF6] py-3"><Plus size={16} color="#fff" /><Text className="text-xs font-bold text-white">新建对话</Text></Pressable><Pressable onPress={() => setHistoryOpen(true)} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#EAF2FF] dark:bg-[#172C55] py-3"><History size={16} color="#2F6DF6" /><Text className="text-xs font-bold text-[#2F6DF6]">历史对话</Text></Pressable><Pressable accessibilityLabel="AI 助手设置" accessibilityState={{ expanded: settingsOpen }} onPress={() => setSettingsOpen((value) => !value)} className={`w-12 items-center justify-center rounded-2xl ${settingsOpen ? 'bg-[#2F6DF6]' : 'bg-[#EEF3F8] dark:bg-[#182235]'}`}><Settings2 size={18} color={settingsOpen ? '#fff' : '#2F6DF6'} /></Pressable></View>
-    {settingsOpen ? <View className="gap-3"><AdminSection title="悬浮助手" detail="在这里控制开关和外观；长按可移动，靠边松手后会自动半隐藏。"><AssistantAppearancePicker /></AdminSection><AIProviderSettings onSaved={setConfig} /></View> : null}
-    <View className="gap-3 rounded-[20px] border border-[#DDE6F2] bg-white p-3 dark:border-[#273449] dark:bg-[#111827]">
-      <Pressable onPress={() => setModelOpen(true)} className="flex-row items-center justify-between rounded-xl bg-[#F1F5FA] px-3 py-2 dark:bg-[#182235]">
-        <View className="flex-1">
-          <Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">模型</Text>
-          <Text numberOfLines={1} className="mt-0.5 text-[11px] font-bold text-[#172033] dark:text-[#F4F7FB]">{active?.model || config?.model || '未配置'}</Text>
-        </View>
-        <ChevronDown size={15} color="#667085" />
-      </Pressable>
-      <View>
-        <Text className="mb-2 text-[9px] text-[#7B8798] dark:text-[#9EABC0]">推理强度</Text>
-        <View className="flex-row flex-wrap gap-1">
-          {efforts.map((effort) => <Pressable key={effort} onPress={() => updateActive((c) => ({ ...c, reasoningEffort: effort, updatedAt: new Date().toISOString() }))} className={`rounded-full px-3 py-1.5 ${active?.reasoningEffort === effort ? 'bg-[#2F6DF6]' : 'bg-[#EEF3F8] dark:bg-[#182235]'}`}><Text className={`text-[9px] font-bold ${active?.reasoningEffort === effort ? 'text-white' : 'text-[#667085] dark:text-[#9EABC0]'}`}>{effort}</Text></Pressable>)}
-        </View>
-      </View>
-    </View>
-    <AdminSection title={active?.title || '新对话'} detail="编辑旧消息后将删除其后的对话，便于从该位置重新提问。">
-      <View className="gap-3">{active?.messages.map((message) => <View key={message.id} className={`max-w-[94%] ${message.role === 'user' ? 'self-end' : 'self-start'}`}>{editingId === message.id ? <View className="min-w-[280px] rounded-2xl bg-white dark:bg-[#111827] p-2"><TextInput value={editText} onChangeText={setEditText} multiline className="min-h-20 rounded-xl bg-[#F1F5FA] dark:bg-[#182235] p-3 text-xs text-[#172033] dark:text-[#F4F7FB]" /><View className="mt-2 flex-row justify-end gap-2"><Pressable onPress={() => setEditingId('')}><X size={18} color="#667085" /></Pressable><Pressable onPress={() => saveEdit(message.id)}><Check size={18} color="#2F6DF6" /></Pressable></View></View> : <View className={`rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-[#2F6DF6]' : 'bg-[#F1F5FA] dark:bg-[#182235]'}`}><MarkdownMessage text={message.text} inverted={message.role === 'user'} /><Pressable onPress={() => { setEditingId(message.id); setEditText(message.text); }} className="mt-2 self-end"><Pencil size={12} color={message.role === 'user' ? '#DCE7FF' : '#8290A3'} /></Pressable></View>}</View>)}</View>
-      <View className="flex-row items-end gap-2 rounded-2xl border border-[#D5DEEA] dark:border-[#34435A] bg-white dark:bg-[#111827] px-3 py-2"><TextInput value={draft} onChangeText={setDraft} placeholder="询问 API、参数、构建或粘贴错误…" placeholderTextColor="#98A2B3" multiline maxLength={12000} className="max-h-40 min-h-12 flex-1 py-2 text-sm text-[#172033] dark:text-[#F4F7FB]" /><Pressable disabled={!draft.trim() || sending} onPress={send} className={`mb-1 h-10 w-10 items-center justify-center rounded-full ${draft.trim() && !sending ? 'bg-[#2F6DF6]' : 'bg-[#D5DEEA]'}`}><Send size={18} color="#fff" /></Pressable></View><AdminMessage error={error} />
-    </AdminSection>
-    <AdminSection title="AI 修复工作流" detail="读取授权仓库片段，先生成修复方案；创建 Draft PR 前仍会确认。"><AdminButton label="根据当前问题生成修复方案" pending={fixing} disabled={!lastProblem} onPress={generateFix} />{proposal ? <View className="gap-2 rounded-2xl bg-[#F1F5FA] dark:bg-[#182235] p-3"><View className="flex-row gap-2"><Wrench size={16} color="#2F6DF6" /><Text className="flex-1 text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">{proposal.title}</Text></View><MarkdownMessage text={proposal.summary} />{proposal.changes.map((change) => <Text key={change.path} selectable className="text-[10px] leading-4 text-[#607086] dark:text-[#AAB6C8]">{change.path} · {change.reason}</Text>)}{proposal.changes.length ? <AdminButton label="确认创建 Draft PR" pending={publishing} onPress={() => localizedAlert('创建 Draft PR', `将修改 ${proposal.changes.length} 个文件。`, [{text:'取消'},{text:'确认',onPress:publish}])} /> : null}</View> : null}{pr ? <Pressable onPress={() => Linking.openURL(pr.html_url)} className="flex-row items-center gap-2 rounded-2xl bg-[#EAF2FF] dark:bg-[#172C55] p-3"><GitPullRequest size={16} color="#2F6DF6" /><Text className="flex-1 text-xs font-bold text-[#2F6DF6]">PR #{pr.number} · {pr.title}</Text><ExternalLink size={14} color="#2F6DF6" /></Pressable> : null}</AdminSection>
-    <View className="flex-row gap-2"><View className="flex-1"><AdminButton label={settingsOpen ? '收起助手设置' : '助手设置'} tone="muted" onPress={() => setSettingsOpen((value) => !value)} /></View><View className="flex-1"><AdminButton label="GitHub 配置" tone="muted" onPress={() => router.push('/github-settings')} /></View></View>
-  </ScreenShell>
-  <HistoryModal visible={historyOpen} items={conversations} activeId={active?.id || ''} selected={selected} setSelected={setSelected} onClose={() => setHistoryOpen(false)} onOpen={(id) => { setActiveId(id); setHistoryOpen(false); }} onNew={newChat} onDelete={() => { const next = conversations.filter((c) => !selected.includes(c.id)); const fallback = next.length ? next : [fresh(config)]; persist(fallback); setActiveId(fallback[0].id); setSelected([]); }} />
-  <Modal visible={modelOpen} transparent animationType="fade" onRequestClose={() => setModelOpen(false)}><View className="flex-1 items-center justify-center bg-black/30 px-5"><View className="max-h-[75%] w-full rounded-[24px] bg-white dark:bg-[#111827] p-5"><View className="flex-row"><Text className="flex-1 text-base font-bold text-[#172033] dark:text-[#F4F7FB]">选择模型</Text><Pressable onPress={() => setModelOpen(false)}><X size={21} color="#667085" /></Pressable></View><TextInput value={active?.model || ''} onChangeText={(model) => updateActive((c) => ({...c,model,updatedAt:new Date().toISOString()}))} placeholder="输入模型 ID" autoCapitalize="none" className="mt-4 rounded-2xl bg-[#F1F5FA] dark:bg-[#182235] px-4 py-3 text-xs text-[#172033] dark:text-[#F4F7FB]" /><Pressable onPress={loadModels} className="mt-3 items-center rounded-2xl bg-[#EAF2FF] dark:bg-[#172C55] py-3"><Text className="text-xs font-bold text-[#2F6DF6]">从服务加载模型</Text></Pressable><ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 8, paddingTop: 12 }}>{models.slice(0,50).map((model) => <Pressable key={model} onPress={() => { updateActive((c) => ({...c,model,updatedAt:new Date().toISOString()})); setModelOpen(false); }} className="rounded-xl bg-[#F4F7FC] dark:bg-[#0B1220] px-3 py-2"><Text className="text-xs text-[#344054] dark:text-[#D5DDEA]">{model}</Text></Pressable>)}</ScrollView></View></View></Modal>
-  </>;
+const HISTORY_KEY = 'sub2api_ai_conversations_v2';
+const efforts: ReasoningEffort[] = ['none', 'low', 'medium', 'high', 'xhigh', 'max'];
+const uid = () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+const welcome = (): ChatItem => ({
+  id: uid(),
+  role: 'assistant',
+  text: '你好，我可以查找 App 页面、Sub2API API 与参数，也能协助排错、构建和生成受控的 GitHub 修复方案。',
+});
+const fresh = (config?: AIProviderConfig | null): Conversation => {
+  const now = new Date().toISOString();
+  return {
+    id: uid(),
+    title: '新对话',
+    createdAt: now,
+    updatedAt: now,
+    model: config?.model || 'gpt-5.6-terra',
+    reasoningEffort: config?.reasoningEffort || 'medium',
+    messages: [welcome()],
+  };
+};
+
+async function readStorage(key: string) {
+  return Platform.OS === 'web'
+    ? globalThis.localStorage?.getItem(key) ?? null
+    : SecureStore.getItemAsync(key);
 }
 
-function HistoryModal({ visible, items, activeId, selected, setSelected, onClose, onOpen, onNew, onDelete }: { visible: boolean; items: Conversation[]; activeId: string; selected: string[]; setSelected: (v: string[]) => void; onClose: () => void; onOpen: (id:string) => void; onNew: () => void; onDelete: () => void }) { return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View className="flex-1 justify-end bg-black/30"><View className="max-h-[85%] rounded-t-[28px] bg-[#F4F7FC] dark:bg-[#0B1220] p-5"><View className="flex-row items-center"><Text className="flex-1 text-lg font-bold text-[#172033] dark:text-[#F4F7FB]">历史对话</Text><Pressable onPress={onClose}><X size={22} color="#667085" /></Pressable></View><View className="my-4 flex-row gap-2"><Pressable onPress={onNew} className="flex-1 flex-row items-center justify-center gap-2 rounded-2xl bg-[#2F6DF6] py-3"><Plus size={15} color="#fff" /><Text className="text-xs font-bold text-white">新建</Text></Pressable><Pressable disabled={!selected.length} onPress={onDelete} className={`flex-1 flex-row items-center justify-center gap-2 rounded-2xl py-3 ${selected.length ? 'bg-[#FFF0F3] dark:bg-[#3A1720]' : 'bg-[#E8EDF4]'}`}><Trash2 size={15} color={selected.length ? '#D9475C' : '#98A2B3'} /><Text className={`text-xs font-bold ${selected.length ? 'text-[#D9475C]' : 'text-[#98A2B3] dark:text-[#8391A6]'}`}>批量删除 ({selected.length})</Text></Pressable></View><ScrollView>{items.map((item) => { const checked = selected.includes(item.id); return <View key={item.id} className={`mb-2 flex-row items-center rounded-2xl border p-3 ${item.id === activeId ? 'border-[#9DBAFA] bg-[#EAF2FF] dark:bg-[#172C55]' : 'border-[#E2E9F3] dark:border-[#273449] bg-white dark:bg-[#111827]'}`}><Pressable onPress={() => setSelected(checked ? selected.filter((id) => id !== item.id) : [...selected,item.id])} className={`mr-3 h-5 w-5 items-center justify-center rounded-md border ${checked ? 'border-[#2F6DF6] bg-[#2F6DF6]' : 'border-[#B8C3D2]'}`}>{checked ? <Check size={13} color="#fff" /> : null}</Pressable><Pressable onPress={() => onOpen(item.id)} className="flex-1"><Text numberOfLines={1} className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">{item.title}</Text><View className="mt-1 flex-row items-center gap-1"><Clock3 size={11} color="#7B8798" /><Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">{new Date(item.updatedAt).toLocaleString()} · {item.model} · {item.messages.length} 条</Text></View></Pressable></View>; })}</ScrollView></View></View></Modal>; }
+async function writeHistory(items: Conversation[]) {
+  const trimmed = items.slice(0, 20).map((conversation) => ({
+    ...conversation,
+    messages: conversation.messages.slice(-30).map((message) => ({
+      ...message,
+      text: message.text.slice(0, 12000),
+    })),
+  }));
+  const raw = JSON.stringify(trimmed);
+  if (Platform.OS === 'web') globalThis.localStorage?.setItem(HISTORY_KEY, raw);
+  else await SecureStore.setItemAsync(HISTORY_KEY, raw);
+}
+
+function parseConfig(raw: string | null): AIProviderConfig | null {
+  try {
+    const value = raw ? JSON.parse(raw) as AIProviderConfig : null;
+    return value?.baseUrl && value.apiKey && value.model ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+export default function AIAssistantScreen() {
+  const [config, setConfig] = useState<AIProviderConfig | null>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeId, setActiveId] = useState('');
+  const [modelOpen, setModelOpen] = useState(false);
+  const [models, setModels] = useState<string[]>([]);
+  const [error, setError] = useState<unknown>();
+  const [github, setGithub] = useState<GitHubConfig | null>(null);
+  const [proposal, setProposal] = useState<AIFixProposal>();
+  const [sources, setSources] = useState<GitHubSourceFile[]>([]);
+  const [fixing, setFixing] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [pr, setPr] = useState<{ html_url: string; number: number; title: string }>();
+
+  const active = conversations.find((conversation) => conversation.id === activeId) ?? conversations[0];
+
+  useEffect(() => {
+    Promise.all([readStorage(AI_PROVIDER_STORAGE_KEY), readStorage(HISTORY_KEY), loadGitHubConfig()])
+      .then(([rawConfig, rawHistory, nextGitHub]) => {
+        const parsed = parseConfig(rawConfig);
+        setConfig(parsed);
+        setGithub(nextGitHub);
+        let history: Conversation[] = [];
+        try { history = rawHistory ? JSON.parse(rawHistory) : []; } catch {}
+        if (!history.length) history = [fresh(parsed)];
+        setConversations(history);
+        setActiveId(history[0].id);
+      });
+  }, []);
+
+  const persist = (next: Conversation[]) => {
+    const sorted = [...next].sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+    setConversations(sorted);
+    void writeHistory(sorted);
+  };
+
+  const updateActive = (update: (conversation: Conversation) => Conversation) => {
+    if (!active) return;
+    persist(conversations.map((conversation) => conversation.id === active.id ? update(conversation) : conversation));
+  };
+
+  const loadModels = async () => {
+    if (!config) return;
+    setError(undefined);
+    try {
+      setModels(await listAIModels({ ...config, model: active?.model || config.model }));
+    } catch (reason) {
+      setError(reason);
+    }
+  };
+
+  const lastProblem = useMemo(
+    () => [...(active?.messages ?? [])].reverse().find((message) => message.role === 'user')?.text || '',
+    [active],
+  );
+
+  const generateFix = async () => {
+    if (!lastProblem || !config || !github?.token || !active) {
+      setError(new Error('需要悬浮助手中的当前问题、AI 配置和 GitHub Token'));
+      return;
+    }
+    setFixing(true);
+    setError(undefined);
+    try {
+      const files = await findRelevantRepositoryFiles(github, lastProblem);
+      const next = await createAIFixProposal(
+        { ...config, model: active.model, reasoningEffort: active.reasoningEffort },
+        lastProblem,
+        files.map(({ path, excerpt }) => ({ path, excerpt })),
+        getAppKnowledgeContext(lastProblem).text,
+      );
+      setSources(files);
+      setProposal(next);
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setFixing(false);
+    }
+  };
+
+  const publish = async () => {
+    if (!github || !proposal || !sources.length) return;
+    setPublishing(true);
+    try {
+      setPr(await createGitHubFixPullRequest(github, sources, proposal));
+    } catch (reason) {
+      setError(reason);
+    } finally {
+      setPublishing(false);
+    }
+  };
+
+  return (
+    <>
+      <LocalizedStackScreen options={{ title: 'AI 助手', headerShown: true }} />
+      <ScreenShell
+        title="AI 助手"
+        subtitle="管理悬浮助手、模型与修复配置"
+        safeAreaEdges={['bottom']}
+        bottomInsetClassName="pb-8"
+      >
+        <View className="gap-3">
+          <AdminSection title="悬浮助手" detail="在这里控制开关和外观；长按可移动，靠边松手后会自动半隐藏。">
+            <AssistantAppearancePicker />
+          </AdminSection>
+          <AIProviderSettings onSaved={setConfig} />
+        </View>
+
+        <View className="gap-3 rounded-[20px] border border-[#DDE6F2] bg-white p-3 dark:border-[#273449] dark:bg-[#111827]">
+          <Pressable onPress={() => setModelOpen(true)} className="flex-row items-center justify-between rounded-xl bg-[#F1F5FA] px-3 py-2 dark:bg-[#182235]">
+            <View className="flex-1">
+              <Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">模型</Text>
+              <Text numberOfLines={1} className="mt-0.5 text-[11px] font-bold text-[#172033] dark:text-[#F4F7FB]">{active?.model || config?.model || '未配置'}</Text>
+            </View>
+            <ChevronDown size={15} color="#667085" />
+          </Pressable>
+          <View>
+            <Text className="mb-2 text-[9px] text-[#7B8798] dark:text-[#9EABC0]">推理强度</Text>
+            <View className="flex-row flex-wrap gap-1">
+              {efforts.map((effort) => (
+                <Pressable
+                  key={effort}
+                  onPress={() => updateActive((conversation) => ({ ...conversation, reasoningEffort: effort, updatedAt: new Date().toISOString() }))}
+                  className={`rounded-full px-3 py-1.5 ${active?.reasoningEffort === effort ? 'bg-[#2F6DF6]' : 'bg-[#EEF3F8] dark:bg-[#182235]'}`}
+                >
+                  <Text className={`text-[9px] font-bold ${active?.reasoningEffort === effort ? 'text-white' : 'text-[#667085] dark:text-[#9EABC0]'}`}>{effort}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <AdminSection title="AI 修复工作流" detail="使用悬浮助手当前会话中的最新问题生成修复方案；创建 Draft PR 前仍会确认。">
+          <AdminButton label="根据当前问题生成修复方案" pending={fixing} disabled={!lastProblem} onPress={generateFix} />
+          {proposal ? (
+            <View className="gap-2 rounded-2xl bg-[#F1F5FA] p-3 dark:bg-[#182235]">
+              <View className="flex-row gap-2">
+                <Wrench size={16} color="#2F6DF6" />
+                <Text className="flex-1 text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">{proposal.title}</Text>
+              </View>
+              <MarkdownMessage text={proposal.summary} />
+              {proposal.changes.map((change) => (
+                <Text key={change.path} selectable className="text-[10px] leading-4 text-[#607086] dark:text-[#AAB6C8]">{change.path} · {change.reason}</Text>
+              ))}
+              {proposal.changes.length ? (
+                <AdminButton
+                  label="确认创建 Draft PR"
+                  pending={publishing}
+                  onPress={() => localizedAlert('创建 Draft PR', `将修改 ${proposal.changes.length} 个文件。`, [
+                    { text: '取消' },
+                    { text: '确认', onPress: publish },
+                  ])}
+                />
+              ) : null}
+            </View>
+          ) : null}
+          {pr ? (
+            <Pressable onPress={() => Linking.openURL(pr.html_url)} className="flex-row items-center gap-2 rounded-2xl bg-[#EAF2FF] p-3 dark:bg-[#172C55]">
+              <GitPullRequest size={16} color="#2F6DF6" />
+              <Text className="flex-1 text-xs font-bold text-[#2F6DF6]">PR #{pr.number} · {pr.title}</Text>
+              <ExternalLink size={14} color="#2F6DF6" />
+            </Pressable>
+          ) : null}
+          <AdminMessage error={error} />
+        </AdminSection>
+
+        <AdminButton label="GitHub 配置" tone="muted" onPress={() => router.push('/github-settings')} />
+      </ScreenShell>
+
+      <Modal visible={modelOpen} transparent animationType="fade" onRequestClose={() => setModelOpen(false)}>
+        <View className="flex-1 items-center justify-center bg-black/30 px-5">
+          <View className="max-h-[75%] w-full rounded-[24px] bg-white p-5 dark:bg-[#111827]">
+            <View className="flex-row">
+              <Text className="flex-1 text-base font-bold text-[#172033] dark:text-[#F4F7FB]">选择模型</Text>
+              <Pressable onPress={() => setModelOpen(false)}><X size={21} color="#667085" /></Pressable>
+            </View>
+            <TextInput
+              value={active?.model || ''}
+              onChangeText={(model) => updateActive((conversation) => ({ ...conversation, model, updatedAt: new Date().toISOString() }))}
+              placeholder="输入模型 ID"
+              autoCapitalize="none"
+              className="mt-4 rounded-2xl bg-[#F1F5FA] px-4 py-3 text-xs text-[#172033] dark:bg-[#182235] dark:text-[#F4F7FB]"
+            />
+            <Pressable onPress={loadModels} className="mt-3 items-center rounded-2xl bg-[#EAF2FF] py-3 dark:bg-[#172C55]">
+              <Text className="text-xs font-bold text-[#2F6DF6]">从服务加载模型</Text>
+            </Pressable>
+            <ScrollView style={{ maxHeight: 360 }} contentContainerStyle={{ gap: 8, paddingTop: 12 }}>
+              {models.slice(0, 50).map((model) => (
+                <Pressable
+                  key={model}
+                  onPress={() => {
+                    updateActive((conversation) => ({ ...conversation, model, updatedAt: new Date().toISOString() }));
+                    setModelOpen(false);
+                  }}
+                  className="rounded-xl bg-[#F4F7FC] px-3 py-2 dark:bg-[#0B1220]"
+                >
+                  <Text className="text-xs text-[#344054] dark:text-[#D5DDEA]">{model}</Text>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}

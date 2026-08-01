@@ -7,7 +7,7 @@ type ListCardProps = {
   title: string;
   meta?: string;
   badge?: string;
-  badgeTone?: 'default' | 'success' | 'muted' | 'danger';
+  badgeTone?: 'default' | 'success' | 'warning' | 'muted' | 'danger';
   children?: ReactNode;
   icon?: LucideIcon;
 };
@@ -20,6 +20,10 @@ const badgeClassMap: Record<NonNullable<ListCardProps['badgeTone']>, { wrap: str
   success: {
     wrap: 'rounded-full bg-[#EAF2FF] dark:bg-[#172C55] px-2.5 py-1',
     text: 'text-[10px] font-semibold uppercase tracking-[1px] text-[#2F6DF6]',
+  },
+  warning: {
+    wrap: 'rounded-full bg-[#FFF4D6] dark:bg-[#422F12] px-2.5 py-1',
+    text: 'text-[10px] font-semibold uppercase tracking-[1px] text-[#B7791F] dark:text-[#F4C15D]',
   },
   muted: {
     wrap: 'rounded-full bg-[#ece7dc] px-2.5 py-1',

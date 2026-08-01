@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { router, usePathname } from 'expo-router';
 import {
   Activity,
-  Blocks,
   Bot,
   ChartNoAxesCombined,
   ChevronLeft,
@@ -12,6 +11,7 @@ import {
   FolderKanban,
   Globe2,
   GripVertical,
+  Info,
   KeyRound,
   Languages,
   LogOut,
@@ -27,7 +27,7 @@ import {
   Users,
 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Animated, Easing, Linking, Modal, Platform, Pressable, ScrollView, Vibration, View, type GestureResponderEvent } from 'react-native';
+import { Animated, Easing, Linking, Modal, Platform, Pressable, ScrollView, Vibration, View, type GestureResponderEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Uniwind } from 'uniwind';
 
@@ -63,7 +63,7 @@ const items: MenuItem[] = [
   { id: 'ip', title: 'IP 管理', route: '/ip-management', icon: Shield },
   { id: 'errors', title: '错误中心', route: '/ops-errors', icon: RadioTower, admin: true },
   { id: 'audit', title: '审计日志', route: '/audit-logs', icon: ScrollText, admin: true },
-  { id: 'build', title: '构建中心', route: '/build-center', icon: Blocks, admin: true },
+  { id: 'about', title: '关于应用', route: '/about', icon: Info },
   { id: 'manage', title: '更多管理', route: '/manage', icon: SlidersHorizontal, admin: true },
 ];
 
@@ -207,8 +207,8 @@ export function AppSidebar() {
       setSelectedId(item.id);
       return;
     }
-    router.push(item.route as never);
     setExpanded(false);
+    if (path !== item.route) router.replace(item.route as never);
   };
 
   const getRowShift = (id: string) => {
@@ -389,7 +389,7 @@ export function AppSidebar() {
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 5, paddingVertical: 4 }} showsVerticalScrollIndicator={false}>{visibleItems.map((item) => {
             const Icon = item.icon;
             const active = path === item.route;
-            const showActiveBackground = active && prefs.defaultMenuId !== item.id;
+            const showActiveBackground = active;
             return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
           })}</ScrollView>
           <View style={{ borderTopWidth: 1, borderTopColor: dark ? '#273449' : '#E1E8F2', paddingHorizontal: 5, paddingTop: 7 }}>
