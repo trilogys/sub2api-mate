@@ -126,6 +126,11 @@ function UserCard({ user, usage }: { user: AdminUser; usage?: UsageStats }) {
         最近使用 {formatActivityTime(user.last_used_at || user.updated_at || user.created_at)}
       </Text>
 
+      <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.mutedCard, paddingHorizontal: 10, paddingVertical: 9 }}>
+        <Text style={{ fontSize: 11, color: colors.subtext }}>剩余额度</Text>
+        <Text numberOfLines={1} style={{ fontSize: 14, fontWeight: '800', color: colors.text }}>{formatCost(user.balance)}</Text>
+      </View>
+
       <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
         <MetricTile title="消费" value={formatCost(totalCost)} />
         <MetricTile title="总 Token" value={formatTokenValue(totalTokens)} />

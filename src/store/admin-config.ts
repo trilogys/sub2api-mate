@@ -31,6 +31,7 @@ export type AuthenticatedUser = {
   username?: string;
   role: 'admin' | 'user';
   status?: string;
+  balance?: number;
 };
 
 type AuthSession = {
