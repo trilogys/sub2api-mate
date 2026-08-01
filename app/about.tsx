@@ -10,7 +10,7 @@ import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { APP_REPOSITORY_URL, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 
-const currentVersion = Constants.expoConfig?.version ?? '1.0.0';
+const currentVersion = Constants.expoConfig?.version ?? '1.1.0';
 
 function ExternalRow({ icon: Icon, title, detail, url }: { icon: typeof Github; title: string; detail: string; url: string }) {
   return (

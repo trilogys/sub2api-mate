@@ -3,7 +3,7 @@
     "name": "sub2api",
     "slug": "sub2api-mobile",
     "owner": "trilogys",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,6 +16,7 @@
       "supportsTablet": true,
       "icon": "./assets/icon.png",
       "bundleIdentifier": "com.ppx.sub2apimobile",
+      "buildNumber": "2",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -23,6 +24,7 @@
     "android": {
       "icon": "./assets/icon.png",
       "package": "com.ppx.sub2apimobile",
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#2F6DF6",
         "foregroundImage": "./assets/android-icon-foreground.png",
