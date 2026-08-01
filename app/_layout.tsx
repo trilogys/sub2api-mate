@@ -11,6 +11,7 @@ import { Uniwind, useUniwind } from 'uniwind';
 import { AIAssistant } from '@/src/components/ai-assistant';
 import { AppSidebar } from '@/src/components/app-sidebar';
 import { AccountRefreshCoordinator } from '@/src/components/account-refresh-coordinator';
+import { ThemedAlertHost } from '@/src/components/themed-alert-host';
 import { translateText } from '@/src/components/localized-text';
 import { queryClient } from '@/src/lib/query-client';
 import { markPerformance } from '@/src/lib/performance';
@@ -22,6 +23,20 @@ const { useSnapshot } = require('valtio/react');
 export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
+
+const primaryStackScreens = [
+  'ops-center',
+  'api-keys',
+  'proxies',
+  'usage-logs',
+  'ai-assistant',
+  'account-refresh',
+  'ip-management',
+  'ops-errors',
+  'audit-logs',
+  'about',
+  'manage',
+] as const;
 
 export default function RootLayout() {
   const config = useSnapshot(adminConfigState);
@@ -60,8 +75,11 @@ export default function RootLayout() {
                     contentStyle: { backgroundColor: theme === 'dark' ? '#0B1220' : '#F4F7FC' },
                   }}
                 >
-                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false, animation: 'none' }} />
                   <Stack.Screen name="login" options={{ headerShown: false }} />
+                  {primaryStackScreens.map((name) => (
+                    <Stack.Screen key={name} name={name} options={{ headerShown: false, animation: 'none' }} />
+                  ))}
                   <Stack.Screen
                     name="users/[id]"
                     options={{
@@ -132,6 +150,7 @@ export default function RootLayout() {
             </View>
             <AIAssistant />
             <AccountRefreshCoordinator />
+            <ThemedAlertHost />
           </>
         )}
       </QueryClientProvider>

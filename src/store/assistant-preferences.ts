@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 const { proxy } = require('valtio');
 
 const KEY = 'sub2api_assistant_preferences_v1';
-export type AssistantPet = 'ai' | 'cat' | 'dog' | 'fox' | 'rabbit' | 'sprite' | 'electric-kid' | 'tiga' | 'gg-bond' | 'doraemon';
+export type AssistantPet = 'ai' | 'cat' | 'dog' | 'fox' | 'rabbit' | 'sprite' | 'tiga' | 'gg-bond';
 export type AssistantPosition = { x: number; y: number };
 
 type AssistantPreferences = {
@@ -22,10 +22,8 @@ export const assistantPetOptions: { value: AssistantPet; label: string; emoji: s
   { value: 'fox', label: '狐狸', emoji: '🦊' },
   { value: 'rabbit', label: '兔子', emoji: '🐰' },
   { value: 'sprite', label: '小精灵', emoji: '🧚' },
-  { value: 'electric-kid', label: '电击小子', emoji: '⚡' },
   { value: 'tiga', label: '迪迦奥特曼', emoji: '🦸' },
   { value: 'gg-bond', label: '猪猪侠', emoji: '🐷' },
-  { value: 'doraemon', label: '哆啦A梦', emoji: '🔔' },
 ];
 
 export const assistantPreferencesState = proxy({

@@ -1,9 +1,11 @@
 import type { PropsWithChildren, ReactNode } from 'react';
+import { usePathname } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { Edge } from 'react-native-safe-area-context';
 import { RefreshControl, ScrollView, View } from 'react-native';
 import { useUniwind } from 'uniwind';
 import { Text } from '@/src/components/localized-text';
+import { primaryMenuPaths } from '@/src/components/localized-navigation';
 
 type ScreenShellProps = PropsWithChildren<{
   title: string;
@@ -32,7 +34,7 @@ function ScreenHeader({
       <View className="mt-4 flex-row items-start justify-between gap-4 px-1 py-1">
         <View className="flex-1">
           <View className="flex-row items-center gap-2">
-            <Text className="text-[20px] font-bold tracking-tight text-[#172033] dark:text-[#F4F7FB]">{title}</Text>
+            <Text className="text-[22px] font-bold tracking-tight text-[#172033] dark:text-[#F4F7FB]">{title}</Text>
             {titleAside}
           </View>
           {subtitle ? (
@@ -79,13 +81,17 @@ export function ScreenShell({
   onRefresh,
   safeAreaEdges = ['top', 'bottom'],
 }: ScreenShellProps) {
+  const path = usePathname();
   const { theme } = useUniwind();
   const pageColor = theme === 'dark' ? '#0B1220' : '#F4F7FC';
+  const primaryMenu = primaryMenuPaths.has(path);
+  const resolvedSafeAreaEdges: Edge[] = primaryMenu ? ['top', 'bottom'] : safeAreaEdges;
+  const resolvedVariant = primaryMenu ? 'minimal' : variant;
   if (!scroll) {
     return (
-      <SafeAreaView edges={safeAreaEdges} style={{ flex: 1, backgroundColor: pageColor }}>
+      <SafeAreaView edges={resolvedSafeAreaEdges} style={{ flex: 1, backgroundColor: pageColor }}>
         <View className={`flex-1 ${horizontalInsetClassName} ${bottomInsetClassName}`}>
-          <ScreenHeader title={title} subtitle={subtitle} titleAside={titleAside} right={right} variant={variant} />
+          <ScreenHeader title={title} subtitle={subtitle} titleAside={titleAside} right={right} variant={resolvedVariant} />
           <View className={`flex-1 ${contentGapClassName}`}>{children}</View>
         </View>
       </SafeAreaView>
@@ -93,14 +99,14 @@ export function ScreenShell({
   }
 
   return (
-    <SafeAreaView edges={safeAreaEdges} style={{ flex: 1, backgroundColor: pageColor }}>
+    <SafeAreaView edges={resolvedSafeAreaEdges} style={{ flex: 1, backgroundColor: pageColor }}>
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         refreshControl={onRefresh ? <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2F6DF6" /> : undefined}
       >
         <View className={`${horizontalInsetClassName} ${bottomInsetClassName}`}>
-          <ScreenHeader title={title} subtitle={subtitle} titleAside={titleAside} right={right} variant={variant} />
+          <ScreenHeader title={title} subtitle={subtitle} titleAside={titleAside} right={right} variant={resolvedVariant} />
           <View className={contentGapClassName}>{children}</View>
         </View>
       </ScrollView>

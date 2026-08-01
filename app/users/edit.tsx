@@ -1,24 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, View } from 'react-native';
+import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { deleteUser, getUser, updateUser } from '@/src/services/admin';
 import type { UpdateUserRequest } from '@/src/types/admin';
 import { Text, TextInput, localizedAlert } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  muted: '#F1F5FA',
-  border: '#E2E9F3',
-  primary: '#2F6DF6',
-  text: '#172033',
-  subtext: '#667085',
-  danger: '#D9475C',
-};
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 function Field({ label, value, onChangeText, secureTextEntry = false, keyboardType = 'default', multiline = false }: {
   label: string;
@@ -28,6 +18,7 @@ function Field({ label, value, onChangeText, secureTextEntry = false, keyboardTy
   keyboardType?: 'default' | 'email-address' | 'number-pad';
   multiline?: boolean;
 }) {
+  const colors = useUserManagementColors();
   return (
     <View style={{ marginBottom: 12 }}>
       <Text style={{ marginBottom: 6, fontSize: 12, color: colors.subtext }}>{label}</Text>
@@ -46,6 +37,7 @@ function Field({ label, value, onChangeText, secureTextEntry = false, keyboardTy
 }
 
 function Choice({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const colors = useUserManagementColors();
   return (
     <Pressable onPress={onPress} style={{ flex: 1, borderRadius: 12, borderWidth: 1, borderColor: active ? colors.primary : colors.border, backgroundColor: active ? colors.primary : colors.muted, paddingVertical: 11, alignItems: 'center' }}>
       <Text style={{ color: active ? '#fff' : colors.text, fontSize: 12, fontWeight: '700' }}>{label}</Text>
@@ -60,6 +52,7 @@ function optionalNumber(value: string) {
 }
 
 export default function EditUserScreen() {
+  const colors = useUserManagementColors();
   const { id } = useLocalSearchParams<{ id: string }>();
   const userId = Number(id);
   const queryClient = useQueryClient();
@@ -126,7 +119,7 @@ export default function EditUserScreen() {
       <LocalizedStackScreen options={{ title: '编辑用户', headerShown: true }} />
       <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 22, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
             <Field label="邮箱" value={email} onChangeText={setEmail} keyboardType="email-address" />
             <Field label="用户名" value={username} onChangeText={setUsername} />
             <Field label="备注" value={notes} onChangeText={setNotes} multiline />
@@ -148,7 +141,7 @@ export default function EditUserScreen() {
           </View>
 
           {error || userQuery.error ? (
-            <View style={{ marginTop: 12, borderRadius: 12, backgroundColor: '#FFF0F2', padding: 12 }}>
+            <View style={{ marginTop: 12, borderRadius: 12, backgroundColor: colors.errorBg, padding: 12 }}>
               <Text style={{ color: colors.danger }}>{error || (userQuery.error as Error)?.message}</Text>
             </View>
           ) : null}
@@ -160,7 +153,7 @@ export default function EditUserScreen() {
           <Pressable
             disabled={busy || userQuery.data?.role === 'admin'}
             onPress={() => localizedAlert('删除用户', `确定删除“${email}”吗？`, [{ text: '取消', style: 'cancel' }, { text: '删除', style: 'destructive', onPress: () => deleteMutation.mutate() }])}
-            style={{ marginTop: 10, borderRadius: 12, backgroundColor: '#FFF0F2', paddingVertical: 13, alignItems: 'center', opacity: userQuery.data?.role === 'admin' ? 0.5 : 1 }}
+            style={{ marginTop: 10, borderRadius: 12, backgroundColor: colors.errorBg, paddingVertical: 13, alignItems: 'center', opacity: userQuery.data?.role === 'admin' ? 0.5 : 1 }}
           >
             <Text style={{ color: colors.danger, fontWeight: '700' }}>删除用户</Text>
           </Pressable>

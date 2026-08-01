@@ -1,7 +1,7 @@
 import { Redirect, router } from 'expo-router';
 import { Check, ChevronDown, ChevronUp, Eye, EyeOff, KeyRound, Languages, LogIn, Trash2 } from 'lucide-react-native';
-import { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUniwind } from 'uniwind';
 
@@ -18,6 +18,7 @@ const lightColors = { page: '#F4F7FC', card: '#FFFFFF', soft: '#EEF4FF', primary
 function useLoginColors() { const { theme } = useUniwind(); return theme === 'dark' ? { page: '#0B1220', card: '#111827', soft: '#182235', primary: '#69A0FF', text: '#F4F7FB', sub: '#9EABC0', border: '#273449', danger: '#FF8293' } : lightColors; }
 
 export default function LoginScreen() {
+  const scrollRef = useRef<ScrollView>(null);
   const colors = useLoginColors();
   const config = useSnapshot(adminConfigState);
   const language = useSnapshot(languageState).value as 'zh' | 'en';
@@ -40,7 +41,12 @@ export default function LoginScreen() {
 
   if (hasAuthenticatedAdminSession(config)) return <Redirect href={config.user?.role === 'user' ? '/api-keys' : '/monitor'} />;
 
+  const keepSecretVisible = () => {
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), Platform.OS === 'android' ? 220 : 120);
+  };
+
   const submit = async () => {
+    Keyboard.dismiss();
     const url = baseUrl.trim().replace(/\/$/, '');
     if (!url) return setError('请输入 Sub2API 服务地址');
     if (mode === 'password' && (!email.trim() || !password)) return setError('请输入邮箱和密码');
@@ -107,7 +113,15 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.page }}>
-      <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20 }} keyboardShouldPersistTaps="handled">
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 20, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode={Platform.OS === 'ios' ? 'interactive' : 'on-drag'}
+        automaticallyAdjustKeyboardInsets
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: 18 }}>
           <View style={{ gap: 6 }}><View style={{ flexDirection: 'row', alignItems: 'center' }}><Text style={{ flex: 1, color: colors.primary, fontSize: 13, fontWeight: '700' }}>SUB2API MOBILE</Text><Pressable accessibilityLabel="切换语言" onPress={() => void setAppLanguage(language === 'zh' ? 'en' : 'zh')} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 12, backgroundColor: colors.soft, paddingHorizontal: 10, paddingVertical: 7 }}><Languages size={15} color={colors.primary} /><Text style={{ color: colors.primary, fontSize: 10, fontWeight: '800' }}>{language === 'zh' ? 'EN' : '中文'}</Text></Pressable></View><Text style={{ color: colors.text, fontSize: 28, fontWeight: '800' }}>连接你的服务</Text><Text style={{ color: colors.sub, lineHeight: 21 }}>支持邮箱密码登录和 Admin Key 管理模式。普通用户登录后只显示自助功能。</Text></View>
           {rememberedAccounts.length ? <View style={{ borderRadius: 18, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, overflow: 'hidden' }}>
@@ -119,7 +133,7 @@ export default function LoginScreen() {
           </View>
           <View style={{ backgroundColor: colors.card, borderRadius: 24, borderWidth: 1, borderColor: colors.border, padding: 18, gap: 14 }}>
             <Field label="服务地址" value={baseUrl} onChangeText={setBaseUrl} placeholder="https://sub2api.example.com" />
-            {mode === 'password' ? <><Field label="邮箱" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" /><SecretField label="密码" value={password} onChangeText={setPassword} visible={showSecret} onToggle={() => setShowSecret((v) => !v)} /></> : <SecretField label="Admin Key" value={adminKey} onChangeText={setAdminKey} visible={showSecret} onToggle={() => setShowSecret((v) => !v)} />}
+            {mode === 'password' ? <><Field label="邮箱" value={email} onChangeText={setEmail} placeholder="name@example.com" keyboardType="email-address" /><SecretField label="密码" value={password} onChangeText={setPassword} visible={showSecret} onToggle={() => setShowSecret((v) => !v)} onFocus={keepSecretVisible} /></> : <SecretField label="Admin Key" value={adminKey} onChangeText={setAdminKey} visible={showSecret} onToggle={() => setShowSecret((v) => !v)} onFocus={keepSecretVisible} />}
             <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: remember }} onPress={() => setRemember((value) => !value)} style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}><View style={{ width: 20, height: 20, borderRadius: 6, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: remember ? colors.primary : colors.border, backgroundColor: remember ? colors.primary : colors.card }}>{remember ? <Check size={14} color="#fff" /> : null}</View><View style={{ flex: 1 }}><Text style={{ color: colors.text, fontSize: 12, fontWeight: '700' }}>记住登录信息</Text><Text style={{ marginTop: 2, color: colors.sub, fontSize: 10 }}>{Platform.OS === 'web' ? 'Web 端不会保存密码或 Admin Key' : '退出后仍可从账号下拉列表快速登录'}</Text></View></Pressable>
             {error ? <Text style={{ color: colors.danger, fontSize: 12, lineHeight: 18 }}>{error}</Text> : null}
             <Pressable disabled={loading} onPress={submit} style={{ height: 50, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primary, opacity: loading ? 0.65 : 1 }}>{loading ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16 }}>登录并连接</Text>}</Pressable>
@@ -127,6 +141,7 @@ export default function LoginScreen() {
           <Text style={{ textAlign: 'center', color: '#8B98AA', fontSize: 11 }}>{Platform.OS === 'web' ? 'Web 端不持久化密码和 Admin Key。' : '勾选后凭据保存在设备安全存储中，不会上传到移动端项目。'}</Text>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -136,7 +151,7 @@ function Field(props: { label: string; value: string; onChangeText: (v: string) 
   return <View style={{ gap: 7 }}><Text style={{ color: colors.sub, fontSize: 12 }}>{props.label}</Text><TextInput {...props} autoCapitalize="none" autoCorrect={false} placeholderTextColor="#98A2B3" style={{ backgroundColor: colors.soft, borderRadius: 15, paddingHorizontal: 14, paddingVertical: 13, color: colors.text, fontSize: 15 }} /></View>;
 }
 
-function SecretField(props: { label: string; value: string; onChangeText: (v: string) => void; visible: boolean; onToggle: () => void }) {
+function SecretField(props: { label: string; value: string; onChangeText: (v: string) => void; visible: boolean; onToggle: () => void; onFocus?: () => void }) {
   const colors = useLoginColors();
-  return <View style={{ gap: 7 }}><Text style={{ color: colors.sub, fontSize: 12 }}>{props.label}</Text><View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soft, borderRadius: 15, paddingRight: 12 }}><TextInput value={props.value} onChangeText={props.onChangeText} secureTextEntry={!props.visible} autoCapitalize="none" autoCorrect={false} placeholder="••••••••" placeholderTextColor="#98A2B3" style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 13, color: colors.text, fontSize: 15 }} /><Pressable onPress={props.onToggle}>{props.visible ? <EyeOff size={19} color={colors.sub} /> : <Eye size={19} color={colors.sub} />}</Pressable></View></View>;
+  return <View style={{ gap: 7 }}><Text style={{ color: colors.sub, fontSize: 12 }}>{props.label}</Text><View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soft, borderRadius: 15, paddingRight: 12 }}><TextInput value={props.value} onChangeText={props.onChangeText} onFocus={props.onFocus} secureTextEntry={!props.visible} autoCapitalize="none" autoCorrect={false} placeholder="••••••••" placeholderTextColor="#98A2B3" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} style={{ flex: 1, paddingHorizontal: 14, paddingVertical: 13, color: colors.text, fontSize: 15 }} /><Pressable accessibilityLabel={props.visible ? '隐藏密码' : '显示密码'} hitSlop={10} onPress={props.onToggle}>{props.visible ? <EyeOff size={19} color={colors.sub} /> : <Eye size={19} color={colors.sub} />}</Pressable></View></View>;
 }

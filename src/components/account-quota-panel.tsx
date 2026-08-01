@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Alert, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 
 import { getAccountUsage, queryOpenAIQuota, resetOpenAIQuota } from '@/src/services/admin';
 import type { AccountUsageProgress, AdminAccount } from '@/src/types/admin';

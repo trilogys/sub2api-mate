@@ -7,19 +7,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { listAllGroups, listUserApiKeys, updateApiKeyGroup } from '@/src/services/admin';
 import { Text } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  muted: '#F1F5FA',
-  border: '#E2E9F3',
-  primary: '#2F6DF6',
-  text: '#172033',
-  subtext: '#667085',
-  danger: '#D9475C',
-};
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 export default function ApiKeyGroupScreen() {
+  const colors = useUserManagementColors();
   const params = useLocalSearchParams<{ id: string; userId: string }>();
   const apiKeyId = Number(params.id);
   const userId = Number(params.userId);
@@ -53,7 +44,7 @@ export default function ApiKeyGroupScreen() {
       <LocalizedStackScreen options={{ title: 'API Key 分组', headerShown: true }} />
       <SafeAreaView edges={['bottom']} style={{ flex: 1, backgroundColor: colors.page }}>
         <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
-          <View style={{ backgroundColor: colors.card, borderRadius: 16, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
+          <View style={{ backgroundColor: colors.card, borderRadius: 22, borderWidth: 1, borderColor: colors.border, padding: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: '700', color: colors.text }}>{apiKey?.name || `Key #${apiKeyId}`}</Text>
             <Text numberOfLines={1} style={{ marginTop: 5, fontSize: 12, color: colors.subtext }}>{apiKey?.key || '正在加载…'}</Text>
             <Text style={{ marginTop: 18, marginBottom: 8, fontSize: 12, color: colors.subtext }}>所属分组</Text>
@@ -74,7 +65,7 @@ export default function ApiKeyGroupScreen() {
           </View>
 
           {error || keysQuery.error || groupsQuery.error ? (
-            <View style={{ marginTop: 12, borderRadius: 12, backgroundColor: '#FFF0F2', padding: 12 }}>
+            <View style={{ marginTop: 12, borderRadius: 12, backgroundColor: colors.errorBg, padding: 12 }}>
               <Text style={{ color: colors.danger }}>{error || (keysQuery.error as Error)?.message || (groupsQuery.error as Error)?.message}</Text>
             </View>
           ) : null}

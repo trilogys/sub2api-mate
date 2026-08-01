@@ -8,28 +8,17 @@ import { createAccount } from '@/src/services/admin';
 import type { AccountPlatform, AccountType } from '@/src/types/admin';
 import { Text, TextInput } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
-
-const colors = {
-  page: '#F4F7FC',
-  card: '#FFFFFF',
-  text: '#172033',
-  subtext: '#667085',
-  border: '#E2E9F3',
-  primary: '#2F6DF6',
-  dark: '#2F6DF6',
-  errorBg: '#FFF0F2',
-  errorText: '#D9475C',
-  muted: '#FFF8EE',
-};
+import { useUserManagementColors } from '@/src/components/user-management-ui';
 
 const PLATFORM_OPTIONS: AccountPlatform[] = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok'];
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  const colors = useUserManagementColors();
   return (
     <View
       style={{
         backgroundColor: colors.card,
-        borderRadius: 16,
+        borderRadius: 22,
         padding: 16,
         marginBottom: 12,
         borderWidth: 1,
@@ -100,6 +89,7 @@ function parseJsonObject(raw: string) {
 }
 
 export default function CreateAccountScreen() {
+  const colors = useUserManagementColors();
   const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [notes, setNotes] = useState('');
