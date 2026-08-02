@@ -11,9 +11,11 @@ export type UIPreferences = {
   colorMode: 'light' | 'dark';
   language: 'zh' | 'en';
   menuDefaultsVersion: number;
+  dismissedServerUpdateVersions: string[];
+  serverUpdatePromptsDisabled: boolean;
 };
 export const languageState = proxy({ value: 'zh' as 'zh' | 'en' });
-export const defaultUIPreferences: UIPreferences = { hiddenMenuIds: ['account-refresh', 'ip'], menuOrder: [], menuButtonPosition: null, defaultMenuId: null, colorMode: 'light', language: 'zh', menuDefaultsVersion: 4 };
+export const defaultUIPreferences: UIPreferences = { hiddenMenuIds: ['account-refresh', 'ip'], menuOrder: [], menuButtonPosition: null, defaultMenuId: null, colorMode: 'light', language: 'zh', menuDefaultsVersion: 4, dismissedServerUpdateVersions: [], serverUpdatePromptsDisabled: false };
 
 function stringArray(value: unknown) {
   return Array.isArray(value)
@@ -34,6 +36,8 @@ export function normalizeUIPreferences(value: unknown): UIPreferences {
     colorMode: parsed.colorMode === 'dark' ? 'dark' : 'light',
     language: parsed.language === 'en' ? 'en' : 'zh',
     menuDefaultsVersion: Number.isFinite(parsed.menuDefaultsVersion) ? Number(parsed.menuDefaultsVersion) : 0,
+    dismissedServerUpdateVersions: stringArray(parsed.dismissedServerUpdateVersions),
+    serverUpdatePromptsDisabled: parsed.serverUpdatePromptsDisabled === true,
   };
 }
 
@@ -73,6 +77,8 @@ export async function loadUIPreferences(): Promise<UIPreferences> {
       colorMode: parsed.colorMode,
       language: parsed.language,
       menuDefaultsVersion: 4,
+      dismissedServerUpdateVersions: parsed.dismissedServerUpdateVersions,
+      serverUpdatePromptsDisabled: parsed.serverUpdatePromptsDisabled,
     };
   } catch { return normalizeUIPreferences(defaultUIPreferences); }
 }

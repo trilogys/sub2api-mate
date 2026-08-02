@@ -34,7 +34,7 @@ import { Uniwind } from 'uniwind';
 import { getFirstCreatedAdmin } from '@/src/lib/admin-user';
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
-import { listUsers } from '@/src/services/admin';
+import { checkSystemUpdates, listUsers } from '@/src/services/admin';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 import { Text, localizedAlert } from '@/src/components/localized-text';
@@ -99,6 +99,12 @@ export function AppSidebar() {
     enabled: config.authMode === 'admin_key' && Boolean(config.baseUrl),
   });
   const defaultAdmin = useMemo(() => getFirstCreatedAdmin(defaultAdminQuery.data?.items ?? []), [defaultAdminQuery.data?.items]);
+  const serverVersionQuery = useQuery({
+    queryKey: ['system-version', config.activeAccountId],
+    queryFn: () => checkSystemUpdates(false),
+    enabled: isAdminSession() && Boolean(config.baseUrl),
+    staleTime: 15 * 60_000,
+  });
 
   useEffect(() => {
     loadUIPreferences().then((next) => {
@@ -149,6 +155,15 @@ export function AppSidebar() {
   const dark = prefs.colorMode === 'dark';
   const language = prefs.language;
   const identity = config.user?.email || defaultAdmin?.email || (defaultAdminQuery.isLoading ? '正在查找管理员…' : 'Admin Key');
+  const currentServerVersion = serverVersionQuery.data?.current_version || '-';
+  const latestServerVersion = serverVersionQuery.data?.latest_version;
+  const hasServerUpdate = Boolean(serverVersionQuery.data?.has_update && latestServerVersion);
+  const serverUpdateWarningVisible = Boolean(
+    hasServerUpdate
+    && !prefs.serverUpdatePromptsDisabled
+    && latestServerVersion
+    && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
+  );
 
   if (path === '/login' || !config.baseUrl) return null;
 
@@ -169,6 +184,34 @@ export function AppSidebar() {
     if (nextLanguage === prefsRef.current.language) return;
     applyAppLanguage(nextLanguage);
     update({ ...prefsRef.current, language: nextLanguage });
+  };
+
+  const openServerVersionDetails = () => {
+    const latest = latestServerVersion || currentServerVersion;
+    const message = `当前版本：${currentServerVersion}\n最新版本：${latest}\n更新状态：${hasServerUpdate ? '发现新版本' : '当前已是最新版本'}`;
+    if (!hasServerUpdate) {
+      localizedAlert('服务端版本', message);
+      return;
+    }
+    if (prefs.serverUpdatePromptsDisabled) {
+      localizedAlert('服务端版本', `${message}\n\n所有版本的升级提示已关闭。`, [
+        { text: '取消', style: 'cancel' },
+        { text: '重新开启提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: false, dismissedServerUpdateVersions: [] }) },
+      ]);
+      return;
+    }
+    if (latestServerVersion && prefs.dismissedServerUpdateVersions.includes(latestServerVersion)) {
+      localizedAlert('服务端版本', `${message}\n\n此版本的升级提示已忽略。`, [
+        { text: '取消', style: 'cancel' },
+        { text: '恢复此版本提示', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: prefsRef.current.dismissedServerUpdateVersions.filter((version) => version !== latestServerVersion) }) },
+      ]);
+      return;
+    }
+    localizedAlert('服务端版本', message, [
+      { text: '取消', style: 'cancel' },
+      { text: '忽略此版本', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: [...prefsRef.current.dismissedServerUpdateVersions, latest] }) },
+      { text: '关闭全部提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: true }) },
+    ]);
   };
 
   const openWebsite = async () => {
@@ -405,9 +448,25 @@ export function AppSidebar() {
             <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <View style={{ flex: 1 }}><Text style={{ fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API</Text><Text numberOfLines={1} style={{ marginTop: 3, fontSize: 11, color: dark ? '#9EABC0' : '#738095' }}>{identity} · {isAdminSession() ? '管理员' : '普通用户'}</Text></View>
+                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API</Text>
                   <Pressable accessibilityRole="link" accessibilityLabel="在浏览器打开当前服务器" onPress={() => void openWebsite()} style={{ marginRight: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, backgroundColor: dark ? '#172C55' : '#EAF2FF', paddingHorizontal: 8, paddingVertical: 7 }}><Globe2 size={13} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ fontSize: 9, fontWeight: '800', color: dark ? '#8BB4FF' : '#2F6DF6' }}>WEBSITE</Text></Pressable>
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
+                </View>
+                <View style={{ marginTop: 7, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 10, color: dark ? '#9EABC0' : '#738095' }}>{identity} · {isAdminSession() ? '管理员' : '普通用户'}</Text>
+                  {isAdminSession() ? (
+                    <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={{ fontSize: 9, color: dark ? '#9EABC0' : '#738095' }}>· Version:</Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="查看服务端版本"
+                        onPress={openServerVersionDetails}
+                        style={{ maxWidth: 104, flexShrink: 1, borderRadius: 999, backgroundColor: serverUpdateWarningVisible ? (dark ? '#4A3513' : '#FFF0C2') : (dark ? '#1A2638' : '#EEF3F9'), paddingHorizontal: 9, paddingVertical: 4 }}
+                      >
+                        <Text numberOfLines={1} style={{ fontSize: 9, fontWeight: '800', color: serverUpdateWarningVisible ? (dark ? '#FFD66B' : '#946321') : (dark ? '#D5DDEA' : '#4B5A70') }}>{currentServerVersion}</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
                 </View>
                 <Pressable accessibilityRole="switch" accessibilityState={{ checked: dark }} onPress={toggleColorMode} style={{ marginTop: 12, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: dark ? '#1A2638' : '#EEF3F9', paddingHorizontal: 12, paddingVertical: 9 }}><View style={{ width: 26 }}>{dark ? <Moon size={17} color="#69A0FF" /> : <Sun size={17} color="#2F6DF6" />}</View><Text style={{ flex: 1, fontSize: 11, fontWeight: '700', color: dark ? '#F4F7FB' : '#344054' }}>深色模式</Text><View style={{ width: 42, height: 24, borderRadius: 12, padding: 3, backgroundColor: dark ? '#2F6DF6' : '#CBD5E1' }}><View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: '#fff', alignSelf: dark ? 'flex-end' : 'flex-start' }} /></View></Pressable>
                 <View style={{ marginTop: 8, flexDirection: 'row', alignItems: 'center', borderRadius: 14, backgroundColor: dark ? '#1A2638' : '#EEF3F9', paddingHorizontal: 12, paddingVertical: 7 }}>
