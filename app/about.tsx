@@ -14,7 +14,7 @@ import { downloadAndInstallAndroidApk, type AndroidAppUpdateProgress } from '@/s
 import { APP_REPOSITORY_URL, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
-const currentVersion = Constants.expoConfig?.version ?? '1.5.0';
+const currentVersion = Constants.expoConfig?.version ?? '1.6.0';
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
