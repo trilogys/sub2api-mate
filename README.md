@@ -4,7 +4,7 @@
   <img src="assets/icon.png" alt="sub2api app icon" width="120" />
 </p>
 
-<h1 align="center">sub2api</h1>
+<h1 align="center">sub2api-mobile</h1>
 
 <p align="center">
   A mobile administration console for Sub2API, built with Expo SDK 54 and React Native.
