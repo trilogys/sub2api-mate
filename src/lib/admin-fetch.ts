@@ -1,6 +1,7 @@
 import { adminConfigState, saveAdminConfig } from '@/src/store/admin-config';
 import type { ApiEnvelope } from '@/src/types/admin';
 import { trimServerUrl } from '@/src/lib/server-url';
+import { Platform } from 'react-native';
 
 export function buildRequestUrl(baseUrl: string, path: string) {
   const normalizedBase = trimServerUrl(baseUrl);
@@ -11,6 +12,30 @@ export function buildRequestUrl(baseUrl: string, path: string) {
     return `${normalizedBase.slice(0, -basePrefix.length)}${normalizedPath}`;
   }
   return `${normalizedBase}${normalizedPath}`;
+}
+
+function prepareRequest(targetUrl: string, init: RequestInit) {
+  const configuredProxyUrl = process.env.EXPO_PUBLIC_SUB2API_WEB_PROXY_URL?.trim();
+  const shouldProxy = Platform.OS === 'web' && (Boolean(configuredProxyUrl) || __DEV__);
+  if (!shouldProxy) return { url: targetUrl, init };
+  const headers = new Headers(init.headers);
+  headers.set('x-sub2api-target-url', targetUrl);
+  return {
+    url: configuredProxyUrl || '/__sub2api_proxy__',
+    init: { ...init, headers },
+  };
+}
+
+export async function fetchWithWebProxy(targetUrl: string, init: RequestInit = {}) {
+  const request = prepareRequest(targetUrl, init);
+  try {
+    return await fetch(request.url, request.init);
+  } catch (error) {
+    if (Platform.OS === 'web' && error instanceof TypeError) {
+      throw new Error('WEB_NETWORK_OR_CORS_ERROR');
+    }
+    throw error;
+  }
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -24,7 +49,7 @@ function getAuthHeaders(): Record<string, string> {
 export async function publicFetch<T>(baseUrl: string, path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
-  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  const response = await fetchWithWebProxy(buildRequestUrl(baseUrl, path), { ...init, headers });
   const rawText = await response.text();
   let json: unknown;
   try { json = rawText ? JSON.parse(rawText) : undefined; } catch { throw new Error('INVALID_SERVER_RESPONSE'); }
@@ -47,7 +72,7 @@ export async function adminFetch<T>(path: string, init: RequestInit = {}, option
   headers.set('Content-Type', 'application/json');
   Object.entries(getAuthHeaders()).forEach(([name, value]) => headers.set(name, value));
   if (options?.idempotencyKey) headers.set('Idempotency-Key', options.idempotencyKey);
-  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  const response = await fetchWithWebProxy(buildRequestUrl(baseUrl, path), { ...init, headers });
   if (response.status === 401 && !options?.skipRefresh && adminConfigState.authMode === 'password' && adminConfigState.refreshToken.trim()) {
     const refreshed = await publicFetch<{ access_token: string; refresh_token?: string }>(baseUrl, '/api/v1/auth/refresh', {
       method: 'POST',
@@ -90,7 +115,7 @@ export async function adminRawFetch(path: string, init: RequestInit = {}): Promi
   }
   if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
   const startedAt = Date.now();
-  const response = await fetch(buildRequestUrl(baseUrl, path), { ...init, headers });
+  const response = await fetchWithWebProxy(buildRequestUrl(baseUrl, path), { ...init, headers });
   const body = await response.text();
   return { status: response.status, ok: response.ok, contentType: response.headers.get('content-type') || '', contentDisposition: response.headers.get('content-disposition') || '', body, durationMs: Date.now() - startedAt };
 }

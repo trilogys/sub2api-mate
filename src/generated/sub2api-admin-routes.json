@@ -1,7 +1,7 @@
 {
   "source": "https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/backend/internal/server/routes/admin.go",
-  "routes_sha256": "b357cef9da9bbf3cf56f15864df9cbf83bba314491637884e457c2544b3c9d15",
-  "route_count": 382,
+  "routes_sha256": "e7820877db604511a61f42f27d58c5886063a6159129745980e6c110637f5125",
+  "route_count": 384,
   "routes": [
     {
       "method": "GET",
@@ -182,6 +182,11 @@
       "method": "POST",
       "path": "/api/v1/admin/accounts/batch-clear-error",
       "handler": "h.Admin.Account.BatchClearError"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/accounts/batch-delete",
+      "handler": "h.Admin.Account.BatchDelete"
     },
     {
       "method": "POST",
@@ -967,6 +972,11 @@
       "method": "GET",
       "path": "/api/v1/admin/openai/accounts/:id/quota",
       "handler": "h.Admin.OpenAIOAuth.QueryQuota"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/openai/accounts/:id/quota/refresh",
+      "handler": "h.Admin.OpenAIOAuth.RefreshQuota"
     },
     {
       "method": "POST",

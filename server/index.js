@@ -1,5 +1,6 @@
 const cors = require('cors');
 const express = require('express');
+const { proxySub2APIRequest } = require('./sub2api-web-proxy');
 
 const app = express();
 
@@ -69,6 +70,10 @@ app.use(
     credentials: true,
   })
 );
+
+app.use('/__sub2api_proxy__', (req, res) => {
+  void proxySub2APIRequest(req, res);
+});
 
 app.use(express.json({ limit: '2mb' }));
 

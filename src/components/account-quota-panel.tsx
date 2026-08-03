@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useRef } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { getAccountUsage, queryOpenAIQuota, resetOpenAIQuota } from '@/src/services/admin';
+import { getAccountUsage, queryOpenAIQuota, resetOpenAIQuota, setAccountSchedulable } from '@/src/services/admin';
+import { clearAccountQuotaOverride, isAccountQuotaForceEnabled } from '@/src/store/account-quota-override';
 import type { AccountUsageProgress, AdminAccount } from '@/src/types/admin';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 
@@ -42,6 +44,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
   autoQueryCredits?: boolean;
 }) {
   const queryClient = useQueryClient();
+  const quotaDisableInFlightRef = useRef(false);
   const supportsUsage = (
     (account.platform === 'anthropic' && ['oauth', 'setup-token'].includes(account.type)) ||
     (account.platform === 'openai' && account.type === 'oauth')
@@ -85,6 +88,22 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
     },
   });
 
+  useEffect(() => {
+    const sevenDayExhausted = (usageQuery.data?.seven_day?.utilization ?? 0) >= 100;
+    if (!sevenDayExhausted) {
+      clearAccountQuotaOverride(account.id);
+      return;
+    }
+    const normalizedStatus = `${account.status ?? ''}`.toLowerCase();
+    const alreadyDisabled = account.schedulable === false || ['inactive', 'disabled', 'paused', 'stop', 'stopped'].includes(normalizedStatus);
+    if (isAccountQuotaForceEnabled(account.id) || alreadyDisabled || quotaDisableInFlightRef.current) return;
+
+    quotaDisableInFlightRef.current = true;
+    void setAccountSchedulable(account.id, false)
+      .then(() => queryClient.invalidateQueries({ queryKey: ['accounts'] }))
+      .finally(() => { quotaDisableInFlightRef.current = false; });
+  }, [account.id, account.schedulable, account.status, queryClient, usageQuery.data?.seven_day?.utilization, usageQuery.data?.updated_at]);
+
   if (!supportsUsage && !isOpenAIOAuth) return null;
   const count = creditsQuery.data?.rate_limit_reset_credits?.available_count ?? 0;
   const canReset = Boolean(creditsQuery.data) && count > 0 && account.parent_account_id == null;
@@ -95,6 +114,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
     ['7d Fable', usageQuery.data?.seven_day_fable],
   ] as const;
   const hasWindow = windows.some(([, value]) => Boolean(value));
+  const sevenDayExhausted = (usageQuery.data?.seven_day?.utilization ?? 0) >= 100;
 
   const content = (
     <View className="gap-3">
@@ -104,6 +124,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
       {usageQuery.isError ? <Text className="text-xs text-[#D9475C]">{(usageQuery.error as Error).message}</Text> : null}
       {refreshUsageMutation.isError ? <Text className="text-xs text-[#D9475C]">{(refreshUsageMutation.error as Error).message}</Text> : null}
       {!usageQuery.isLoading && !hasWindow && !usageQuery.isError ? <Text className="text-xs text-[#7C8AA0] dark:text-[#9EABC0]">服务端暂未返回 5h / 7d 窗口数据。</Text> : null}
+      {sevenDayExhausted ? <Text className="rounded-xl bg-[#FFF4D6] px-3 py-2 text-[11px] leading-5 text-[#B7791F] dark:bg-[#422F12] dark:text-[#F4C15D]">7 天额度已用完，账号默认自动停用；手动启用时可选择强制启用。</Text> : null}
 
       <View className="flex-row flex-wrap gap-2">
         <Pressable disabled={refreshUsageMutation.isPending} onPress={(event) => { event.stopPropagation(); refreshUsageMutation.mutate(); }} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2.5 disabled:opacity-50">

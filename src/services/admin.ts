@@ -507,6 +507,13 @@ export function batchRefreshAccounts(accountIds: number[]) {
   });
 }
 
+export function batchDeleteAccounts(accountIds: number[]) {
+  return adminFetch<{ total: number; success: number; failed: number; errors?: Array<{ account_id: number; error: string }> }>('/api/v1/admin/accounts/batch-delete', {
+    method: 'POST',
+    body: JSON.stringify({ account_ids: accountIds }),
+  });
+}
+
 export function listProxies(search = '', page = 1, pageSize = 20) {
   return adminFetch<PaginatedData<AdminProxy>>(
     `/api/v1/admin/proxies${buildQuery({ page, page_size: pageSize, search: search.trim() })}`

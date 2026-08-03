@@ -10,6 +10,28 @@ import { Text, TextInput } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 
 const methods = ['ALL', 'GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'WS'] as const;
+const moduleLabels: Record<string, string> = {
+  accounts: '账号',
+  ops: '运维',
+  settings: '设置',
+  groups: '分组',
+  users: '用户',
+  dashboard: '仪表盘',
+  'data-management': '数据管理',
+  backups: '备份',
+  proxies: '代理',
+  usage: '使用记录',
+  subscriptions: '订阅',
+  channels: '渠道',
+  'channel-monitors': '渠道监控',
+  'channel-monitor-templates': '监控模板',
+  'risk-control': '风控',
+  system: '系统',
+};
+
+function routeModule(path: string) {
+  return path.split('/')[4] || 'other';
+}
 
 export default function APIConsoleScreen() {
   const [routes, setRoutes] = useState(getAllAdminRoutes);
@@ -19,6 +41,7 @@ export default function APIConsoleScreen() {
   const [upstreamChanged, setUpstreamChanged] = useState(false);
   const [search, setSearch] = useState('');
   const [method, setMethod] = useState<(typeof methods)[number]>('ALL');
+  const [module, setModule] = useState('ALL');
   const coverage = getAdminRouteCoverage();
 
   const refresh = async (force: boolean) => {
@@ -38,15 +61,21 @@ export default function APIConsoleScreen() {
   };
 
   useEffect(() => { void refresh(false); }, []);
+  const modules = useMemo(() => {
+    const counts = new Map<string, number>();
+    routes.forEach((route) => counts.set(routeModule(route.path), (counts.get(routeModule(route.path)) ?? 0) + 1));
+    return [...counts.entries()].sort((left, right) => right[1] - left[1]);
+  }, [routes]);
   const filtered = useMemo(() => {
     const keyword = search.trim().toLowerCase();
     return routes.filter((route) => {
       const matchesMethod = method === 'ALL'
         || (method === 'WS' ? route.transport === 'websocket' : route.method === method);
+      const matchesModule = module === 'ALL' || routeModule(route.path) === module;
       const matchesSearch = !keyword || `${route.method} ${route.path} ${route.handler}`.toLowerCase().includes(keyword);
-      return matchesMethod && matchesSearch;
+      return matchesMethod && matchesModule && matchesSearch;
     });
-  }, [method, routes, search]);
+  }, [method, module, routes, search]);
 
   return (
     <>
@@ -58,6 +87,20 @@ export default function APIConsoleScreen() {
             <TextInput value={search} onChangeText={setSearch} placeholder="搜索路径、处理器或功能名称" placeholderTextColor="#98A2B3" className="min-h-12 flex-1 text-sm text-[#172033] dark:text-[#F4F7FB]" autoCapitalize="none" autoCorrect={false} />
           </View>
           <FlatList horizontal data={methods} keyExtractor={(item) => item} showsHorizontalScrollIndicator={false} contentContainerClassName="gap-2" renderItem={({ item }) => <AdminChip label={item} selected={method === item} onPress={() => setMethod(item)} />} />
+          <FlatList
+            horizontal
+            data={[['ALL', routes.length] as const, ...modules]}
+            keyExtractor={([name]) => name}
+            showsHorizontalScrollIndicator={false}
+            contentContainerClassName="gap-2"
+            renderItem={({ item: [name, count] }) => (
+              <AdminChip
+                label={`${name === 'ALL' ? '全部模块' : moduleLabels[name] || name} ${count}`}
+                selected={module === name}
+                onPress={() => setModule(name)}
+              />
+            )}
+          />
           <View className="flex-row items-center gap-2 rounded-2xl bg-[#EAF2FF] dark:bg-[#172C55] p-3"><RefreshCw size={16} color="#2F6DF6" /><Text className="flex-1 text-xs leading-5 text-[#2F6DF6]">打开页面时自动检查上游，六小时内复用结果；手动刷新会立即重新检索。</Text></View>
           <AdminButton label="立即检索最新 API" tone="muted" pending={syncing} onPress={() => void refresh(true)} />
           <AdminMessage error={syncError} success={syncedAt ? `${new Date(syncedAt).toLocaleString()} 已检索 ${routes.length} 条${upstreamChanged ? '，与当前 APK 内置清单有变化' : '，与当前 APK 内置清单一致'}` : undefined} />
@@ -80,7 +123,7 @@ export default function APIConsoleScreen() {
               </View>
               <View className="flex-1">
                 <Text selectable className="font-mono text-xs font-semibold text-[#27364F] dark:text-[#D5DDEA]">{item.path}</Text>
-                <Text numberOfLines={1} className="mt-1 text-[11px] text-[#6B778C] dark:text-[#9EABC0]">{item.handler} · {item.dedicated ? '专用封装' : '通用控制台'}</Text>
+                <Text numberOfLines={1} className="mt-1 text-[11px] text-[#6B778C] dark:text-[#9EABC0]">{moduleLabels[routeModule(item.path)] || routeModule(item.path)} · {item.handler} · {item.dedicated ? '专用封装' : '通用控制台'}</Text>
               </View>
               <ChevronRight size={18} color="#98A2B3" />
             </Pressable>

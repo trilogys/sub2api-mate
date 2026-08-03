@@ -82,33 +82,39 @@ for (const file of (await listFiles(resolve('app'))).filter((path) => path.endsW
   });
 }
 
-const serviceSource = await readFile(resolve('src/services/admin.ts'), 'utf8');
 const services = [];
 const functionPattern = /export function\s+(\w+)\s*\(([\s\S]*?)\)\s*\{/g;
-for (const match of serviceSource.matchAll(functionPattern)) {
-  const blockStart = match.index + match[0].lastIndexOf('{');
-  const body = findBalancedBlock(serviceSource, blockStart);
-  const endpointLiterals = [...body.matchAll(/([`'"])([^`'"]*\/api\/v1\/admin[^`'"]*)\1/g)].map((item) => (
-    item[2].replace(/\$\{([^}]+)\}/g, ':$1').replace(/\$\{[^}]+\}/g, ':param')
-  ));
-  if (!endpointLiterals.length) continue;
-  services.push({
-    kind: 'service',
-    name: match[1],
-    signature: clean(match[2]),
-    method: body.match(/method:\s*['"]([A-Z]+)['"]/)?.[1] || 'GET',
-    endpoints: unique(endpointLiterals),
-  });
+for (const file of (await listFiles(resolve('src/services'))).filter((path) => path.endsWith('.ts'))) {
+  const serviceSource = await readFile(file, 'utf8');
+  for (const match of serviceSource.matchAll(functionPattern)) {
+    const blockStart = match.index + match[0].lastIndexOf('{');
+    const body = findBalancedBlock(serviceSource, blockStart);
+    const endpointLiterals = [...body.matchAll(/([`'"])([^`'"]*\/api\/v1\/admin[^`'"]*)\1/g)].map((item) => (
+      item[2].replace(/\$\{([^}]+)\}/g, ':$1').replace(/\$\{[^}]+\}/g, ':param')
+    ));
+    if (!endpointLiterals.length) continue;
+    services.push({
+      kind: 'service',
+      name: match[1],
+      signature: clean(match[2]),
+      method: body.match(/officialAdminRequest(?:<[^>]+>)?\(\s*['"]([A-Z]+)['"]/)?.[1]
+        || body.match(/method:\s*['"]([A-Z]+)['"]/)?.[1]
+        || 'GET',
+      endpoints: unique(endpointLiterals),
+    });
+  }
 }
 
-const typeSource = await readFile(resolve('src/types/admin.ts'), 'utf8');
 const types = [];
 const typePattern = /export\s+(?:type|interface)\s+(\w+)[^{=]*(?:=\s*)?\{/g;
-for (const match of typeSource.matchAll(typePattern)) {
-  const blockStart = match.index + match[0].lastIndexOf('{');
-  const body = findBalancedBlock(typeSource, blockStart);
-  const fields = unique([...body.matchAll(/^\s*([A-Za-z_][A-Za-z0-9_]*\??)\s*:/gm)].map((item) => item[1]));
-  if (fields.length) types.push({ kind: 'type', name: match[1], fields });
+for (const file of (await listFiles(resolve('src/types'))).filter((path) => path.endsWith('.ts'))) {
+  const typeSource = await readFile(file, 'utf8');
+  for (const match of typeSource.matchAll(typePattern)) {
+    const blockStart = match.index + match[0].lastIndexOf('{');
+    const body = findBalancedBlock(typeSource, blockStart);
+    const fields = unique([...body.matchAll(/^\s*([A-Za-z_][A-Za-z0-9_]*\??)\s*:/gm)].map((item) => item[1]));
+    if (fields.length) types.push({ kind: 'type', name: match[1], fields });
+  }
 }
 
 const routes = routeManifest.routes.map((route) => ({

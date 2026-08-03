@@ -387,9 +387,19 @@ export function AIAssistant() {
               <View className="flex-row items-center gap-1"><Pressable accessibilityLabel="新建 AI 对话" onPress={newConversation} className="h-9 w-9 items-center justify-center rounded-full bg-[#EAF2FF] dark:bg-[#172C55]"><Plus size={18} color="#2F6DF6" /></Pressable><Pressable accessibilityLabel="查看历史对话" onPress={() => setHistoryOpen(true)} className="h-9 w-9 items-center justify-center rounded-full bg-[#EAF2FF] dark:bg-[#172C55]"><History size={17} color="#2F6DF6" /></Pressable><Pressable accessibilityLabel="关闭 AI 助手" onPress={() => setOpen(false)} className="h-9 w-9 items-center justify-center rounded-full bg-[#EEF3F9] dark:bg-[#1A2638]"><X size={19} color="#344054" /></Pressable></View>
             </View>
 
-            <ScrollView ref={scrollRef} className="min-h-52 px-4 pt-4" contentContainerClassName="gap-3 pb-4" keyboardShouldPersistTaps="handled">
+            <ScrollView
+              ref={scrollRef}
+              style={{ flex: 1, minHeight: 0 }}
+              contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16, rowGap: 12 }}
+              keyboardShouldPersistTaps="handled"
+              onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
+            >
               {messages.map((message) => (
-                <View key={message.id} className={`max-w-[88%] rounded-2xl px-4 py-3 ${message.role === 'user' ? 'self-end bg-[#2F6DF6]' : 'self-start border border-[#E4EAF2] dark:border-[#273449] bg-[#FFFFFF] dark:bg-[#111827]'}`}>
+                <View
+                  key={message.id}
+                  style={message.role === 'assistant' ? { alignSelf: 'stretch', width: '100%' } : { alignSelf: 'flex-end', maxWidth: '88%' }}
+                  className={`rounded-2xl px-4 py-3 ${message.role === 'user' ? 'bg-[#2F6DF6]' : 'border border-[#E4EAF2] bg-[#FFFFFF] dark:border-[#273449] dark:bg-[#111827]'}`}
+                >
                   {message.role === 'assistant' ? <MarkdownMessage text={message.text} /> : <Text selectable className="text-sm leading-5 text-white">{message.text}</Text>}
                 </View>
               ))}
