@@ -46,11 +46,19 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
+      - name: Check Expo authentication
+        run: |
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "EXPO_TOKEN is not configured in repository Actions secrets."
+            exit 1
+          fi
+          eas whoami
+
       - name: Install dependencies
         run: npm ci
 
       - name: Trigger EAS build and wait for completion
-        run: npx eas build --non-interactive --wait --json --profile "${{ inputs.profile }}" --platform "${{ inputs.platform }}" > eas-build.json
+        run: eas build --non-interactive --wait --json --profile "${{ inputs.profile }}" --platform "${{ inputs.platform }}" > eas-build.json
 
       - name: Extract Android APK URL
         id: apk
@@ -65,9 +73,9 @@ jobs:
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=${url}\n`);
           EOF
 
-      - name: Extract iOS simulator archive URL
+      - name: Extract iOS archive URL
         id: ios
-        if: inputs.platform == 'ios' && inputs.profile == 'ios-simulator'
+        if: inputs.platform == 'ios'
         run: |
           node <<'EOF'
           const fs = require('node:fs');
@@ -93,17 +101,31 @@ jobs:
           retention-days: 30
 
       - name: Download iOS simulator build from EAS
-        if: steps.ios.outputs.url != ''
+        if: steps.ios.outputs.url != '' && inputs.profile == 'ios-simulator'
         env:
           IOS_URL: ${{ steps.ios.outputs.url }}
         run: curl --fail --location --retry 3 "$IOS_URL" --output sub2api-ios-simulator.tar.gz
 
       - name: Upload iOS simulator artifact
-        if: steps.ios.outputs.url != ''
+        if: steps.ios.outputs.url != '' && inputs.profile == 'ios-simulator'
         uses: actions/upload-artifact@v4
         with:
           name: sub2api-ios-simulator-${{ github.run_number }}
           path: sub2api-ios-simulator.tar.gz
+          retention-days: 30
+
+      - name: Download signed iOS IPA from EAS
+        if: steps.ios.outputs.url != '' && inputs.profile != 'ios-simulator'
+        env:
+          IOS_URL: ${{ steps.ios.outputs.url }}
+        run: curl --fail --location --retry 3 "$IOS_URL" --output sub2api.ipa
+
+      - name: Upload signed iOS IPA artifact
+        if: steps.ios.outputs.url != '' && inputs.profile != 'ios-simulator'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sub2api-ios-ipa-${{ github.run_number }}
+          path: sub2api.ipa
           retention-days: 30
 
       - name: Publish build links in workflow summary
