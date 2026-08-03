@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "sub2api",
+    "name": "Sub2API Mate",
     "slug": "sub2api-mobile",
     "owner": "trilogys",
     "version": "1.4.0",
@@ -15,7 +15,7 @@
     "ios": {
       "supportsTablet": true,
       "icon": "./assets/icon.png",
-      "bundleIdentifier": "com.ppx.sub2apimobile",
+      "bundleIdentifier": "com.ppx.sub2apimate",
       "buildNumber": "5",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -23,7 +23,7 @@
     },
     "android": {
       "icon": "./assets/icon.png",
-      "package": "com.ppx.sub2apimobile",
+      "package": "com.ppx.sub2apimate",
       "versionCode": 5,
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"

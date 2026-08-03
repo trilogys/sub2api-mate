@@ -77,7 +77,7 @@ const apiBase = 'https://api.github.com';
 const allowedPath = /^(?:app|src)\/.+\.(?:ts|tsx|js|jsx|json)$/;
 
 export const defaultGitHubConfig: GitHubConfig = {
-  repository: 'trilogys/sub2api-mobile',
+  repository: 'trilogys/sub2api-mate',
   token: '',
   baseBranch: 'main',
 };
@@ -134,7 +134,14 @@ export async function loadGitHubConfig(): Promise<GitHubConfig> {
   const value = await SecureStore.getItemAsync(GITHUB_CONFIG_STORAGE_KEY);
   if (!value) return defaultGitHubConfig;
   try {
-    return { ...defaultGitHubConfig, ...JSON.parse(value) };
+    const saved = JSON.parse(value) as Partial<GitHubConfig>;
+    return {
+      ...defaultGitHubConfig,
+      ...saved,
+      repository: saved.repository === 'trilogys/sub2api-mobile'
+        ? defaultGitHubConfig.repository
+        : saved.repository ?? defaultGitHubConfig.repository,
+    };
   } catch {
     return defaultGitHubConfig;
   }

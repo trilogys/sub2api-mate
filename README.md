@@ -1,23 +1,23 @@
 [**English**](README.md) | [简体中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="sub2api app icon" width="120" />
+  <img src="assets/icon.png" alt="Sub2API Mate app icon" width="120" />
 </p>
 
-<h1 align="center">sub2api-mobile</h1>
+<h1 align="center">Sub2API Mate</h1>
 
 <p align="center">
-  A mobile administration console for Sub2API, built with Expo SDK 54 and React Native.
+  An independent mobile companion and administration console for Sub2API, built with Expo SDK 54 and React Native.
 </p>
 
 > [!IMPORTANT]
 > **Inspiration and thanks.** This project was inspired by [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile). We sincerely thank ckken for publishing the original open-source work. The upstream project is licensed under the MIT License, and this repository preserves its original copyright and complete license text in [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt). The extensive mobile UI, administration coverage, AI assistant, build center, and automation in this repository are independently maintained by the trilogys contributors. No endorsement by the upstream author is implied.
 
-The maintained repository is [trilogys/sub2api-mobile](https://github.com/trilogys/sub2api-mobile). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
+The maintained repository is [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
 
 ## Overview
 
-sub2api brings the day-to-day administration, diagnostics, and build workflows of a Sub2API deployment to Android, iOS, and the web. It provides role-aware access, a responsive blue-and-white card interface, full access to generated administration routes, mobile-friendly dedicated pages, an optional AI assistant, and cloud APK builds that can be started from a phone.
+Sub2API Mate brings the day-to-day administration, diagnostics, and build workflows of a Sub2API deployment to Android, iOS, and the web. It is an independently maintained community companion rather than an official Sub2API client. It provides role-aware access, a responsive blue-and-white card interface, full access to generated administration routes, mobile-friendly dedicated pages, an optional AI assistant, and cloud APK builds that can be started from a phone.
 
 > [!NOTE]
 > **Testing scope:** The current release has only been tested on Android. Expo includes iOS and Web targets, but those targets have not yet been fully verified.
@@ -144,7 +144,7 @@ The optional floating assistant can be enabled from the AI Assistant page. Long-
 
 ### Controlled GitHub repair workflow
 
-GitHub settings default to `trilogys/sub2api-mobile` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
+GitHub settings default to `trilogys/sub2api-mate` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
 
 - Contents: read and write
 - Pull requests: read and write
@@ -182,7 +182,7 @@ From the app, configure a GitHub token with Actions permission, choose the repos
 - Approximate progress calculated from completed steps
 - APK artifact availability, size, expiration, and download entry point
 
-The target repository can be changed in the app; `trilogys/sub2api-mobile` is the default.
+The target repository can be changed in the app; `trilogys/sub2api-mate` is the default.
 
 ### EAS preview APK
 

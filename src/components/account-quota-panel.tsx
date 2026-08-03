@@ -66,7 +66,13 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
     mutationFn: () => getAccountUsage(account.id, 'active', true),
     onSuccess: (usage) => {
       queryClient.setQueryData(['account-usage', account.id], usage);
+      if (usage.error) {
+        localizedAlert('额度刷新失败', usage.error);
+        return;
+      }
+      localizedAlert('额度刷新成功', '已获取该账号的最新额度数据。');
     },
+    onError: (error) => localizedAlert('额度刷新失败', error instanceof Error ? error.message : '请稍后重试。'),
   });
   const resetMutation = useMutation({
     mutationFn: () => resetOpenAIQuota(account.id),

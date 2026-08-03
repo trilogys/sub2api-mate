@@ -1,4 +1,4 @@
-export const APP_REPOSITORY = 'trilogys/sub2api-mobile';
+export const APP_REPOSITORY = 'trilogys/sub2api-mate';
 export const APP_REPOSITORY_URL = `https://github.com/${APP_REPOSITORY}`;
 
 export type AppReleaseAsset = {

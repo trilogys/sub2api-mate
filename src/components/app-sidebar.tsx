@@ -445,7 +445,7 @@ export function AppSidebar() {
     <>
       <View style={{ width: RAIL_WIDTH, backgroundColor: dark ? '#0F1726' : '#F7F9FD', borderRightWidth: 1, borderRightColor: dark ? '#273449' : '#E1E8F2' }}>
         <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
-          <View style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2F6DF6' }}><Text style={{ color: '#fff', fontSize: 12, fontWeight: '900' }}>S2</Text></View></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="展开侧边菜单" hitSlop={6} onPress={() => setExpanded(true)} style={{ height: 48, alignItems: 'center', justifyContent: 'center' }}><View style={{ width: 30, height: 30, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: '#2F6DF6' }}><Text style={{ color: '#fff', fontSize: 12, fontWeight: '900' }}>S2</Text></View></Pressable>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 5, paddingVertical: 4 }} showsVerticalScrollIndicator={false}>{visibleItems.map((item) => {
             const Icon = item.icon;
             const active = path === item.route;
@@ -466,7 +466,7 @@ export function AppSidebar() {
             <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API</Text>
+                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API Mate</Text>
                   <Pressable accessibilityRole="link" accessibilityLabel="在浏览器打开当前服务器" onPress={() => void openWebsite()} style={{ marginRight: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, backgroundColor: dark ? '#172C55' : '#EAF2FF', paddingHorizontal: 8, paddingVertical: 7 }}><Globe2 size={13} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ fontSize: 9, fontWeight: '800', color: dark ? '#8BB4FF' : '#2F6DF6' }}>WEBSITE</Text></Pressable>
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
                 </View>

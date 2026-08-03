@@ -285,7 +285,7 @@
       "placeholders": [
         "Expo access token",
         "main",
-        "trilogys/sub2api-mobile"
+        "trilogys/sub2api-mate"
       ]
     },
     {
@@ -354,7 +354,7 @@
         "保存"
       ],
       "placeholders": [
-        "trilogys/sub2api-mobile",
+        "trilogys/sub2api-mate",
         "main",
         "github_pat_..."
       ]

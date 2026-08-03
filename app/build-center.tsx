@@ -13,7 +13,7 @@ import type { GitHubConfig, GitHubWorkflowStep } from '@/src/services/github';
 import { Text } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 
-const repository = 'https://github.com/trilogys/sub2api-mobile';
+const repository = 'https://github.com/trilogys/sub2api-mate';
 const buildWorkflow = `${repository}/actions/workflows/eas-build.yml`;
 const nativeBuildWorkflow = 'android-native-build.yml';
 const apiSyncWorkflow = `${repository}/actions/workflows/sync-sub2api-api.yml`;
@@ -136,7 +136,7 @@ export default function BuildCenterScreen() {
   const completedSteps = nativeSteps.filter((step) => step.status === 'completed').length;
   const nativeProgress = nativeSteps.length ? Math.round((completedSteps / nativeSteps.length) * 100) : nativeRun?.status === 'completed' ? 100 : 0;
   const apkArtifacts = (nativeDetails?.artifacts ?? []).filter((artifact) => artifact.name.toLowerCase().includes('apk'));
-  const nativeRepository = normalizeGitHubRepository(githubConfig?.repository || 'trilogys/sub2api-mobile');
+  const nativeRepository = normalizeGitHubRepository(githubConfig?.repository || 'trilogys/sub2api-mate');
   const nativeWorkflowUrl = `https://github.com/${nativeRepository}/actions/workflows/${nativeBuildWorkflow}`;
   const nativeStatus = !githubRequestedAt
     ? undefined
@@ -182,8 +182,8 @@ export default function BuildCenterScreen() {
             <ExternalLink size={18} color="#2F6DF6" />
             <Text className="flex-1 text-xs leading-5 text-[#2F6DF6]">Release 用于独立安装测试；Debug 适合排错，通常需要 Metro 开发服务器。</Text>
           </View>
-          <AdminField label="构建仓库" value={githubConfig?.repository ?? 'trilogys/sub2api-mobile'} onChangeText={(repository) => { setGitHubConfig((current) => ({ ...(current ?? { repository: 'trilogys/sub2api-mobile', token: '', baseBranch: 'main' }), repository })); setRepositorySaved(false); }} placeholder="trilogys/sub2api-mobile" autoCapitalize="none" autoCorrect={false} />
-          <Text className="text-[11px] leading-5 text-[#6B778C] dark:text-[#9EABC0]">默认使用 trilogys/sub2api-mobile。目标仓库必须包含 {nativeBuildWorkflow} 工作流。</Text>
+          <AdminField label="构建仓库" value={githubConfig?.repository ?? 'trilogys/sub2api-mate'} onChangeText={(repository) => { setGitHubConfig((current) => ({ ...(current ?? { repository: 'trilogys/sub2api-mate', token: '', baseBranch: 'main' }), repository })); setRepositorySaved(false); }} placeholder="trilogys/sub2api-mate" autoCapitalize="none" autoCorrect={false} />
+          <Text className="text-[11px] leading-5 text-[#6B778C] dark:text-[#9EABC0]">默认使用 trilogys/sub2api-mate。目标仓库必须包含 {nativeBuildWorkflow} 工作流。</Text>
           <AdminButton label={repositorySaved ? '仓库已保存' : '保存并切换构建仓库'} tone="muted" disabled={!githubConfig?.repository || Platform.OS === 'web'} onPress={saveRepository} />
           <AdminField label="Git 分支或标签" value={gitRef} onChangeText={setGitRef} placeholder="main" autoCapitalize="none" autoCorrect={false} />
           <View className="flex-row gap-2">

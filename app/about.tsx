@@ -116,7 +116,7 @@ export default function AboutScreen() {
       <ScreenShell title="关于应用" subtitle="版本、在线更新与开源信息" bottomInsetClassName="pb-8" refreshing={releaseQuery.isRefetching} onRefresh={() => releaseQuery.refetch().then(() => undefined)}>
         <View className="items-center rounded-[24px] border border-[#E2E9F3] bg-white px-5 py-6 dark:border-[#273449] dark:bg-[#111827]">
           <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80, borderRadius: 22 }} resizeMode="cover" />
-          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">sub2api</Text>
+          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">Sub2API Mate</Text>
           <Text className="mt-1 text-xs text-[#6B778C] dark:text-[#9EABC0]">版本 {currentVersion} · Expo SDK 54 · {Platform.OS === 'android' ? 'Android' : Platform.OS === 'ios' ? 'iOS' : 'Web'}</Text>
         </View>
 
@@ -193,7 +193,7 @@ export default function AboutScreen() {
         </AdminSection>
 
         <AdminSection title="开源项目" detail="代码、发布版本、问题反馈与许可证信息。">
-          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/sub2api-mobile" url={APP_REPOSITORY_URL} />
+          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/sub2api-mate" url={APP_REPOSITORY_URL} />
           <ExternalRow icon={Download} title="版本与 APK" detail="查看全部 GitHub Releases" url={`${APP_REPOSITORY_URL}/releases`} />
           <ExternalRow icon={CircleAlert} title="问题反馈" detail="提交 Bug、建议或兼容性问题" url={`${APP_REPOSITORY_URL}/issues`} />
           <ExternalRow icon={FileText} title="Apache License 2.0" detail="查看本项目开源许可证" url={`${APP_REPOSITORY_URL}/blob/main/LICENSE`} />
