@@ -1,4 +1,4 @@
-name: EAS Build
+name: EAS Android Build
 
 on:
   workflow_dispatch:
@@ -9,18 +9,8 @@ on:
         default: preview
         type: choice
         options:
-          - ios-simulator
           - preview
           - production
-      platform:
-        description: Target platform
-        required: true
-        default: android
-        type: choice
-        options:
-          - android
-          - ios
-          - all
 
 jobs:
   build:
@@ -58,11 +48,11 @@ jobs:
         run: npm ci
 
       - name: Trigger EAS build and wait for completion
-        run: eas build --non-interactive --wait --json --profile "${{ inputs.profile }}" --platform "${{ inputs.platform }}" > eas-build.json
+        run: eas build --non-interactive --wait --json --profile "${{ inputs.profile }}" --platform android > eas-build.json
 
       - name: Extract Android APK URL
         id: apk
-        if: inputs.platform == 'android' && inputs.profile == 'preview'
+        if: inputs.profile == 'preview'
         run: |
           node <<'EOF'
           const fs = require('node:fs');
@@ -70,19 +60,6 @@ jobs:
           const builds = Array.isArray(parsed) ? parsed : [parsed];
           const android = builds.find((build) => String(build.platform).toLowerCase() === 'android');
           const url = android?.artifacts?.buildUrl || android?.artifacts?.applicationArchiveUrl || '';
-          fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=${url}\n`);
-          EOF
-
-      - name: Extract iOS archive URL
-        id: ios
-        if: inputs.platform == 'ios'
-        run: |
-          node <<'EOF'
-          const fs = require('node:fs');
-          const parsed = JSON.parse(fs.readFileSync('eas-build.json', 'utf8').trim());
-          const builds = Array.isArray(parsed) ? parsed : [parsed];
-          const ios = builds.find((build) => String(build.platform).toLowerCase() === 'ios');
-          const url = ios?.artifacts?.buildUrl || ios?.artifacts?.applicationArchiveUrl || '';
           fs.appendFileSync(process.env.GITHUB_OUTPUT, `url=${url}\n`);
           EOF
 
@@ -98,34 +75,6 @@ jobs:
         with:
           name: sub2api-mobile-apk-${{ github.run_number }}
           path: sub2api-mobile.apk
-          retention-days: 30
-
-      - name: Download iOS simulator build from EAS
-        if: steps.ios.outputs.url != '' && inputs.profile == 'ios-simulator'
-        env:
-          IOS_URL: ${{ steps.ios.outputs.url }}
-        run: curl --fail --location --retry 3 "$IOS_URL" --output sub2api-ios-simulator.tar.gz
-
-      - name: Upload iOS simulator artifact
-        if: steps.ios.outputs.url != '' && inputs.profile == 'ios-simulator'
-        uses: actions/upload-artifact@v4
-        with:
-          name: sub2api-ios-simulator-${{ github.run_number }}
-          path: sub2api-ios-simulator.tar.gz
-          retention-days: 30
-
-      - name: Download signed iOS IPA from EAS
-        if: steps.ios.outputs.url != '' && inputs.profile != 'ios-simulator'
-        env:
-          IOS_URL: ${{ steps.ios.outputs.url }}
-        run: curl --fail --location --retry 3 "$IOS_URL" --output sub2api.ipa
-
-      - name: Upload signed iOS IPA artifact
-        if: steps.ios.outputs.url != '' && inputs.profile != 'ios-simulator'
-        uses: actions/upload-artifact@v4
-        with:
-          name: sub2api-ios-ipa-${{ github.run_number }}
-          path: sub2api.ipa
           retention-days: 30
 
       - name: Publish build links in workflow summary
