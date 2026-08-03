@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import Constants from 'expo-constants';
 import { router, usePathname } from 'expo-router';
 import {
   Activity,
@@ -35,6 +36,7 @@ import { getFirstCreatedAdmin } from '@/src/lib/admin-user';
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
 import { checkSystemUpdates, listUsers } from '@/src/services/admin';
+import { getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 import { Text, localizedAlert } from '@/src/components/localized-text';
@@ -105,6 +107,11 @@ export function AppSidebar() {
     enabled: isAdminSession() && Boolean(config.baseUrl),
     staleTime: 15 * 60_000,
   });
+  const appReleaseQuery = useQuery({
+    queryKey: ['app-release', 'latest'],
+    queryFn: getLatestAppRelease,
+    staleTime: 15 * 60_000,
+  });
 
   useEffect(() => {
     loadUIPreferences().then((next) => {
@@ -163,6 +170,14 @@ export function AppSidebar() {
     && !prefs.serverUpdatePromptsDisabled
     && latestServerVersion
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
+  );
+  const latestAppVersion = appReleaseQuery.data?.tag_name;
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.3.0'));
+  const appUpdateWarningVisible = Boolean(
+    hasAppUpdate
+    && !prefs.appUpdatePromptsDisabled
+    && latestAppVersion
+    && !prefs.dismissedAppUpdateVersions.includes(latestAppVersion),
   );
 
   if (path === '/login' || !config.baseUrl) return null;
@@ -374,6 +389,7 @@ export function AppSidebar() {
     const selected = selectedId === item.id;
     const active = path === item.route || selected;
     const showActiveBackground = active && prefs.defaultMenuId !== item.id;
+    const showAppUpdate = item.id === 'about' && appUpdateWarningVisible;
     const dragging = draggingId === item.id;
     const dropTarget = Boolean(draggingId) && dragTargetIndex === index && !dragging;
     const rowShift = getRowShift(item.id);
@@ -415,8 +431,9 @@ export function AppSidebar() {
           }}
         >
           {showText && customizing ? <GripVertical size={15} color={dark ? '#718096' : '#98A2B3'} /> : null}
-          <Icon size={19} color={showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />
+          <Icon size={19} color={showAppUpdate ? '#D88A18' : showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />
           {showText ? <Text numberOfLines={1} style={{ flex: 1, color: showActiveBackground ? (dark ? '#8BB4FF' : '#2F6DF6') : dark ? '#D5DDEA' : '#263247', fontSize: 13, fontWeight: showActiveBackground ? '800' : '600' }}>{item.title}</Text> : null}
+          {showText && showAppUpdate ? <Text style={{ borderRadius: 999, backgroundColor: dark ? '#4A3513' : '#FFF0C2', paddingHorizontal: 7, paddingVertical: 3, fontSize: 8, fontWeight: '800', color: dark ? '#FFD66B' : '#946321' }}>NEW</Text> : null}
           {showText && prefs.defaultMenuId === item.id ? <Text style={{ borderRadius: 999, backgroundColor: dark ? '#24416F' : '#DCE9FF', paddingHorizontal: 7, paddingVertical: 3, fontSize: 8, fontWeight: '800', color: dark ? '#9CC0FF' : '#2F6DF6' }}>DEFAULT</Text> : null}
         </Pressable>
         {showText && customizing ? <Pressable onPress={() => update({ ...prefsRef.current, hiddenMenuIds: hidden ? prefs.hiddenMenuIds.filter((id) => id !== item.id) : [...prefs.hiddenMenuIds, item.id], defaultMenuId: !hidden && prefs.defaultMenuId === item.id ? null : prefs.defaultMenuId })} style={{ minWidth: 44, padding: 8 }}><Text style={{ textAlign: 'center', color: hidden ? '#69A0FF' : '#D9475C', fontSize: 10, fontWeight: '700' }}>{hidden ? '显示' : '隐藏'}</Text></Pressable> : null}
@@ -433,7 +450,8 @@ export function AppSidebar() {
             const Icon = item.icon;
             const active = path === item.route;
             const showActiveBackground = active;
-            return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
+            const showAppUpdate = item.id === 'about' && appUpdateWarningVisible;
+            return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showAppUpdate ? '#D88A18' : showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{showAppUpdate ? <Text style={{ position: 'absolute', right: 2, top: 2, borderRadius: 999, backgroundColor: dark ? '#4A3513' : '#FFF0C2', paddingHorizontal: 3, paddingVertical: 1, fontSize: 6, fontWeight: '900', color: dark ? '#FFD66B' : '#946321' }}>NEW</Text> : prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
           })}</ScrollView>
           <View style={{ borderTopWidth: 1, borderTopColor: dark ? '#273449' : '#E1E8F2', paddingHorizontal: 5, paddingTop: 7 }}>
             <Pressable accessibilityLabel="退出账号" onPress={requestLogout} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><LogOut size={19} color="#D9475C" /></Pressable>

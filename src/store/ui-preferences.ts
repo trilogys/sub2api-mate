@@ -13,9 +13,11 @@ export type UIPreferences = {
   menuDefaultsVersion: number;
   dismissedServerUpdateVersions: string[];
   serverUpdatePromptsDisabled: boolean;
+  dismissedAppUpdateVersions: string[];
+  appUpdatePromptsDisabled: boolean;
 };
 export const languageState = proxy({ value: 'zh' as 'zh' | 'en' });
-export const defaultUIPreferences: UIPreferences = { hiddenMenuIds: ['account-refresh', 'ip'], menuOrder: [], menuButtonPosition: null, defaultMenuId: null, colorMode: 'light', language: 'zh', menuDefaultsVersion: 4, dismissedServerUpdateVersions: [], serverUpdatePromptsDisabled: false };
+export const defaultUIPreferences: UIPreferences = { hiddenMenuIds: ['account-refresh', 'ip'], menuOrder: [], menuButtonPosition: null, defaultMenuId: null, colorMode: 'light', language: 'zh', menuDefaultsVersion: 4, dismissedServerUpdateVersions: [], serverUpdatePromptsDisabled: false, dismissedAppUpdateVersions: [], appUpdatePromptsDisabled: false };
 
 function stringArray(value: unknown) {
   return Array.isArray(value)
@@ -38,6 +40,8 @@ export function normalizeUIPreferences(value: unknown): UIPreferences {
     menuDefaultsVersion: Number.isFinite(parsed.menuDefaultsVersion) ? Number(parsed.menuDefaultsVersion) : 0,
     dismissedServerUpdateVersions: stringArray(parsed.dismissedServerUpdateVersions),
     serverUpdatePromptsDisabled: parsed.serverUpdatePromptsDisabled === true,
+    dismissedAppUpdateVersions: stringArray(parsed.dismissedAppUpdateVersions),
+    appUpdatePromptsDisabled: parsed.appUpdatePromptsDisabled === true,
   };
 }
 
@@ -79,6 +83,8 @@ export async function loadUIPreferences(): Promise<UIPreferences> {
       menuDefaultsVersion: 4,
       dismissedServerUpdateVersions: parsed.dismissedServerUpdateVersions,
       serverUpdatePromptsDisabled: parsed.serverUpdatePromptsDisabled,
+      dismissedAppUpdateVersions: parsed.dismissedAppUpdateVersions,
+      appUpdatePromptsDisabled: parsed.appUpdatePromptsDisabled,
     };
   } catch { return normalizeUIPreferences(defaultUIPreferences); }
 }
