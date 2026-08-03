@@ -1,9 +1,9 @@
 {
   "source": "Wei-Shaw/sub2api frontend/src/api/admin and backend/internal/handler/admin",
   "counts": {
-    "services": 292,
+    "services": 293,
     "types": 263,
-    "backend_types": 142,
+    "backend_types": 143,
     "handlers": 287
   },
   "entries": [
@@ -254,6 +254,14 @@
       "signature": "accountIds: number[]",
       "method": "POST",
       "endpoint": "/api/v1/admin/accounts/batch-clear-error"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "accounts",
+      "name": "batchDelete",
+      "signature": "accountIds: number[]",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/accounts/batch-delete"
     },
     {
       "kind": "upstream_service",
@@ -3017,6 +3025,8 @@
         "total",
         "success",
         "failed",
+        "success_ids?",
+        "failed_ids?",
         "errors?",
         "warnings?"
       ]
@@ -3265,6 +3275,7 @@
         "mode",
         "base_url",
         "model",
+        "proxy_id",
         "api_key_configured",
         "api_key_masked",
         "api_key_count",
@@ -5565,6 +5576,7 @@
         "contact_info",
         "doc_url",
         "home_content",
+        "compact_home_enabled",
         "hide_ccs_import_button",
         "table_default_page_size",
         "table_page_size_options",
@@ -5766,6 +5778,7 @@
         "base_url?",
         "model?",
         "timeout_ms?",
+        "proxy_id?",
         "prompt?",
         "images?"
       ]
@@ -5924,6 +5937,7 @@
         "mode?",
         "base_url?",
         "model?",
+        "proxy_id?",
         "api_key?",
         "api_keys?",
         "api_keys_mode?",
@@ -6144,6 +6158,7 @@
         "contact_info?",
         "doc_url?",
         "home_content?",
+        "compact_home_enabled?",
         "hide_ccs_import_button?",
         "table_default_page_size?",
         "table_page_size_options?",
@@ -7167,6 +7182,7 @@
         "base_url",
         "model",
         "timeout_ms",
+        "proxy_id",
         "prompt",
         "images"
       ]
@@ -7180,6 +7196,7 @@
         "mode",
         "base_url",
         "model",
+        "proxy_id",
         "api_key",
         "api_keys",
         "api_keys_mode",
@@ -7356,6 +7373,9 @@
         "peak_start",
         "peak_end",
         "peak_rate_multiplier",
+        "profit_control_enabled",
+        "profit_min_margin",
+        "profit_safety_buffer",
         "image_price_1k",
         "image_price_2k",
         "image_price_4k",
@@ -7685,6 +7705,15 @@
         "fallback_mode",
         "backup_proxy_name",
         "expiry_warn_days"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "account_handler",
+      "name": "deleteError",
+      "fields": [
+        "account_id",
+        "error"
       ]
     },
     {
@@ -8085,6 +8114,8 @@
         "group_ids",
         "expires_at",
         "auto_pause_on_expired",
+        "upstream_billing_probe_enabled",
+        "upstream_billing_rate_sync_enabled",
         "confirm_mixed_channel_risk"
       ]
     },
@@ -8201,6 +8232,9 @@
         "peak_start",
         "peak_end",
         "peak_rate_multiplier",
+        "profit_control_enabled",
+        "profit_min_margin",
+        "profit_safety_buffer",
         "image_price_1k",
         "image_price_2k",
         "image_price_4k",
@@ -8429,6 +8463,7 @@
         "contact_info",
         "doc_url",
         "home_content",
+        "compact_home_enabled",
         "hide_ccs_import_button",
         "purchase_subscription_enabled",
         "purchase_subscription_url",

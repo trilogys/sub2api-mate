@@ -1,5 +1,5 @@
 import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Modal, Pressable, View, type AlertButton } from 'react-native';
 
 import { Text } from '@/src/components/localized-text';
@@ -30,6 +30,9 @@ function buttonClasses(button: AlertButton) {
 export function ThemedAlertHost() {
   const [queue, setQueue] = useState<ThemedAlertRequest[]>([]);
   const current = queue[0];
+  const lastVisibleRequestRef = useRef<ThemedAlertRequest | undefined>(undefined);
+  if (current) lastVisibleRequestRef.current = current;
+  const displayedRequest = current ?? lastVisibleRequestRef.current;
 
   useEffect(() => registerThemedAlertPresenter((request) => {
     setQueue((items) => [...items, request]);
@@ -41,10 +44,10 @@ export function ThemedAlertHost() {
     if (notifyDismiss) request?.options?.onDismiss?.();
   };
 
-  const dismissible = current?.options?.cancelable !== false;
-  const buttons = current?.buttons?.length ? current.buttons : [{ text: '确定' }];
+  const dismissible = displayedRequest?.options?.cancelable !== false;
+  const buttons = displayedRequest?.buttons?.length ? displayedRequest.buttons : [{ text: '确定' }];
   const stacked = buttons.length > 2;
-  const tone = current ? getTone(current) : 'info';
+  const tone = displayedRequest ? getTone(displayedRequest) : 'info';
   const toneStyle = toneStyles[tone];
   const Icon = toneStyle.icon;
 
@@ -74,8 +77,8 @@ export function ThemedAlertHost() {
               <Icon size={22} color={toneStyle.color} />
             </View>
             <View className="min-w-0 flex-1">
-              <Text className="text-base font-bold text-[#172033] dark:text-[#F4F7FB]">{current?.title}</Text>
-              {current?.message ? <Text selectable className="mt-1 text-xs leading-5 text-[#6B778C] dark:text-[#9EABC0]">{current.message}</Text> : null}
+              <Text className="text-base font-bold text-[#172033] dark:text-[#F4F7FB]">{displayedRequest?.title}</Text>
+              {displayedRequest?.message ? <Text selectable className="mt-1 text-xs leading-5 text-[#6B778C] dark:text-[#9EABC0]">{displayedRequest.message}</Text> : null}
             </View>
             {dismissible ? (
               <Pressable accessibilityLabel="关闭" hitSlop={10} onPress={() => close(true)} className="p-1">

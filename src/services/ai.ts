@@ -1,3 +1,5 @@
+import { fetchWithWebProxy } from '@/src/lib/admin-fetch';
+
 export type ReasoningEffort = 'none' | 'low' | 'medium' | 'high' | 'xhigh' | 'max';
 
 export type AIProviderConfig = {
@@ -37,6 +39,7 @@ function redactSecrets(value: string) {
 type OpenAIErrorBody = {
   error?: { message?: string; code?: string } | string;
   message?: string;
+  reason?: string;
 };
 
 function normalizeBaseUrl(value: string) {
@@ -50,7 +53,7 @@ async function openAIRequest<T>(config: AIProviderConfig, path: string, init?: R
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 30000);
   try {
-    const response = await fetch(`${normalizeBaseUrl(config.baseUrl)}${path}`, {
+    const response = await fetchWithWebProxy(`${normalizeBaseUrl(config.baseUrl)}${path}`, {
       ...init,
       signal: controller.signal,
       headers: {
@@ -68,11 +71,13 @@ async function openAIRequest<T>(config: AIProviderConfig, path: string, init?: R
     }
     if (!response.ok) {
       const nested = typeof payload.error === 'object' ? payload.error?.message : payload.error;
-      throw new Error(nested || payload.message || `模型请求失败（HTTP ${response.status}）`);
+      throw new Error(nested || payload.reason || payload.message || `模型请求失败（HTTP ${response.status}）`);
     }
     return payload;
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') throw new Error('模型请求超时（30 秒）');
+    if (error instanceof Error && error.message === 'WEB_NETWORK_OR_CORS_ERROR') throw new Error('Web 端无法连接模型服务，请重新启动 Web 或检查代理配置。');
+    if (error instanceof Error && ['WEB_PROXY_UPSTREAM_UNREACHABLE', 'WEB_PROXY_REQUEST_FAILED'].includes(error.message)) throw new Error('Web 代理无法连接模型服务，请检查 Base URL、HTTPS 证书和网络。');
     throw error;
   } finally {
     clearTimeout(timeout);

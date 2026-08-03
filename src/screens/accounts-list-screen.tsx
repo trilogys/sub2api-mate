@@ -1,8 +1,8 @@
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { CheckCircle2, CircleAlert, Clock3, KeyRound, Play, Search, ShieldCheck, ShieldOff, X } from 'lucide-react-native';
-import { useCallback, useMemo, useState } from 'react';
-import { FlatList, Modal, Pressable, RefreshControl, View } from 'react-native';
+import { Check, CheckCircle2, CircleAlert, Clock3, KeyRound, Play, Search, ShieldCheck, ShieldOff, Trash2, X } from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AppState, FlatList, Modal, Pressable, RefreshControl, View } from 'react-native';
 import type { Edge } from 'react-native-safe-area-context';
 
 import { AccountQuotaPanel } from '@/src/components/account-quota-panel';
@@ -13,10 +13,11 @@ import { PaginationControls } from '@/src/components/pagination-controls';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { useDebouncedValue } from '@/src/hooks/use-debounced-value';
 import { formatTokenValue } from '@/src/lib/formatters';
-import { getAccountTodayStats, listAccounts, recoverAccountState, setAccountSchedulable } from '@/src/services/admin';
+import { batchDeleteAccounts, getAccountTodayStats, listAccounts, recoverAccountState, setAccountSchedulable } from '@/src/services/admin';
 import { accountRefreshState, updateAccountRefresh } from '@/src/store/account-refresh';
-import type { AdminAccount } from '@/src/types/admin';
-import { Text, TextInput } from '@/src/components/localized-text';
+import { clearAccountQuotaOverride, forceEnableAccountQuota } from '@/src/store/account-quota-override';
+import type { AccountUsageInfo, AdminAccount } from '@/src/types/admin';
+import { Text, TextInput, localizedAlert } from '@/src/components/localized-text';
 const { useSnapshot } = require('valtio/react');
 
 type AccountStatusFilter = 'all' | 'active' | 'limited' | 'paused' | 'error';
@@ -155,12 +156,17 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
   const [searchText, setSearchText] = useState('');
   const [page, setPage] = useState(1);
   const [filter, setFilter] = useState<AccountStatusFilter>('all');
-  const [usageSort, setUsageSort] = useState<UsageSort>('usage-desc');
+  const [usageSort, setUsageSort] = useState<UsageSort>(null);
   const [testAccountTarget, setTestAccountTarget] = useState<AdminAccount | null>(null);
   const [togglingAccountId, setTogglingAccountId] = useState<number | null>(null);
   const [recoveringAccountId, setRecoveringAccountId] = useState<number | null>(null);
   const [recoverNotice, setRecoverNotice] = useState<RecoverNotice>(null);
   const [runningRefresh, setRunningRefresh] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedAccountIds, setSelectedAccountIds] = useState<number[]>([]);
+  const [refreshCountdown, setRefreshCountdown] = useState(refreshConfig.intervalSeconds);
+  const refreshCountdownRef = useRef(refreshConfig.intervalSeconds);
+  const autoRefreshRunningRef = useRef(false);
   const keyword = useDebouncedValue(searchText.trim(), 300);
   const queryClient = useQueryClient();
 
@@ -175,6 +181,34 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['accounts'] }),
   });
 
+  useEffect(() => {
+    refreshCountdownRef.current = refreshConfig.intervalSeconds;
+    setRefreshCountdown(refreshConfig.intervalSeconds);
+  }, [refreshConfig.enabled, refreshConfig.intervalSeconds]);
+
+  useEffect(() => {
+    if (!refreshConfig.hydrated || !refreshConfig.enabled) return;
+    const timer = setInterval(() => {
+      if (AppState.currentState !== 'active' || autoRefreshRunningRef.current) return;
+      const next = refreshCountdownRef.current - 1;
+      if (next > 0) {
+        refreshCountdownRef.current = next;
+        setRefreshCountdown(next);
+        return;
+      }
+      refreshCountdownRef.current = refreshConfig.intervalSeconds;
+      setRefreshCountdown(refreshConfig.intervalSeconds);
+      autoRefreshRunningRef.current = true;
+      void runConfiguredAccountRefresh()
+        .catch((reason) => updateAccountRefresh({
+          lastRunAt: new Date().toISOString(),
+          lastMessage: reason instanceof Error ? reason.message : '刷新失败',
+        }))
+        .finally(() => { autoRefreshRunningRef.current = false; });
+    }, 1_000);
+    return () => clearInterval(timer);
+  }, [refreshConfig.enabled, refreshConfig.hydrated, refreshConfig.intervalSeconds]);
+
   const recoverMutation = useMutation({
     mutationFn: (accountId: number) => recoverAccountState(accountId),
     onSuccess: async () => {
@@ -184,6 +218,29 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
     onError: (error) => {
       setRecoverNotice({ tone: 'error', title: '恢复失败', message: error instanceof Error ? error.message : '账号状态恢复失败，请稍后重试。' });
     },
+  });
+
+  const batchDeleteMutation = useMutation({
+    mutationFn: (accountIds: number[]) => batchDeleteAccounts(accountIds),
+    onSuccess: async (result) => {
+      setSelectedAccountIds([]);
+      setSelectionMode(false);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['accounts'] }),
+        queryClient.invalidateQueries({ queryKey: ['account-today-stats'] }),
+        queryClient.invalidateQueries({ queryKey: ['account-usage'] }),
+      ]);
+      setRecoverNotice({
+        tone: result.failed ? 'error' : 'success',
+        title: result.failed ? '批量删除部分完成' : '批量删除完成',
+        message: `成功 ${result.success} 个，失败 ${result.failed} 个。`,
+      });
+    },
+    onError: (error) => setRecoverNotice({
+      tone: 'error',
+      title: '批量删除失败',
+      message: error instanceof Error ? error.message : '请稍后重试。',
+    }),
   });
 
   const items = accountsQuery.data?.items ?? [];
@@ -220,9 +277,19 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
       return true;
     });
 
-    if (!usageSort) return statusMatched;
-
     const sorted = [...statusMatched].sort((left, right) => {
+      const statusRank: Record<AccountStatusFilter, number> = {
+        active: 0,
+        limited: 1,
+        paused: 2,
+        error: 3,
+        all: 4,
+      };
+      const leftRank = statusRank[getAccountVisualStatus(left).filterKey];
+      const rightRank = statusRank[getAccountVisualStatus(right).filterKey];
+      if (leftRank !== rightRank) return leftRank - rightRank;
+      if (!usageSort) return 0;
+
       const requestsLeft = todayByAccountId.get(left.id)?.requests ?? 0;
       const requestsRight = todayByAccountId.get(right.id)?.requests ?? 0;
       if (requestsLeft === requestsRight) {
@@ -237,7 +304,32 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
     return sorted;
   }, [filter, items, todayByAccountId, usageSort]);
   const errorMessage = accountsQuery.error instanceof Error ? accountsQuery.error.message : '';
-  const runRefresh = async () => { setRunningRefresh(true); try { await runConfiguredAccountRefresh(); await accountsQuery.refetch(); } finally { setRunningRefresh(false); } };
+  const selectedAccountIdSet = useMemo(() => new Set(selectedAccountIds), [selectedAccountIds]);
+  const toggleAccountSelection = (accountId: number) => {
+    setSelectedAccountIds((current) => current.includes(accountId)
+      ? current.filter((id) => id !== accountId)
+      : [...current, accountId]);
+  };
+  const confirmBatchDelete = () => {
+    if (!selectedAccountIds.length || batchDeleteMutation.isPending) return;
+    localizedAlert('批量删除账号', `将永久删除已选择的 ${selectedAccountIds.length} 个账号，此操作不可撤销。`, [
+      { text: '取消', style: 'cancel' },
+      { text: '确认删除', style: 'destructive', onPress: () => batchDeleteMutation.mutate(selectedAccountIds) },
+    ]);
+  };
+  const runRefresh = async () => {
+    setRunningRefresh(true);
+    try {
+      await runConfiguredAccountRefresh();
+      refreshCountdownRef.current = refreshConfig.intervalSeconds;
+      setRefreshCountdown(refreshConfig.intervalSeconds);
+      localizedAlert('刷新成功', '账号状态、今日统计和实时额度已刷新。');
+    } catch (reason) {
+      localizedAlert('刷新失败', reason instanceof Error ? reason.message : '请稍后重试。');
+    } finally {
+      setRunningRefresh(false);
+    }
+  };
 
   const summary = useMemo(() => {
     const total = items.length;
@@ -252,8 +344,34 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
     () => (
       <View className="pb-2">
         <View className="mb-3 rounded-[22px] border border-[#DDE6F2] dark:border-[#273449] bg-white dark:bg-[#111827] p-4">
-          <View className="flex-row items-center"><View className="h-9 w-9 items-center justify-center rounded-xl bg-[#EAF2FF] dark:bg-[#172C55]"><Clock3 size={17} color="#2F6DF6" /></View><View className="ml-3 flex-1"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">账号定时刷新</Text><Text className="mt-1 text-[10px] text-[#667085] dark:text-[#9EABC0]">{refreshConfig.enabled ? `每 ${refreshConfig.intervalMinutes < 60 ? `${refreshConfig.intervalMinutes} 分钟` : `${refreshConfig.intervalMinutes / 60} 小时`}刷新` : '已关闭'}</Text></View><Pressable onPress={() => updateAccountRefresh({ enabled: !refreshConfig.enabled })} className={`h-7 w-12 justify-center rounded-full px-1 ${refreshConfig.enabled ? 'bg-[#2F6DF6]' : 'bg-[#CBD5E1]'}`}><View className={`h-5 w-5 rounded-full bg-white dark:bg-[#111827] ${refreshConfig.enabled ? 'self-end' : 'self-start'}`} /></Pressable></View>
-          <View className="mt-3 flex-row items-center gap-2"><View className="flex-1 flex-row flex-wrap gap-1">{[15, 30, 60, 180].map((minutes) => <Pressable key={minutes} onPress={() => updateAccountRefresh({ intervalMinutes: minutes })} className={`rounded-full px-2.5 py-1.5 ${refreshConfig.intervalMinutes === minutes ? 'bg-[#2F6DF6]' : 'bg-[#EEF3F9] dark:bg-[#1A2638]'}`}><Text className={`text-[9px] font-bold ${refreshConfig.intervalMinutes === minutes ? 'text-white' : 'text-[#607086] dark:text-[#AAB6C8]'}`}>{minutes < 60 ? `${minutes}m` : `${minutes / 60}h`}</Text></Pressable>)}</View><Pressable disabled={runningRefresh} onPress={() => void runRefresh()} className="flex-row items-center gap-1 rounded-full bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Play size={12} color="#2F6DF6" /><Text className="text-[9px] font-bold text-[#2F6DF6]">{runningRefresh ? '刷新中' : '立即刷新'}</Text></Pressable></View>
+          <View className="flex-row items-center"><View className="h-9 w-9 items-center justify-center rounded-xl bg-[#EAF2FF] dark:bg-[#172C55]"><Clock3 size={17} color="#2F6DF6" /></View><View className="ml-3 flex-1"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">账号定时刷新</Text><Text className="mt-1 text-[10px] text-[#667085] dark:text-[#9EABC0]">{refreshConfig.enabled ? `${refreshCountdown}s 后静默刷新状态、统计与额度` : '已关闭'}</Text></View><Pressable onPress={() => updateAccountRefresh({ enabled: !refreshConfig.enabled })} className={`h-7 w-12 justify-center rounded-full px-1 ${refreshConfig.enabled ? 'bg-[#2F6DF6]' : 'bg-[#CBD5E1]'}`}><View className={`h-5 w-5 rounded-full bg-white dark:bg-[#111827] ${refreshConfig.enabled ? 'self-end' : 'self-start'}`} /></Pressable></View>
+          <View className="mt-3 flex-row items-center gap-2"><View className="flex-1 flex-row flex-wrap gap-1">{[10, 15, 30, 60].map((seconds) => <Pressable key={seconds} onPress={() => updateAccountRefresh({ intervalSeconds: seconds })} className={`rounded-full px-2.5 py-1.5 ${refreshConfig.intervalSeconds === seconds ? 'bg-[#2F6DF6]' : 'bg-[#EEF3F9] dark:bg-[#1A2638]'}`}><Text className={`text-[9px] font-bold ${refreshConfig.intervalSeconds === seconds ? 'text-white' : 'text-[#607086] dark:text-[#AAB6C8]'}`}>{seconds}s</Text></Pressable>)}</View><Pressable disabled={runningRefresh} onPress={() => void runRefresh()} className="flex-row items-center gap-1 rounded-full bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Play size={12} color="#2F6DF6" /><Text className="text-[9px] font-bold text-[#2F6DF6]">{runningRefresh ? '刷新中' : '立即刷新'}</Text></Pressable></View>
+        </View>
+        <View className="mb-3 flex-row items-center gap-2 rounded-[18px] border border-[#E2E9F3] bg-white p-2.5 dark:border-[#273449] dark:bg-[#111827]">
+          <Pressable
+            onPress={() => { setSelectionMode((current) => !current); setSelectedAccountIds([]); }}
+            className={`min-h-9 flex-1 items-center justify-center rounded-xl px-3 ${selectionMode ? 'bg-[#EAF2FF] dark:bg-[#172C55]' : 'bg-[#F1F5FA] dark:bg-[#182235]'}`}
+          >
+            <Text numberOfLines={1} className={`text-xs font-bold ${selectionMode ? 'text-[#2F6DF6]' : 'text-[#475467] dark:text-[#C2CCDB]'}`}>{selectionMode ? '取消' : '批量管理'}</Text>
+          </Pressable>
+          {selectionMode ? (
+            <>
+              <Pressable
+                onPress={() => setSelectedAccountIds(selectedAccountIds.length === filteredItems.length ? [] : filteredItems.map((account) => account.id))}
+                className="min-h-9 items-center justify-center rounded-xl bg-[#F1F5FA] px-3 dark:bg-[#182235]"
+              >
+                <Text numberOfLines={1} className="text-xs font-bold text-[#475467] dark:text-[#C2CCDB]">{selectedAccountIds.length === filteredItems.length && filteredItems.length ? '取消全选' : '全选'}</Text>
+              </Pressable>
+              <Pressable
+                disabled={!selectedAccountIds.length || batchDeleteMutation.isPending}
+                onPress={confirmBatchDelete}
+                className="min-h-9 flex-row items-center justify-center gap-1.5 rounded-xl bg-[#FFF0F2] px-3 disabled:opacity-40 dark:bg-[#3A1720]"
+              >
+                <Trash2 size={14} color="#D9475C" />
+                <Text className="text-xs font-bold text-[#D9475C]">删除 {selectedAccountIds.length || ''}</Text>
+              </Pressable>
+            </>
+          ) : null}
         </View>
         <View className="rounded-[20px] bg-[#FFFFFF] dark:bg-[#111827] p-2">
           <View className="flex-row items-center rounded-[14px] bg-[#F1F5FA] dark:bg-[#182235] px-3 py-1.5">
@@ -305,7 +423,7 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
         </View>
       </View>
     ),
-    [filter, refreshConfig.enabled, refreshConfig.intervalMinutes, runningRefresh, summary.active, summary.errors, summary.limited, summary.paused, summary.total, usageSort]
+    [batchDeleteMutation.isPending, filter, filteredItems, refreshConfig.enabled, refreshConfig.intervalSeconds, refreshCountdown, runningRefresh, selectedAccountIds, selectionMode, summary.active, summary.errors, summary.limited, summary.paused, summary.total, usageSort]
   );
 
   const renderItem = useCallback(
@@ -317,15 +435,28 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
       const groupsText = account.groups?.map((group) => group.name).filter(Boolean).slice(0, 3).join(' · ');
       const todayStats = todayByAccountId.get(account.id) ?? { requests: 0, tokens: 0, cost: 0 };
       const nextSchedulable = visualStatus.filterKey === 'paused';
-      const toggleLabel = nextSchedulable ? '启用' : '停用';
+      const cachedUsage = queryClient.getQueryData<AccountUsageInfo>(['account-usage', account.id]);
+      const sevenDayExhausted = (cachedUsage?.seven_day?.utilization ?? 0) >= 100;
+      const toggleLabel = nextSchedulable && sevenDayExhausted ? '强制启用' : nextSchedulable ? '启用' : '停用';
       const isTogglingCurrent = togglingAccountId === account.id && toggleMutation.isPending;
       const showRecover = visualStatus.filterKey !== 'active' && visualStatus.filterKey !== 'paused';
       const isRecoveringCurrent = recoveringAccountId === account.id && recoverMutation.isPending;
+      const selected = selectedAccountIdSet.has(account.id);
 
       return (
-        <Pressable onPress={() => router.push(`/accounts/${account.id}`)}>
-          <ListCard
+        <Pressable onPress={() => selectionMode ? toggleAccountSelection(account.id) : router.push(`/accounts/${account.id}`)}>
+          {selectionMode ? (
+            <View className={`mb-2 flex-row items-center rounded-2xl border px-3 py-2 ${selected ? 'border-[#9DBAFA] bg-[#EAF2FF] dark:bg-[#172C55]' : 'border-[#E2E9F3] bg-white dark:border-[#273449] dark:bg-[#111827]'}`}>
+              <View className={`h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-[#2F6DF6] bg-[#2F6DF6]' : 'border-[#AAB6C8]'}`}>
+                {selected ? <Check size={13} color="#FFFFFF" strokeWidth={3} /> : null}
+              </View>
+              <Text className={`ml-2 text-xs font-bold ${selected ? 'text-[#2F6DF6]' : 'text-[#667085] dark:text-[#9EABC0]'}`}>{selected ? '已选择' : '点击选择此账号'}</Text>
+            </View>
+          ) : null}
+          <View pointerEvents={selectionMode ? 'none' : 'auto'}>
+            <ListCard
             title={account.name}
+            titleNumberOfLines={2}
             meta={`${account.platform} · ${account.type}`}
             badge={statusText}
             badgeTone={visualStatus.badgeTone}
@@ -347,18 +478,21 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
                 </View>
               ) : null}
 
-              <View className="flex-row gap-2">
-                <View className="min-h-[68px] flex-1 justify-between rounded-[14px] bg-[#F1F5FA] dark:bg-[#182235] px-3 py-3">
-                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-[11px] text-[#6B778C] dark:text-[#9EABC0]">请求次数</Text>
-                  <Text className="mt-1 text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">{todayStats.requests}</Text>
+              <View className="gap-2">
+                <View className="min-h-[44px] flex-row items-center rounded-[14px] border border-[#E4EAF3] bg-[#F6F8FC] px-3.5 dark:border-[#273449] dark:bg-[#182235]">
+                  <View className="mr-2.5 h-2 w-2 rounded-full bg-[#2F6DF6]" />
+                  <Text className="flex-1 text-[11px] text-[#6B778C] dark:text-[#9EABC0]">请求次数</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} className="ml-3 max-w-[55%] text-sm font-bold leading-5 tabular-nums text-[#172033] dark:text-[#F4F7FB]">{todayStats.requests}</Text>
                 </View>
-                <View className="min-h-[68px] flex-1 justify-between rounded-[14px] bg-[#F1F5FA] dark:bg-[#182235] px-3 py-3">
-                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-[11px] text-[#6B778C] dark:text-[#9EABC0]">消费金额</Text>
-                  <Text className="mt-1 text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">${todayStats.cost.toFixed(2)}</Text>
+                <View className="min-h-[44px] flex-row items-center rounded-[14px] border border-[#E4EAF3] bg-[#F6F8FC] px-3.5 dark:border-[#273449] dark:bg-[#182235]">
+                  <View className="mr-2.5 h-2 w-2 rounded-full bg-[#20A66A]" />
+                  <Text className="flex-1 text-[11px] text-[#6B778C] dark:text-[#9EABC0]">消费金额</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} className="ml-3 max-w-[55%] text-sm font-bold leading-5 tabular-nums text-[#172033] dark:text-[#F4F7FB]">${todayStats.cost.toFixed(2)}</Text>
                 </View>
-                <View className="min-h-[68px] flex-1 justify-between rounded-[14px] bg-[#F1F5FA] dark:bg-[#182235] px-3 py-3">
-                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className="text-[11px] text-[#6B778C] dark:text-[#9EABC0]">token消耗</Text>
-                  <Text className="mt-1 text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">{formatTokenValue(todayStats.tokens)}</Text>
+                <View className="min-h-[44px] flex-row items-center rounded-[14px] border border-[#E4EAF3] bg-[#F6F8FC] px-3.5 dark:border-[#273449] dark:bg-[#182235]">
+                  <View className="mr-2.5 h-2 w-2 rounded-full bg-[#8B5CF6]" />
+                  <Text className="flex-1 text-[11px] text-[#6B778C] dark:text-[#9EABC0]">token消耗</Text>
+                  <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} className="ml-3 max-w-[55%] text-sm font-bold leading-5 tabular-nums text-[#172033] dark:text-[#F4F7FB]">{formatTokenValue(todayStats.tokens)}</Text>
                 </View>
               </View>
 
@@ -384,15 +518,39 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
                   disabled={isTogglingCurrent}
                   onPress={(event) => {
                     event.stopPropagation();
-                    setTogglingAccountId(account.id);
-                    toggleMutation.mutate({
-                      accountId: account.id,
-                      schedulable: nextSchedulable,
-                    }, {
-                      onSettled: () => {
-                        setTogglingAccountId((current) => (current === account.id ? null : current));
-                      },
-                    });
+                    const applyToggle = (forceQuota = false) => {
+                      if (nextSchedulable && forceQuota) forceEnableAccountQuota(account.id);
+                      if (!nextSchedulable) clearAccountQuotaOverride(account.id);
+                      setTogglingAccountId(account.id);
+                      toggleMutation.mutate({
+                        accountId: account.id,
+                        schedulable: nextSchedulable,
+                      }, {
+                        onSuccess: () => {
+                          if (nextSchedulable && forceQuota) {
+                            localizedAlert('强制启用成功', '账号已强制启用；在额度恢复前，请留意请求失败或限流状态。');
+                            return;
+                          }
+                          localizedAlert(nextSchedulable ? '启用成功' : '停用成功', nextSchedulable ? '账号已启用。' : '账号已停用。');
+                        },
+                        onError: (error) => {
+                          if (nextSchedulable) clearAccountQuotaOverride(account.id);
+                          const message = error instanceof Error && error.message.trim() ? error.message : '服务器未返回错误详情，请稍后重试。';
+                          localizedAlert(nextSchedulable && forceQuota ? '强制启用失败' : nextSchedulable ? '启用失败' : '停用失败', message);
+                        },
+                        onSettled: () => {
+                          setTogglingAccountId((current) => (current === account.id ? null : current));
+                        },
+                      });
+                    };
+                    if (nextSchedulable && sevenDayExhausted) {
+                      localizedAlert('强制启用账号', '该账号 7 天额度已用完，强制启用后仍可能请求失败或触发限流。是否继续？', [
+                        { text: '取消', style: 'cancel' },
+                        { text: '强制启用', onPress: () => applyToggle(true) },
+                      ]);
+                      return;
+                    }
+                    applyToggle();
                   }}
                 >
                   <Text className="text-xs font-semibold uppercase tracking-[1.2px] text-[#344054] dark:text-[#D5DDEA]">{isTogglingCurrent ? '处理中...' : toggleLabel}</Text>
@@ -415,11 +573,12 @@ export function AccountsListScreen({ safeAreaEdges }: AccountsListScreenProps) {
               </View>
 
             </View>
-          </ListCard>
+            </ListCard>
+          </View>
         </Pressable>
       );
     },
-    [recoverMutation, recoveringAccountId, todayByAccountId, toggleMutation, togglingAccountId]
+    [queryClient, recoverMutation, recoveringAccountId, selectedAccountIdSet, selectionMode, todayByAccountId, toggleMutation, togglingAccountId]
   );
 
   const emptyState = useMemo(

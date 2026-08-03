@@ -17,6 +17,14 @@ type LoginMode = 'password' | 'admin_key';
 const lightColors = { page: '#F4F7FC', card: '#FFFFFF', soft: '#EEF4FF', primary: '#2F6DF6', text: '#172033', sub: '#667085', border: '#DDE6F2', danger: '#D9475C' };
 function useLoginColors() { const { theme } = useUniwind(); return theme === 'dark' ? { page: '#0B1220', card: '#111827', soft: '#182235', primary: '#69A0FF', text: '#F4F7FB', sub: '#9EABC0', border: '#273449', danger: '#FF8293' } : lightColors; }
 
+function formatLoginError(reason: unknown) {
+  const message = reason instanceof Error ? reason.message : '';
+  if (message === 'WEB_NETWORK_OR_CORS_ERROR') return 'Web 端无法发起请求。请使用 npm run web 启动，或配置可用的 Web 代理。';
+  if (message === 'WEB_PROXY_UPSTREAM_UNREACHABLE') return 'Web 代理无法连接 Sub2API 服务，请检查服务地址、HTTPS 证书和网络可达性。';
+  if (message === 'INVALID_SERVER_RESPONSE') return '服务器返回的不是有效 JSON，请检查服务地址是否填写正确。';
+  return message || '登录失败，请检查地址和凭据';
+}
+
 export default function LoginScreen() {
   const scrollRef = useRef<ScrollView>(null);
   const colors = useLoginColors();
@@ -65,7 +73,7 @@ export default function LoginScreen() {
         router.replace('/monitor');
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '登录失败，请检查地址和凭据');
+      setError(formatLoginError(reason));
     } finally { setLoading(false); }
   };
 
@@ -98,7 +106,7 @@ export default function LoginScreen() {
       setEmail(account.loginEmail || account.user?.email || '');
       setPassword(account.loginSecret || '');
       setAdminKey(account.adminApiKey || '');
-      setError(reason instanceof Error ? reason.message : '账号登录失败，请重新填写凭据');
+      setError(formatLoginError(reason));
     } finally {
       setLoading(false);
     }

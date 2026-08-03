@@ -1122,8 +1122,13 @@ export type OpsSystemLog = {
   component: string;
   message: string;
   request_id?: string;
+  client_request_id?: string;
+  user_id?: number | null;
+  api_key_id?: number | null;
+  account_id?: number | null;
   platform?: string;
   model?: string;
+  extra?: Record<string, unknown>;
 };
 
 export type OAuthSession = {

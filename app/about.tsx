@@ -11,7 +11,7 @@ import { Text, localizedAlert } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { downloadAndInstallAndroidApk, type AndroidAppUpdateProgress } from '@/src/services/android-app-update';
-import { APP_REPOSITORY_URL, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
+import { APP_REPOSITORY_URL, APP_UPDATE_CHECK_INTERVAL_MS, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
 const currentVersion = Constants.expoConfig?.version ?? '1.6.0';
@@ -40,7 +40,13 @@ export default function AboutScreen() {
   const [apkProgress, setApkProgress] = useState<AndroidAppUpdateProgress | null>(null);
   const [prefs, setPrefs] = useState<UIPreferences>(defaultUIPreferences);
   const prefsRef = useRef<UIPreferences>(defaultUIPreferences);
-  const releaseQuery = useQuery({ queryKey: ['app-release', 'latest'], queryFn: getLatestAppRelease, staleTime: 15 * 60_000 });
+  const releaseQuery = useQuery({
+    queryKey: ['app-release', 'latest'],
+    queryFn: getLatestAppRelease,
+    staleTime: APP_UPDATE_CHECK_INTERVAL_MS,
+    refetchInterval: APP_UPDATE_CHECK_INTERVAL_MS,
+    refetchIntervalInBackground: false,
+  });
   const release = releaseQuery.data;
   const hasUpdate = Boolean(release?.tag_name && isNewerAppVersion(release.tag_name, currentVersion));
   const apk = findAndroidApk(release, Device.supportedCpuArchitectures);
@@ -120,7 +126,7 @@ export default function AboutScreen() {
           <Text className="mt-1 text-xs text-[#6B778C] dark:text-[#9EABC0]">版本 {currentVersion} · Expo SDK 54 · {Platform.OS === 'android' ? 'Android' : Platform.OS === 'ios' ? 'iOS' : 'Web'}</Text>
         </View>
 
-        <AdminSection title="升级提示" detail="自动检查 GitHub Release；下拉页面也可以重新检查。">
+        <AdminSection title="升级提示" detail="每 5 分钟自动检查 GitHub Release；下拉页面也可以重新检查。">
           <View className={`flex-row items-center gap-3 rounded-2xl p-3 ${hasUpdate ? 'bg-[#FFF6E7] dark:bg-[#3B2B16]' : 'bg-[#EFFAF4] dark:bg-[#153326]'}`}>
             {hasUpdate ? <CircleAlert size={20} color="#D88A18" /> : <CheckCircle2 size={20} color="#20A66A" />}
             <View className="flex-1">

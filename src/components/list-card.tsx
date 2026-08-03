@@ -10,6 +10,7 @@ type ListCardProps = {
   badgeTone?: 'default' | 'success' | 'warning' | 'muted' | 'danger';
   children?: ReactNode;
   icon?: LucideIcon;
+  titleNumberOfLines?: number;
 };
 
 const badgeClassMap: Record<NonNullable<ListCardProps['badgeTone']>, { wrap: string; text: string }> = {
@@ -35,7 +36,7 @@ const badgeClassMap: Record<NonNullable<ListCardProps['badgeTone']>, { wrap: str
   },
 };
 
-export function ListCard({ title, meta, badge, badgeTone = 'default', children, icon: Icon }: ListCardProps) {
+export function ListCard({ title, meta, badge, badgeTone = 'default', children, icon: Icon, titleNumberOfLines }: ListCardProps) {
   const badgeClass = badgeClassMap[badgeTone];
 
   return (
@@ -47,7 +48,7 @@ export function ListCard({ title, meta, badge, badgeTone = 'default', children, 
         <View className="flex-1">
           <View className="flex-row items-center gap-2">
             {Icon ? <Icon color="#6B778C" size={16} /> : null}
-            <Text className="text-base font-semibold text-[#172033] dark:text-[#F4F7FB]">{title}</Text>
+            <Text numberOfLines={titleNumberOfLines} className="text-base font-semibold text-[#172033] dark:text-[#F4F7FB]">{title}</Text>
           </View>
           {meta ? <Text numberOfLines={1} className="mt-1 text-xs text-[#6B778C] dark:text-[#9EABC0]">{meta}</Text> : null}
         </View>

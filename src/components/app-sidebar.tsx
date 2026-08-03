@@ -36,7 +36,7 @@ import { getFirstCreatedAdmin } from '@/src/lib/admin-user';
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
 import { checkSystemUpdates, listUsers } from '@/src/services/admin';
-import { getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
+import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 import { Text, localizedAlert } from '@/src/components/localized-text';
@@ -110,7 +110,9 @@ export function AppSidebar() {
   const appReleaseQuery = useQuery({
     queryKey: ['app-release', 'latest'],
     queryFn: getLatestAppRelease,
-    staleTime: 15 * 60_000,
+    staleTime: APP_UPDATE_CHECK_INTERVAL_MS,
+    refetchInterval: APP_UPDATE_CHECK_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
 
   useEffect(() => {

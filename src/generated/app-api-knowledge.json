@@ -1,14 +1,14 @@
 {
   "source": "https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/backend/internal/server/routes/admin.go",
-  "routes_sha256": "b357cef9da9bbf3cf56f15864df9cbf83bba314491637884e457c2544b3c9d15",
+  "routes_sha256": "e7820877db604511a61f42f27d58c5886063a6159129745980e6c110637f5125",
   "counts": {
-    "routes": 382,
-    "services": 136,
-    "types": 78,
+    "routes": 384,
+    "services": 406,
+    "types": 99,
     "screens": 54,
-    "upstream_services": 292,
+    "upstream_services": 293,
     "upstream_types": 263,
-    "upstream_backend_types": 142,
+    "upstream_backend_types": 143,
     "upstream_handlers": 287
   },
   "entries": [
@@ -454,11 +454,33 @@
       "title": "运维监控",
       "app_route": "/ops-center",
       "fields": [
-        "日志搜索"
+        "分组 ID（可选）",
+        "搜索",
+        "SLA 最低百分比",
+        "TTFT P99 上限（ms）",
+        "请求错误率上限（%）",
+        "上游错误率上限（%）"
       ],
-      "sections": [],
+      "sections": [
+        "监控范围",
+        "实时流量",
+        "耗时与 TTFT",
+        "并发与队列",
+        "账号可用性",
+        "系统状态",
+        "平台吞吐",
+        "分组吞吐",
+        "OpenAI Token 性能",
+        "请求检索",
+        "日志写入健康",
+        "日志筛选",
+        "仪表盘设置",
+        "指标阈值"
+      ],
       "placeholders": [
-        "消息、组件、request ID"
+        "输入未显示在上方的分组 ID",
+        "请求 ID、模型或消息",
+        "消息、组件或 Request ID"
       ]
     },
     {
@@ -1142,6 +1164,15 @@
       "method": "POST",
       "endpoints": [
         "/api/v1/admin/accounts/batch-refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "batchDeleteAccounts",
+      "signature": "accountIds: number[]",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/batch-delete"
       ]
     },
     {
@@ -1945,6 +1976,2427 @@
       "endpoints": [
         "/api/v1/admin/accounts/exchange-setup-token-code",
         "/api/v1/admin/accounts/exchange-code"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountApplyOAuthCredentials",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/apply-oauth-credentials"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetAvailableModels",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/models"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSyncUpstreamModels",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/models/sync-upstream"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetOllamaCloudUsage",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/ollama-cloud-usage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSetOllamaCloudUsageAutoRefresh",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/ollama-cloud-usage/auto-refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountRefreshOllamaCloudUsage",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/ollama-cloud-usage/refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountDeleteOllamaCloudUsageSession",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/ollama-cloud-usage/session"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSaveOllamaCloudUsageSession",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/ollama-cloud-usage/session"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountRefreshTier",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/refresh-tier"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountRevertProxyFallback",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/revert-proxy-fallback"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSetPrivacy",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/set-privacy"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthCreateShadow",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/shadow"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/stats"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetTempUnschedulable",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/temp-unschedulable"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountTest",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountProbeUpstreamBilling",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/upstream-billing-probe"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSetUpstreamBillingProbeEnabled",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/accounts/:id/upstream-billing-probe"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetAntigravityDefaultModelMapping",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/antigravity/default-model-mapping"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountBatchCreate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/batch"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountBatchClearError",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/batch-clear-error"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountBatchRefreshTier",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/batch-refresh-tier"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountBatchUpdateCredentials",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/batch-update-credentials"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountBulkUpdate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/bulk-update"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountCheckMixedChannel",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/check-mixed-channel"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOAuthCookieAuth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/cookie-auth"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountExportData",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/data"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountImportCodexSession",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/import/codex-session"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSyncUpstreamModelsPreview",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/models/sync-upstream-preview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetOllamaCloudUsageSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/ollama-cloud-usage/settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountUpdateOllamaCloudUsageSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/accounts/ollama-cloud-usage/settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOAuthSetupTokenCookieAuth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/setup-token-cookie-auth"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountSyncFromCRS",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/sync/crs"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountPreviewFromCRS",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/sync/crs/preview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetBatchTodayStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/today-stats/batch"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountProbeUpstreamBillingBatch",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/upstream-billing-probe/batch"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountGetUpstreamBillingProbeSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/accounts/upstream-billing-probe/settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAccountUpdateUpstreamBillingProbeSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/accounts/upstream-billing-probe/settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateListInviteRecords",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/affiliates/invites"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateListRebateRecords",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/affiliates/rebates"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateListTransferRecords",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/affiliates/transfers"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateClearUserSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/affiliates/users/:user_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateGetUserOverview",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/affiliates/users/:user_id/overview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateBatchSetRate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/affiliates/users/batch-rate"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAffiliateLookupUsers",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/affiliates/users/lookup"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAnnouncementGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/announcements/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAnnouncementListReadStatus",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/announcements/:id/read-status"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAntigravityOAuthGenerateAuthURL",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/antigravity/oauth/auth-url"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAntigravityOAuthExchangeCode",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/antigravity/oauth/exchange-code"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAntigravityOAuthRefreshToken",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/antigravity/oauth/refresh-token"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialAuditLogClear",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/audit-logs/clear"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupGetBackup",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/backups/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupGetDownloadURL",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/backups/:id/download-url"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupGetImageStorageConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/backups/image-storage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupUpdateImageStorageConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/backups/image-storage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupTestImageStorageConnection",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/backups/image-storage/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupGetS3Config",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/backups/s3-config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupUpdateS3Config",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/backups/s3-config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialBackupTestS3Connection",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/backups/s3-config/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateList",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateCreate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateDelete",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateGet",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateUpdate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateApply",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates/:id/apply"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorTemplateAssociatedMonitors",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channel-monitor-templates/:id/monitors"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorGet",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channel-monitors/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelMonitorHistory",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channel-monitors/:id/history"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelGetModelDefaultPricing",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channels/model-pricing"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialChannelSyncPricingModels",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/channels/pricing/sync-models"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardBackfillAggregation",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/dashboard/aggregation/backfill"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetAPIKeyUsageTrend",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/api-keys-trend"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetBatchAPIKeysUsage",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/dashboard/api-keys-usage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetGroupStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/groups"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetRealtimeMetrics",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/realtime"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetUserBreakdown",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/user-breakdown"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetUserSpendingRanking",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/users-ranking"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetUserUsageTrend",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/dashboard/users-trend"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDashboardGetBatchUsersUsage",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/dashboard/users-usage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementGetBackupJob",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/data-management/backups/:job_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementGetConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/data-management/config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementUpdateConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/data-management/config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementListS3Profiles",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/profiles"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementCreateS3Profile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/profiles"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementDeleteS3Profile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/profiles/:profile_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementUpdateS3Profile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/profiles/:profile_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementSetActiveS3Profile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/profiles/:profile_id/activate"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementTestS3",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/data-management/s3/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementListSourceProfiles",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/data-management/sources/:source_type/profiles"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementCreateSourceProfile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/data-management/sources/:source_type/profiles"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementDeleteSourceProfile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/data-management/sources/:source_type/profiles/:profile_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementUpdateSourceProfile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/data-management/sources/:source_type/profiles/:profile_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialDataManagementSetActiveSourceProfile",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/data-management/sources/:source_type/profiles/:profile_id/activate"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialErrorPassthroughGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/error-passthrough-rules/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGeminiOAuthGenerateAuthURL",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/gemini/oauth/auth-url"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGeminiOAuthGetCapabilities",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/gemini/oauth/capabilities"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGeminiOAuthExchangeCode",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/gemini/oauth/exchange-code"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthQueryQuota",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/grok/accounts/:id/quota"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthRefreshAccountToken",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/accounts/:id/refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthResetQuota",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/accounts/:id/reset-quota"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthGenerateAuthURL",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/oauth/auth-url"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthCreateAccountFromOAuth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/oauth/create-from-oauth"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthExchangeCode",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/oauth/exchange-code"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthReconcileOAuthAccounts",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/oauth/reconcile"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthRefreshToken",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/oauth/refresh-token"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthRuntimeSanity",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/grok/runtime-sanity"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGrokOAuthCreateAccountsFromSSO",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/grok/sso-to-oauth"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetGroupAPIKeys",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/api-keys"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupListCompositeRoutes",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/composite-routes"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupCreateCompositeRoute",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/composite-routes"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupDeleteCompositeRoute",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/composite-routes/:route_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupUpdateCompositeRoute",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/composite-routes/:route_id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupPreviewCompositeRoute",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/composite-routes/preview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetModelsListCandidates",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/models-list-candidates"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupClearGroupRateMultipliers",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/rate-multipliers"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetGroupRateMultipliers",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/rate-multipliers"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupBatchSetGroupRateMultipliers",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/rate-multipliers"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupClearGroupRPMOverrides",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/rpm-overrides"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupBatchSetGroupRPMOverrides",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/rpm-overrides"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/stats"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionListByGroup",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/:id/subscriptions"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetCapacitySummary",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/capacity-summary"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetLiveCapability",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/live-capability"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupUpdateSortOrder",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/groups/sort-order"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialGroupGetUsageSummary",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/groups/usage-summary"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthRefreshQuota",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/accounts/:id/quota/refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthRefreshAccountToken",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/accounts/:id/refresh"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthCreateAccountFromCodexPAT",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/create-from-codex-pat"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthCreateAccountFromOAuth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/create-from-oauth"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthExchangeCode",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/exchange-code"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthGenerateAuthURL",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/generate-auth-url"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpenAIOAuthRefreshToken",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/refresh-token"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetAccountAvailability",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/account-availability"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetAdvancedSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/advanced-settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateAdvancedSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/advanced-settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetAlertEvent",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-events/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListAlertRules",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-rules"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsCreateAlertRule",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-rules"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsDeleteAlertRule",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-rules/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateAlertRule",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-rules/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsCreateAlertSilence",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-silences"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetAuthCacheInvalidationHealth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/auth-cache-invalidation/health"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetConcurrencyStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/concurrency"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardErrorDistribution",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/error-distribution"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardErrorTrend",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/error-trend"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardLatencyHistogram",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/latency-histogram"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardOpenAITokenStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/openai-token-stats"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardOverview",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/overview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardSnapshotV2",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/snapshot-v2"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetDashboardThroughputTrend",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/throughput-trend"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetEmailNotificationConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/email-notification/config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateEmailNotificationConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/email-notification/config"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetErrorLogs",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/errors"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetErrorLogByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/errors/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateErrorResolution",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/errors/:id/resolve"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListIngressRejects",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/ingress-rejections"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetIngressRejectHealth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/ingress-rejections/health"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetRealtimeTrafficSummary",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/realtime-traffic"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListRequestErrors",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/request-errors"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetRequestError",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/request-errors/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsResolveRequestError",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/request-errors/:id/resolve"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListRequestErrorUpstreamErrors",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/request-errors/:id/upstream-errors"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListRequestDetails",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/requests"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetAlertRuntimeSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/runtime/alert"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateAlertRuntimeSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/runtime/alert"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetRuntimeLogConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/runtime/logging"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateRuntimeLogConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/runtime/logging"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsResetRuntimeLogConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/ops/runtime/logging/reset"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetMetricThresholds",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/settings/metric-thresholds"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsUpdateMetricThresholds",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/settings/metric-thresholds"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListSystemLogs",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/system-logs"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsCleanupSystemLogs",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/ops/system-logs/cleanup"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetSystemLogIngestionHealth",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/system-logs/health"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsListUpstreamErrors",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/upstream-errors"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetUpstreamError",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/upstream-errors/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsResolveUpstreamError",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/upstream-errors/:id/resolve"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsGetUserConcurrencyStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/user-concurrency"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialOpsQPSWSHandler",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/ws/qps"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromoGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/promo-codes/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromoGetUsages",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/promo-codes/:id/usages"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromptAuditProbeEndpoint",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/prompt-audit/endpoints/probe"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromptAuditGetEvent",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/prompt-audit/events/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromptAuditBatchDelete",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/prompt-audit/events/batch-delete"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromptAuditDeleteByFilter",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/prompt-audit/events/delete-by-filter"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialPromptAuditDeletePreview",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/prompt-audit/events/delete-preview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyGetProxyAccounts",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/proxies/:id/accounts"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyGetStats",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/proxies/:id/stats"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyGetAll",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/proxies/all"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyBatchCreate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/proxies/batch"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyBatchDelete",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/proxies/batch-delete"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyExportData",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/proxies/data"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialProxyImportData",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/proxies/data"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialRedeemGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/redeem-codes/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialRedeemBatchDelete",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/redeem-codes/batch-delete"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialRedeemBatchUpdate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/redeem-codes/batch-update"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialRedeemCreateAndRedeem",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/redeem-codes/create-and-redeem"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialRedeemExport",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/redeem-codes/export"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialContentModerationTestAPIKeys",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/risk-control/api-keys/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialContentModerationDeleteFlaggedHash",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/risk-control/hashes"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialContentModerationClearFlaggedHashes",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/risk-control/hashes/all"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialScheduledTestListResults",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/scheduled-test-plans/:id/results"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingDeleteAdminAPIKey",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/settings/admin-api-key"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetAdminAPIKey",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/admin-api-key"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingRegenerateAdminAPIKey",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/admin-api-key/regenerate"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetBetaPolicySettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/beta-policy"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateBetaPolicySettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/beta-policy"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingPreviewEmailTemplate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/email-template-preview"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingListEmailTemplates",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/email-templates"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetEmailTemplate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/email-templates/:event/:locale"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateEmailTemplate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/email-templates/:event/:locale"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingRestoreOfficialEmailTemplate",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/email-templates/:event/:locale/restore-official"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetOverloadCooldownSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/overload-cooldown"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateOverloadCooldownSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/overload-cooldown"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetPanelRateLimitSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/panel-rate-limit"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdatePanelRateLimitSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/panel-rate-limit"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetRateLimit429CooldownSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/rate-limit-429-cooldown"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateRateLimit429CooldownSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/rate-limit-429-cooldown"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetRectifierSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/rectifier"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateRectifierSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/rectifier"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingSendTestEmail",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/send-test-email"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetStreamTimeoutSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/stream-timeout"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateStreamTimeoutSettings",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/stream-timeout"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingTestSMTPConnection",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/test-smtp"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingGetWebSearchEmulationConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/settings/web-search-emulation"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingUpdateWebSearchEmulationConfig",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/settings/web-search-emulation"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingResetWebSearchUsage",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/web-search-emulation/reset-usage"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSettingTestWebSearchEmulation",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/settings/web-search-emulation/test"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionRevoke",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "DELETE",
+      "endpoints": [
+        "/api/v1/admin/subscriptions/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/subscriptions/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionGetProgress",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/subscriptions/:id/progress"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionBulkAssign",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/subscriptions/bulk-assign"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSystemGetVersion",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/system/version"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialTLSFingerprintProfileGetByID",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/tls-fingerprint-profiles/:id"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUsageListCleanupTasks",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/usage/cleanup-tasks"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUsageCreateCleanupTask",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/usage/cleanup-tasks"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUsageCancelCleanupTask",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/usage/cleanup-tasks/:id/cancel"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUsageSearchAPIKeys",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/usage/search-api-keys"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUsageSearchUsers",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/usage/search-users"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserAttributeGetBatchUserAttributes",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/user-attributes/batch"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserAttributeGetUserAttributes",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/users/:id/attributes"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserAttributeUpdateUserAttributes",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/users/:id/attributes"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserBindAuthIdentity",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/users/:id/auth-identities"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserGetBalanceHistory",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/users/:id/balance-history"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserGetUserPlatformQuotas",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/users/:id/platform-quotas"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserUpdateUserPlatformQuotas",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/users/:id/platform-quotas"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserResetUserPlatformQuotaWindow",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/users/:id/platform-quotas/reset"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserReplaceGroup",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/users/:id/replace-group"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserGetUserRPMStatus",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/users/:id/rpm-status"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialSubscriptionListByUser",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/users/:id/subscriptions"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserBatchUpdateConcurrency",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/users/batch-concurrency"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "officialUserBatchUpdateLimits",
+      "signature": "input: OfficialAdminCallInput = {}",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/users/batch-limits"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsSnapshot",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/snapshot-v2:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsOverview",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/overview:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsThroughputTrend",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/throughput-trend:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsErrorTrend",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/error-trend:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsLatencyHistogram",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/latency-histogram:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsErrorDistribution",
+      "signature": "params: OpsQueryParams",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/error-distribution:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsConcurrency",
+      "signature": "params: Pick<OpsQueryParams, 'platform' | 'group_id'>",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/concurrency:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsAccountAvailability",
+      "signature": "params: Pick<OpsQueryParams, 'platform' | 'group_id'>",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/account-availability:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsRealtimeTraffic",
+      "signature": "params: Pick<OpsQueryParams, 'platform' | 'group_id'> & { window: string }",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/realtime-traffic:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsOpenAITokenStats",
+      "signature": "params: Pick<OpsQueryParams, 'platform' | 'group_id'> & { time_range: string; page?: number; page_size?: number }",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/dashboard/openai-token-stats:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "listOpsRequests",
+      "signature": "params: Pick<OpsQueryParams, 'time_range' | 'start_time' | 'end_time' | 'platform' | 'group_id'> & { kind?: 'all' | 'success' | 'error'; q?: string; page?: number; page_size?: number; sort?: 'created_at_desc' | 'duration_desc'; }",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/requests:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "listOfficialOpsAlertEvents",
+      "signature": "params: Pick<OpsQueryParams, 'time_range' | 'start_time' | 'end_time' | 'platform' | 'group_id'> & { limit?: number; status?: string }",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-events:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "updateOfficialOpsAlertEventStatus",
+      "signature": "id: number, status: 'resolved' | 'manual_resolved'",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/alert-events/:id/status"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "listOfficialOpsSystemLogs",
+      "signature": "params: Pick<OpsQueryParams, 'time_range' | 'start_time' | 'end_time' | 'platform'> & { page?: number; page_size?: number; q?: string; level?: string; }",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/system-logs:query(params)"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsSystemLogHealth",
+      "signature": "",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/system-logs/health"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsAdvancedSettings",
+      "signature": "",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/advanced-settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "updateOpsAdvancedSettings",
+      "signature": "settings: OpsAdvancedSettings",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/advanced-settings"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "getOpsMetricThresholds",
+      "signature": "",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/ops/settings/metric-thresholds"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "updateOpsMetricThresholds",
+      "signature": "settings: OpsMetricThresholds",
+      "method": "PUT",
+      "endpoints": [
+        "/api/v1/admin/ops/settings/metric-thresholds"
       ]
     },
     {
@@ -3255,8 +5707,13 @@
         "component",
         "message",
         "request_id?",
+        "client_request_id?",
+        "user_id?",
+        "api_key_id?",
+        "account_id?",
         "platform?",
-        "model?"
+        "model?",
+        "extra?"
       ]
     },
     {
@@ -3266,6 +5723,310 @@
         "auth_url",
         "session_id",
         "state?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsQueryParams",
+      "fields": [
+        "time_range?",
+        "start_time?",
+        "end_time?",
+        "platform?",
+        "group_id?",
+        "mode?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsPercentiles",
+      "fields": [
+        "p50_ms?",
+        "p90_ms?",
+        "p95_ms?",
+        "p99_ms?",
+        "avg_ms?",
+        "max_ms?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsSystemMetrics",
+      "fields": [
+        "cpu_usage_percent?",
+        "memory_used_mb?",
+        "memory_total_mb?",
+        "memory_usage_percent?",
+        "db_ok?",
+        "redis_ok?",
+        "db_max_open_conns?",
+        "redis_pool_size?",
+        "redis_conn_total?",
+        "redis_conn_idle?",
+        "db_conn_active?",
+        "db_conn_idle?",
+        "db_conn_waiting?",
+        "goroutine_count?",
+        "concurrency_queue_depth?",
+        "account_switch_count?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsJobHeartbeat",
+      "fields": [
+        "job_name",
+        "last_run_at?",
+        "last_success_at?",
+        "last_error_at?",
+        "last_error?",
+        "last_duration_ms?",
+        "last_result?",
+        "updated_at"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsDashboardOverview",
+      "fields": [
+        "start_time",
+        "end_time",
+        "platform",
+        "group_id?",
+        "health_score?",
+        "system_metrics?",
+        "job_heartbeats?",
+        "success_count",
+        "error_count_total",
+        "business_limited_count",
+        "error_count_sla",
+        "request_count_total",
+        "request_count_sla",
+        "token_consumed",
+        "sla",
+        "error_rate",
+        "upstream_error_rate",
+        "upstream_error_count_excl_429_529",
+        "upstream_429_count",
+        "upstream_529_count",
+        "qps",
+        "tps",
+        "duration",
+        "ttft"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsThroughputPoint",
+      "fields": [
+        "bucket_start",
+        "request_count",
+        "token_consumed",
+        "switch_count?",
+        "qps",
+        "tps"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsThroughputTrend",
+      "fields": [
+        "bucket",
+        "points",
+        "by_platform?",
+        "top_groups?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsErrorTrend",
+      "fields": [
+        "bucket",
+        "points",
+        "bucket_start",
+        "error_count_total",
+        "business_limited_count",
+        "error_count_sla",
+        "upstream_error_count_excl_429_529",
+        "upstream_429_count",
+        "upstream_529_count"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsDashboardSnapshot",
+      "fields": [
+        "generated_at",
+        "overview",
+        "throughput_trend",
+        "error_trend"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsLatencyHistogram",
+      "fields": [
+        "total_requests",
+        "buckets"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsErrorDistribution",
+      "fields": [
+        "total",
+        "items"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsConcurrencyEntry",
+      "fields": [
+        "platform",
+        "current_in_use",
+        "max_capacity",
+        "load_percentage",
+        "waiting_in_queue",
+        "group_id?",
+        "group_name?",
+        "account_id?",
+        "account_name?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsConcurrencyStats",
+      "fields": [
+        "enabled",
+        "platform",
+        "group",
+        "account",
+        "timestamp?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsAvailabilityEntry",
+      "fields": [
+        "platform",
+        "total_accounts",
+        "available_count",
+        "rate_limit_count",
+        "error_count",
+        "group_id?",
+        "group_name?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsAccountAvailability",
+      "fields": [
+        "enabled",
+        "platform",
+        "group",
+        "account",
+        "account_id",
+        "account_name",
+        "status",
+        "is_available",
+        "is_rate_limited",
+        "rate_limit_remaining_sec?",
+        "has_error",
+        "error_message?",
+        "timestamp?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsRealtimeTraffic",
+      "fields": [
+        "enabled",
+        "summary",
+        "window",
+        "start_time",
+        "end_time",
+        "platform",
+        "group_id?",
+        "qps",
+        "tps",
+        "timestamp?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsRequestDetail",
+      "fields": [
+        "kind",
+        "created_at",
+        "request_id",
+        "platform?",
+        "model?",
+        "duration_ms?",
+        "status_code?",
+        "error_id?",
+        "phase?",
+        "severity?",
+        "message?",
+        "user_id?",
+        "api_key_id?",
+        "account_id?",
+        "group_id?",
+        "stream?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsOpenAITokenStats",
+      "fields": [
+        "items",
+        "model",
+        "request_count",
+        "avg_tokens_per_sec?",
+        "avg_first_token_ms?",
+        "total_output_tokens",
+        "avg_duration_ms",
+        "total"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsAdvancedSettings",
+      "fields": [
+        "data_retention",
+        "aggregation",
+        "openai_account_quota_auto_pause",
+        "ignore_count_tokens_errors",
+        "ignore_context_canceled",
+        "ignore_no_available_accounts",
+        "ignore_invalid_api_key_errors",
+        "ignore_insufficient_balance_errors",
+        "display_openai_token_stats",
+        "display_alert_events",
+        "auto_refresh_enabled",
+        "auto_refresh_interval_seconds"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsMetricThresholds",
+      "fields": [
+        "sla_percent_min?",
+        "ttft_p99_ms_max?",
+        "request_error_rate_percent_max?",
+        "upstream_error_rate_percent_max?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "OpsSystemLogHealth",
+      "fields": [
+        "queue_depth",
+        "queue_capacity",
+        "dropped_count",
+        "write_failed_count",
+        "written_count",
+        "avg_write_delay_ms",
+        "last_error?"
       ]
     },
     {
@@ -3515,6 +6276,14 @@
       "signature": "accountIds: number[]",
       "method": "POST",
       "endpoint": "/api/v1/admin/accounts/batch-clear-error"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "accounts",
+      "name": "batchDelete",
+      "signature": "accountIds: number[]",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/accounts/batch-delete"
     },
     {
       "kind": "upstream_service",
@@ -6278,6 +9047,8 @@
         "total",
         "success",
         "failed",
+        "success_ids?",
+        "failed_ids?",
         "errors?",
         "warnings?"
       ]
@@ -6526,6 +9297,7 @@
         "mode",
         "base_url",
         "model",
+        "proxy_id",
         "api_key_configured",
         "api_key_masked",
         "api_key_count",
@@ -8826,6 +11598,7 @@
         "contact_info",
         "doc_url",
         "home_content",
+        "compact_home_enabled",
         "hide_ccs_import_button",
         "table_default_page_size",
         "table_page_size_options",
@@ -9027,6 +11800,7 @@
         "base_url?",
         "model?",
         "timeout_ms?",
+        "proxy_id?",
         "prompt?",
         "images?"
       ]
@@ -9185,6 +11959,7 @@
         "mode?",
         "base_url?",
         "model?",
+        "proxy_id?",
         "api_key?",
         "api_keys?",
         "api_keys_mode?",
@@ -9405,6 +12180,7 @@
         "contact_info?",
         "doc_url?",
         "home_content?",
+        "compact_home_enabled?",
         "hide_ccs_import_button?",
         "table_default_page_size?",
         "table_page_size_options?",
@@ -10428,6 +13204,7 @@
         "base_url",
         "model",
         "timeout_ms",
+        "proxy_id",
         "prompt",
         "images"
       ]
@@ -10441,6 +13218,7 @@
         "mode",
         "base_url",
         "model",
+        "proxy_id",
         "api_key",
         "api_keys",
         "api_keys_mode",
@@ -10617,6 +13395,9 @@
         "peak_start",
         "peak_end",
         "peak_rate_multiplier",
+        "profit_control_enabled",
+        "profit_min_margin",
+        "profit_safety_buffer",
         "image_price_1k",
         "image_price_2k",
         "image_price_4k",
@@ -10946,6 +13727,15 @@
         "fallback_mode",
         "backup_proxy_name",
         "expiry_warn_days"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "account_handler",
+      "name": "deleteError",
+      "fields": [
+        "account_id",
+        "error"
       ]
     },
     {
@@ -11346,6 +14136,8 @@
         "group_ids",
         "expires_at",
         "auto_pause_on_expired",
+        "upstream_billing_probe_enabled",
+        "upstream_billing_rate_sync_enabled",
         "confirm_mixed_channel_risk"
       ]
     },
@@ -11462,6 +14254,9 @@
         "peak_start",
         "peak_end",
         "peak_rate_multiplier",
+        "profit_control_enabled",
+        "profit_min_margin",
+        "profit_safety_buffer",
         "image_price_1k",
         "image_price_2k",
         "image_price_4k",
@@ -11690,6 +14485,7 @@
         "contact_info",
         "doc_url",
         "home_content",
+        "compact_home_enabled",
         "hide_ccs_import_button",
         "purchase_subscription_enabled",
         "purchase_subscription_url",
@@ -15338,6 +18134,12 @@
     {
       "kind": "route",
       "method": "POST",
+      "path": "/api/v1/admin/accounts/batch-delete",
+      "handler": "h.Admin.Account.BatchDelete"
+    },
+    {
+      "kind": "route",
+      "method": "POST",
       "path": "/api/v1/admin/accounts/batch-refresh",
       "handler": "h.Admin.Account.BatchRefresh"
     },
@@ -16276,6 +19078,12 @@
       "method": "GET",
       "path": "/api/v1/admin/openai/accounts/:id/quota",
       "handler": "h.Admin.OpenAIOAuth.QueryQuota"
+    },
+    {
+      "kind": "route",
+      "method": "POST",
+      "path": "/api/v1/admin/openai/accounts/:id/quota/refresh",
+      "handler": "h.Admin.OpenAIOAuth.RefreshQuota"
     },
     {
       "kind": "route",
