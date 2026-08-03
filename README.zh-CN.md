@@ -4,7 +4,7 @@
   <img src="assets/icon.png" alt="sub2api 应用图标" width="120" />
 </p>
 
-<h1 align="center">sub2api</h1>
+<h1 align="center">sub2api-mobile</h1>
 
 <p align="center">
   基于 Expo SDK 54 和 React Native 构建的 Sub2API 移动管理控制台。
