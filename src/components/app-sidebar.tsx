@@ -174,7 +174,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.6.0'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.7.0'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
