@@ -21,9 +21,16 @@ concurrency:
 
 jobs:
   build:
-    name: Build ${{ inputs.variant }} APK
+    name: Build ${{ inputs.variant }} APK (${{ matrix.architecture }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture:
+          - arm64-v8a
+          - armeabi-v7a
+          - x86_64
     env:
       CI: '1'
       GRADLE_TASK: ${{ inputs.variant == 'debug' && 'assembleDebug' || 'assembleRelease' }}
@@ -67,15 +74,15 @@ jobs:
         run: |
           chmod +x gradlew
           if [ "$GRADLE_TASK" = "assembleRelease" ]; then
-            ./gradlew "$GRADLE_TASK" -x lintVitalAnalyzeRelease --max-workers=2 --no-daemon --stacktrace
+            ./gradlew "$GRADLE_TASK" -PreactNativeArchitectures=${{ matrix.architecture }} -x lintVitalAnalyzeRelease --max-workers=2 --no-daemon --stacktrace
           else
-            ./gradlew "$GRADLE_TASK" --max-workers=2 --no-daemon --stacktrace
+            ./gradlew "$GRADLE_TASK" -PreactNativeArchitectures=${{ matrix.architecture }} --max-workers=2 --no-daemon --stacktrace
           fi
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: sub2api-mobile-${{ inputs.variant }}-apk-${{ github.run_number }}
+          name: sub2api-${{ inputs.variant }}-${{ matrix.architecture }}-apk-${{ github.run_number }}
           path: android/app/build/outputs/apk/**/*.apk
           if-no-files-found: error
           retention-days: 14
