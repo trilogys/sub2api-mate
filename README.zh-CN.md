@@ -1,13 +1,13 @@
 [English](README.md) | [**简体中文**](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="sub2api 应用图标" width="120" />
+  <img src="assets/icon.png" alt="Sub2API Mate 应用图标" width="120" />
 </p>
 
-<h1 align="center">sub2api-mobile</h1>
+<h1 align="center">Sub2API Mate</h1>
 
 <p align="center">
-  基于 Expo SDK 54 和 React Native 构建的 Sub2API 移动管理控制台。
+  基于 Expo SDK 54 和 React Native 构建的 Sub2API 独立移动管理助手与控制台。
 </p>
 
 > [!IMPORTANT]
@@ -17,7 +17,7 @@
 
 ## 项目简介
 
-sub2api 把 Sub2API 部署的日常管理、诊断和构建流程带到 Android、iOS 与 Web。项目提供按角色区分的权限、适配手机的蓝白卡片界面、完整的管理接口入口、移动端专用页面、可选 AI 助手，以及可以在手机上触发的云端 APK 构建。
+Sub2API Mate 把 Sub2API 部署的日常管理、诊断和构建流程带到 Android、iOS 与 Web。它是由社区独立维护的移动伴侣，并非 Sub2API 官方客户端。项目提供按角色区分的权限、适配手机的蓝白卡片界面、完整的管理接口入口、移动端专用页面、可选 AI 助手，以及可以在手机上触发的云端 APK 构建。
 
 > [!NOTE]
 > **测试范围：** 当前版本仅在 Android 平台进行了测试。项目通过 Expo 包含 iOS 和 Web 目标，但这两个平台尚未经过完整验证。
