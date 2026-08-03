@@ -3,7 +3,7 @@
     "name": "Sub2API Mate",
     "slug": "sub2api-mobile",
     "owner": "trilogys",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,7 +16,7 @@
       "supportsTablet": true,
       "icon": "./assets/icon.png",
       "bundleIdentifier": "com.ppx.sub2apimate",
-      "buildNumber": "5",
+      "buildNumber": "6",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
@@ -24,7 +24,7 @@
     "android": {
       "icon": "./assets/icon.png",
       "package": "com.ppx.sub2apimate",
-      "versionCode": 5,
+      "versionCode": 6,
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
