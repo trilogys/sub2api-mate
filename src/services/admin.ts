@@ -9,6 +9,8 @@ import type {
   AccountUsageInfo,
   ActionResult,
   AdminAccount,
+  AdminDataImportResult,
+  AdminDataPayload,
   AdminApiKey,
   AdminChannel,
   AdminComplianceStatus,
@@ -327,6 +329,19 @@ export function listAccounts(search = '', page = 1, pageSize = 20) {
   return adminFetch<PaginatedData<AdminAccount>>(
     `/api/v1/admin/accounts${buildQuery({ page, page_size: pageSize, search: search.trim() })}`
   );
+}
+
+export function exportAccountData(includeProxies = true) {
+  return adminFetch<AdminDataPayload>(
+    `/api/v1/admin/accounts/data${includeProxies ? '' : '?include_proxies=false'}`,
+  );
+}
+
+export function importAccountData(data: AdminDataPayload) {
+  return adminFetch<AdminDataImportResult>('/api/v1/admin/accounts/data', {
+    method: 'POST',
+    body: JSON.stringify({ data, skip_default_group_bind: true }),
+  });
 }
 
 export function getAccount(accountId: number) {

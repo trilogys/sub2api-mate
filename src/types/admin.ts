@@ -330,6 +330,57 @@ export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' 
 
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock' | 'service_account';
 
+export type AdminDataProxy = {
+  proxy_key: string;
+  name: string;
+  protocol: ProxyProtocol;
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+  status: 'active' | 'inactive';
+};
+
+export type AdminDataAccount = {
+  name: string;
+  notes?: string | null;
+  platform: AccountPlatform;
+  type: AccountType;
+  credentials: Record<string, unknown>;
+  extra?: Record<string, unknown>;
+  proxy_key?: string | null;
+  concurrency: number;
+  priority: number;
+  rate_multiplier?: number | null;
+  expires_at?: number | null;
+  auto_pause_on_expired?: boolean;
+};
+
+export type AdminDataPayload = {
+  type?: string;
+  version?: number;
+  exported_at: string;
+  proxies: AdminDataProxy[];
+  accounts: AdminDataAccount[];
+  skipped_shadows?: number;
+};
+
+export type AdminDataImportError = {
+  kind: 'proxy' | 'account';
+  name?: string;
+  proxy_key?: string;
+  message: string;
+};
+
+export type AdminDataImportResult = {
+  proxy_created: number;
+  proxy_reused: number;
+  proxy_failed: number;
+  account_created: number;
+  account_failed: number;
+  errors?: AdminDataImportError[];
+};
+
 export type CreateAccountRequest = {
   name: string;
   platform: AccountPlatform;
