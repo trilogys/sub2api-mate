@@ -141,9 +141,9 @@ export default function AboutScreen() {
                 <AdminButton label="恢复此版本提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, dismissedAppUpdateVersions: prefsRef.current.dismissedAppUpdateVersions.filter((version) => version !== release.tag_name) })} />
               </>
             ) : (
-              <View className="flex-row gap-2">
-                <View className="flex-1"><AdminButton label="忽略此版本" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, dismissedAppUpdateVersions: [...prefsRef.current.dismissedAppUpdateVersions, release.tag_name] })} /></View>
-                <View className="flex-1"><AdminButton label="关闭全部提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, appUpdatePromptsDisabled: true })} /></View>
+              <View className="gap-2">
+                <AdminButton label="忽略此版本" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, dismissedAppUpdateVersions: [...prefsRef.current.dismissedAppUpdateVersions, release.tag_name] })} />
+                <AdminButton label="关闭全部提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, appUpdatePromptsDisabled: true })} />
               </View>
             )
           ) : null}

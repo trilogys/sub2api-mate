@@ -3,9 +3,9 @@
   "routes_sha256": "b357cef9da9bbf3cf56f15864df9cbf83bba314491637884e457c2544b3c9d15",
   "counts": {
     "routes": 382,
-    "services": 135,
-    "types": 73,
-    "screens": 52,
+    "services": 136,
+    "types": 78,
+    "screens": 54,
     "upstream_services": 292,
     "upstream_types": 263,
     "upstream_backend_types": 142,
@@ -63,6 +63,32 @@
       "placeholders": [
         "搜索邮箱、用户名或备注"
       ]
+    },
+    {
+      "kind": "screen",
+      "title": "关于应用",
+      "app_route": "/about",
+      "fields": [],
+      "sections": [
+        "升级提示",
+        "Expo 在线更新",
+        "开源项目",
+        "更新与安全说明"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "账号操作",
+      "app_route": "/account-data",
+      "fields": [],
+      "sections": [
+        "需要管理员权限",
+        "导出账号",
+        "导入账号",
+        "导入结果"
+      ],
+      "placeholders": []
     },
     {
       "kind": "screen",
@@ -163,7 +189,6 @@
         "AI 修复工作流"
       ],
       "placeholders": [
-        "询问 API、参数、构建或粘贴错误…",
         "输入模型 ID"
       ]
     },
@@ -955,6 +980,15 @@
       "method": "GET",
       "endpoints": [
         "/api/v1/admin/accounts:buildQuery({ page, page_size: pageSize, search: search.trim() )}"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "importAccountData",
+      "signature": "data: AdminDataPayload",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/accounts/data"
       ]
     },
     {
@@ -2160,7 +2194,8 @@
         "email",
         "username?",
         "role",
-        "status?"
+        "status?",
+        "balance?"
       ]
     },
     {
@@ -2282,18 +2317,97 @@
         "type",
         "status?",
         "schedulable?",
+        "rate_limited_at?",
+        "rate_limit_reset_at?",
+        "overload_until?",
+        "temp_unschedulable_until?",
+        "temp_unschedulable_reason?",
         "priority?",
         "concurrency?",
         "current_concurrency?",
         "rate_multiplier?",
         "notes?",
         "error_message?",
+        "quota_limit?",
+        "quota_used?",
+        "quota_daily_limit?",
+        "quota_daily_used?",
+        "quota_daily_reset_at?",
+        "quota_weekly_limit?",
+        "quota_weekly_used?",
+        "quota_weekly_reset_at?",
         "updated_at?",
         "last_used_at?",
         "group_ids?",
         "groups?",
         "parent_account_id?",
         "extra?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AdminDataProxy",
+      "fields": [
+        "proxy_key",
+        "name",
+        "protocol",
+        "host",
+        "port",
+        "username?",
+        "password?",
+        "status"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AdminDataAccount",
+      "fields": [
+        "name",
+        "notes?",
+        "platform",
+        "type",
+        "credentials",
+        "extra?",
+        "proxy_key?",
+        "concurrency",
+        "priority",
+        "rate_multiplier?",
+        "expires_at?",
+        "auto_pause_on_expired?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AdminDataPayload",
+      "fields": [
+        "type?",
+        "version?",
+        "exported_at",
+        "proxies",
+        "accounts",
+        "skipped_shadows?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AdminDataImportError",
+      "fields": [
+        "kind",
+        "name?",
+        "proxy_key?",
+        "message"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "AdminDataImportResult",
+      "fields": [
+        "proxy_created",
+        "proxy_reused",
+        "proxy_failed",
+        "account_created",
+        "account_failed",
+        "errors?"
       ]
     },
     {

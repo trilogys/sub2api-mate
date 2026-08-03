@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Activity, AlertTriangle, BadgePercent, Blocks, Braces, ChevronRight, ClipboardCheck, DatabaseBackup, Github, KeyRound, Languages, ListPlus, LogOut, Megaphone, MessageCircle, Network, RadioTower, Route, ScanSearch, ScrollText, Server, Settings2, Share2, ShieldCheck, Siren, Ticket, Timer, UsersRound, Waypoints, Wrench } from 'lucide-react-native';
+import { Activity, AlertTriangle, BadgePercent, Blocks, Braces, ChevronRight, ClipboardCheck, DatabaseBackup, FileJson, Github, KeyRound, Languages, ListPlus, LogOut, Megaphone, MessageCircle, Network, RadioTower, Route, ScanSearch, ScrollText, Server, Settings2, Share2, ShieldCheck, Siren, Ticket, Timer, UsersRound, Waypoints, Wrench } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { ScreenShell } from '@/src/components/screen-shell';
@@ -12,6 +12,7 @@ import { languageState, setAppLanguage } from '@/src/store/ui-preferences';
 const { useSnapshot } = require('valtio/react');
 
 const modules = [
+  { title: '账号操作', detail: '导入和导出官方兼容的账号 JSON 数据', route: '/account-data', icon: FileJson, admin: true },
   { title: '代理管理', detail: '维护出口代理，执行连通性与质量检测', route: '/proxies', icon: Network, admin: true },
   { title: '兑换码', detail: '批量生成余额、并发、订阅和邀请码', route: '/redeem', icon: Ticket, admin: true },
   { title: '错误中心', detail: '查看请求错误与上游错误并标记处理状态', route: '/ops-errors', icon: AlertTriangle, admin: true },
