@@ -13,7 +13,7 @@
 > [!IMPORTANT]
 > **灵感来源与致谢。** 本项目的灵感来自 [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile)。衷心感谢 ckken 发布原始开源成果。上游项目使用 MIT License，本仓库在 [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt) 中完整保留了原作者版权声明和许可证正文。本仓库大幅扩展的移动端界面、管理功能覆盖、AI 助手、构建中心和自动化由 trilogys contributors 独立维护；这不表示原作者对本项目提供背书。
 
-当前维护仓库为 [trilogys/sub2api-mobile](https://github.com/trilogys/sub2api-mobile)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
+当前维护仓库为 [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
 
 ## 项目简介
 
@@ -144,7 +144,7 @@ AI 助手页面可以开启悬浮助手。长按可移动，靠边时可以部�
 
 ### 受控的 GitHub 修复流程
 
-GitHub 设置默认仓库为 `trilogys/sub2api-mobile`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
+GitHub 设置默认仓库为 `trilogys/sub2api-mate`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
 
 - Contents：读写
 - Pull requests：读写
@@ -182,7 +182,7 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 - 根据已完成步骤计算的近似百分比
 - APK Artifact 是否可下载、大小、过期时间和下载入口
 
-目标仓库可以切换，默认是 `trilogys/sub2api-mobile`。
+目标仓库可以切换，默认是 `trilogys/sub2api-mate`。
 
 ### EAS Preview APK
 

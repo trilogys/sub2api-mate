@@ -31,8 +31,8 @@ export default function GitHubSettingsScreen() {
     <>
       <LocalizedStackScreen options={{ title: 'GitHub 配置', headerShown: true }} />
       <ScreenShell title="GitHub 配置" subtitle="供 AI 创建修复分支和 Draft PR" safeAreaEdges={['bottom']} bottomInsetClassName="pb-8">
-        <AdminSection title="仓库" detail="默认使用你的 trilogys/sub2api-mobile，也可填写其他 owner/repository 或 GitHub URL。">
-          <AdminField label="仓库地址" value={config.repository} onChangeText={(value) => update('repository', value)} placeholder="trilogys/sub2api-mobile" autoCapitalize="none" autoCorrect={false} />
+        <AdminSection title="仓库" detail="默认使用你的 trilogys/sub2api-mate，也可填写其他 owner/repository 或 GitHub URL。">
+          <AdminField label="仓库地址" value={config.repository} onChangeText={(value) => update('repository', value)} placeholder="trilogys/sub2api-mate" autoCapitalize="none" autoCorrect={false} />
           <AdminField label="基础分支" value={config.baseBranch} onChangeText={(value) => update('baseBranch', value)} placeholder="main" autoCapitalize="none" autoCorrect={false} />
         </AdminSection>
 
