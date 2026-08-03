@@ -50,7 +50,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
 
   const usageQuery = useQuery({
     queryKey: ['account-usage', account.id],
-    queryFn: () => getAccountUsage(account.id),
+    queryFn: () => getAccountUsage(account.id, account.platform === 'anthropic' ? 'passive' : undefined),
     enabled: supportsUsage,
     staleTime: 60_000,
     retry: false,
@@ -61,6 +61,12 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
     enabled: isOpenAIOAuth && autoQueryCredits,
     staleTime: 60_000,
     retry: false,
+  });
+  const refreshUsageMutation = useMutation({
+    mutationFn: () => getAccountUsage(account.id, 'active', true),
+    onSuccess: (usage) => {
+      queryClient.setQueryData(['account-usage', account.id], usage);
+    },
   });
   const resetMutation = useMutation({
     mutationFn: () => resetOpenAIQuota(account.id),
@@ -90,11 +96,12 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
       {usageQuery.isLoading ? <Text className="text-xs text-[#7C8AA0] dark:text-[#9EABC0]">正在读取 5h / 7d 额度…</Text> : null}
       {usageQuery.data?.error ? <Text className="text-xs text-[#D88A21]">{usageQuery.data.error}</Text> : null}
       {usageQuery.isError ? <Text className="text-xs text-[#D9475C]">{(usageQuery.error as Error).message}</Text> : null}
+      {refreshUsageMutation.isError ? <Text className="text-xs text-[#D9475C]">{(refreshUsageMutation.error as Error).message}</Text> : null}
       {!usageQuery.isLoading && !hasWindow && !usageQuery.isError ? <Text className="text-xs text-[#7C8AA0] dark:text-[#9EABC0]">服务端暂未返回 5h / 7d 窗口数据。</Text> : null}
 
       <View className="flex-row flex-wrap gap-2">
-        <Pressable disabled={usageQuery.isFetching} onPress={(event) => { event.stopPropagation(); void usageQuery.refetch(); }} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2.5 disabled:opacity-50">
-          <Text className="text-xs font-bold text-[#2459C4]">{usageQuery.isFetching ? '刷新中…' : '刷新额度'}</Text>
+        <Pressable disabled={refreshUsageMutation.isPending} onPress={(event) => { event.stopPropagation(); refreshUsageMutation.mutate(); }} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2.5 disabled:opacity-50">
+          <Text className="text-xs font-bold text-[#2459C4]">{refreshUsageMutation.isPending ? '刷新中…' : '刷新额度'}</Text>
         </Pressable>
         {isOpenAIOAuth ? (
           <>
