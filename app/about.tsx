@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import Constants from 'expo-constants';
 import * as Device from 'expo-device';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Linking, Platform, Pressable, View, Image } from 'react-native';
 import * as Updates from 'expo-updates';
 import { CheckCircle2, ChevronRight, CircleAlert, Code2, Download, ExternalLink, FileText, Github, Info, RefreshCw, ShieldCheck } from 'lucide-react-native';
@@ -12,6 +12,7 @@ import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { downloadAndInstallAndroidApk, type AndroidAppUpdateProgress } from '@/src/services/android-app-update';
 import { APP_REPOSITORY_URL, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
+import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
 const currentVersion = Constants.expoConfig?.version ?? '1.3.0';
 
@@ -37,6 +38,8 @@ function ExternalRow({ icon: Icon, title, detail, url }: { icon: typeof Github; 
 
 export default function AboutScreen() {
   const [apkProgress, setApkProgress] = useState<AndroidAppUpdateProgress | null>(null);
+  const [prefs, setPrefs] = useState<UIPreferences>(defaultUIPreferences);
+  const prefsRef = useRef<UIPreferences>(defaultUIPreferences);
   const releaseQuery = useQuery({ queryKey: ['app-release', 'latest'], queryFn: getLatestAppRelease, staleTime: 15 * 60_000 });
   const release = releaseQuery.data;
   const hasUpdate = Boolean(release?.tag_name && isNewerAppVersion(release.tag_name, currentVersion));
@@ -44,6 +47,22 @@ export default function AboutScreen() {
   const apkProgressPercent = apkProgress?.totalBytes
     ? Math.min(100, Math.round((apkProgress.downloadedBytes / apkProgress.totalBytes) * 100))
     : 0;
+  const appUpdatePromptDisabled = prefs.appUpdatePromptsDisabled;
+  const appUpdateVersionDismissed = Boolean(release?.tag_name && prefs.dismissedAppUpdateVersions.includes(release.tag_name));
+
+  useEffect(() => {
+    loadUIPreferences().then((next) => {
+      prefsRef.current = next;
+      setPrefs(next);
+    });
+  }, []);
+
+  const updatePreferences = (next: UIPreferences) => {
+    const normalized = normalizeUIPreferences(next);
+    prefsRef.current = normalized;
+    setPrefs(normalized);
+    saveUIPreferences(normalized).catch(() => undefined);
+  };
 
   const apkMutation = useMutation({
     mutationFn: async () => {
@@ -110,6 +129,24 @@ export default function AboutScreen() {
             </View>
           </View>
           {hasUpdate && release?.body ? <Text numberOfLines={6} className="rounded-2xl bg-[#F6F8FC] p-3 text-xs leading-5 text-[#475467] dark:bg-[#182235] dark:text-[#C2CCDB]">{release.body}</Text> : null}
+          {hasUpdate && release?.tag_name ? (
+            appUpdatePromptDisabled ? (
+              <>
+                <Text className="text-xs leading-5 text-[#7B8798] dark:text-[#9EABC0]">所有 App 版本的升级提示已关闭，手动检查和下载仍可使用。</Text>
+                <AdminButton label="重新开启所有升级提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, appUpdatePromptsDisabled: false, dismissedAppUpdateVersions: [] })} />
+              </>
+            ) : appUpdateVersionDismissed ? (
+              <>
+                <Text className="text-xs leading-5 text-[#7B8798] dark:text-[#9EABC0]">已忽略此版本的升级提示：{release.tag_name}</Text>
+                <AdminButton label="恢复此版本提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, dismissedAppUpdateVersions: prefsRef.current.dismissedAppUpdateVersions.filter((version) => version !== release.tag_name) })} />
+              </>
+            ) : (
+              <View className="flex-row gap-2">
+                <View className="flex-1"><AdminButton label="忽略此版本" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, dismissedAppUpdateVersions: [...prefsRef.current.dismissedAppUpdateVersions, release.tag_name] })} /></View>
+                <View className="flex-1"><AdminButton label="关闭全部提示" tone="muted" onPress={() => updatePreferences({ ...prefsRef.current, appUpdatePromptsDisabled: true })} /></View>
+              </View>
+            )
+          ) : null}
           <AdminButton label={releaseQuery.isRefetching ? '正在检查…' : '重新检查版本'} pending={releaseQuery.isRefetching} tone="muted" onPress={() => void releaseQuery.refetch()} />
           {hasUpdate ? (
             Platform.OS === 'android' && apk ? (
