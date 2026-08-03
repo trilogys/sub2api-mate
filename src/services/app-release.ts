@@ -70,6 +70,22 @@ export async function getLatestAppRelease(): Promise<AppRelease | null> {
   };
 }
 
-export function findAndroidApk(release: AppRelease | null | undefined) {
-  return release?.assets.find((asset) => asset.name.toLowerCase().endsWith('.apk')) ?? null;
+export function findAndroidApk(release: AppRelease | null | undefined, architectures?: readonly string[] | null) {
+  const apks = release?.assets.filter((asset) => asset.name.toLowerCase().endsWith('.apk')) ?? [];
+  if (apks.length === 0) return null;
+
+  const architectureNames = architectures?.map((architecture) => architecture.toLowerCase()) ?? [];
+  const preferredAbi = architectureNames.map((architecture) => {
+    if (architecture.includes('arm64')) return 'arm64-v8a';
+    if (architecture.includes('armeabi') || architecture.includes('armv7')) return 'armeabi-v7a';
+    if (architecture.includes('x86_64') || architecture.includes('x86-64')) return 'x86_64';
+    return null;
+  }).find(Boolean);
+
+  if (preferredAbi) {
+    const matchingApk = apks.find((asset) => asset.name.toLowerCase().includes(preferredAbi));
+    if (matchingApk) return matchingApk;
+  }
+
+  return apks.find((asset) => !/(arm64-v8a|armeabi-v7a|x86_64)/i.test(asset.name)) ?? apks[0];
 }
