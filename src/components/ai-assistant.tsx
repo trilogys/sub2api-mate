@@ -371,7 +371,7 @@ export function AIAssistant() {
 
       <Modal visible={open} transparent animationType="slide" statusBarTranslucent navigationBarTranslucent onRequestClose={() => setOpen(false)}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(18, 31, 53, 0.5)' }}
         >
           <SafeAreaView

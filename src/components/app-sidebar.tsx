@@ -32,10 +32,9 @@ import { Animated, Easing, Linking, Modal, Platform, Pressable, ScrollView, Vibr
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Uniwind } from 'uniwind';
 
-import { getFirstCreatedAdmin } from '@/src/lib/admin-user';
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
-import { checkSystemUpdates, listUsers } from '@/src/services/admin';
+import { checkSystemUpdates } from '@/src/services/admin';
 import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
@@ -95,12 +94,6 @@ export function AppSidebar() {
   const dragTargetIndexRef = useRef(-1);
   const [dragTargetIndex, setDragTargetIndex] = useState(-1);
 
-  const defaultAdminQuery = useQuery({
-    queryKey: ['default-admin-user', config.activeAccountId],
-    queryFn: () => listUsers('', 1, 100),
-    enabled: config.authMode === 'admin_key' && Boolean(config.baseUrl),
-  });
-  const defaultAdmin = useMemo(() => getFirstCreatedAdmin(defaultAdminQuery.data?.items ?? []), [defaultAdminQuery.data?.items]);
   const serverVersionQuery = useQuery({
     queryKey: ['system-version', config.activeAccountId],
     queryFn: () => checkSystemUpdates(false),
@@ -163,7 +156,6 @@ export function AppSidebar() {
   const visibleItems = allowed.filter((item) => !prefs.hiddenMenuIds.includes(item.id));
   const dark = prefs.colorMode === 'dark';
   const language = prefs.language;
-  const identity = config.user?.email || defaultAdmin?.email || (defaultAdminQuery.isLoading ? '正在查找管理员…' : 'Admin Key');
   const currentServerVersion = serverVersionQuery.data?.current_version || '-';
   const latestServerVersion = serverVersionQuery.data?.latest_version;
   const hasServerUpdate = Boolean(serverVersionQuery.data?.has_update && latestServerVersion);
@@ -473,7 +465,7 @@ export function AppSidebar() {
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
                 </View>
                 <View style={{ marginTop: 7, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 10, color: dark ? '#9EABC0' : '#738095' }}>{identity} · {isAdminSession() ? '管理员' : '普通用户'}</Text>
+                  <Text numberOfLines={1} style={{ flexShrink: 1, fontSize: 10, color: dark ? '#9EABC0' : '#738095' }}>{isAdminSession() ? '管理员' : '普通用户'}</Text>
                   {isAdminSession() ? (
                     <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                       <Text style={{ fontSize: 9, color: dark ? '#9EABC0' : '#738095' }}>· Version:</Text>
