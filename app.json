@@ -3,7 +3,7 @@
     "name": "Sub2API Mate",
     "slug": "sub2api-mobile",
     "owner": "trilogys",
-    "version": "1.7.0",
+    "version": "1.3.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
