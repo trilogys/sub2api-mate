@@ -55,7 +55,10 @@ import type {
   OpsErrorLog,
   OpsSystemLog,
   OpenAIQuotaResetResult,
+  OpenAIQuotaRefreshResult,
   OpenAIQuotaUsage,
+  PaymentOrder,
+  RefundResult,
   PaginatedData,
   ProxyQualityCheckResult,
   ProxyTestResult,
@@ -416,8 +419,24 @@ export function queryOpenAIQuota(accountId: number) {
   return adminFetch<OpenAIQuotaUsage>(`/api/v1/admin/openai/accounts/${accountId}/quota`);
 }
 
+export function refreshOpenAIQuota(accountId: number) {
+  return adminFetch<OpenAIQuotaRefreshResult>(`/api/v1/admin/openai/accounts/${accountId}/quota/refresh`, { method: 'POST' });
+}
+
 export function resetOpenAIQuota(accountId: number) {
   return adminFetch<OpenAIQuotaResetResult>(`/api/v1/admin/openai/accounts/${accountId}/reset-quota`, { method: 'POST' });
+}
+
+export function listPaymentOrders(params: { page?: number; page_size?: number; status?: string; keyword?: string } = {}) {
+  return adminFetch<PaginatedData<PaymentOrder>>(`/api/v1/admin/payment/orders${buildQuery({ page: params.page ?? 1, page_size: params.page_size ?? 20, status: params.status, keyword: params.keyword })}`);
+}
+
+export function refundPaymentOrder(orderId: number, body: { amount: number; reason: string; deduct_balance?: boolean; force?: boolean }) {
+  return adminFetch<RefundResult>(`/api/v1/admin/payment/orders/${orderId}/refund`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export function queryPaymentRefund(orderId: number) {
+  return adminFetch<RefundResult>(`/api/v1/admin/payment/orders/${orderId}/refund/query`, { method: 'POST' });
 }
 
 export async function testAccount(accountId: number, body: AccountTestRequest) {

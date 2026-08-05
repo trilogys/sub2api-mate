@@ -1,5 +1,5 @@
 import { router } from 'expo-router';
-import { Activity, AlertTriangle, BadgePercent, Blocks, Braces, ChevronRight, ClipboardCheck, DatabaseBackup, FileJson, Github, KeyRound, Languages, ListPlus, LogOut, Megaphone, MessageCircle, Network, RadioTower, Route, ScanSearch, ScrollText, Server, Settings2, Share2, ShieldCheck, Siren, Ticket, Timer, UsersRound, Waypoints, Wrench } from 'lucide-react-native';
+import { Activity, AlertTriangle, BadgeDollarSign, BadgePercent, Blocks, Braces, ChevronRight, ClipboardCheck, DatabaseBackup, FileJson, Github, KeyRound, Languages, ListPlus, LogOut, Megaphone, MessageCircle, Network, RadioTower, Route, ScanSearch, ScrollText, Server, Settings2, Share2, ShieldCheck, Siren, Ticket, Timer, UsersRound, Waypoints, Wrench } from 'lucide-react-native';
 import { Pressable, View } from 'react-native';
 
 import { ScreenShell } from '@/src/components/screen-shell';
@@ -17,6 +17,7 @@ const modules = [
   { title: '兑换码', detail: '批量生成余额、并发、订阅和邀请码', route: '/redeem', icon: Ticket, admin: true },
   { title: '错误中心', detail: '查看请求错误与上游错误并标记处理状态', route: '/ops-errors', icon: AlertTriangle, admin: true },
   { title: '订阅管理', detail: '分配、延期、重置额度和撤销用户订阅', route: '/subscriptions', icon: UsersRound, admin: true },
+  { title: '支付订单', detail: '检索支付订单、退款并处理强制退款确认', route: '/payment-orders', icon: BadgeDollarSign, admin: true },
   { title: '渠道管理', detail: '维护可用渠道与分组绑定', route: '/channels', icon: Waypoints, admin: true },
   { title: '风控中心', detail: '配置内容审核并查看命中记录', route: '/risk-control', icon: ShieldCheck, admin: true },
   { title: '系统设置', detail: '管理注册、默认额度和业务功能开关', route: '/system-settings', icon: Settings2, admin: true },

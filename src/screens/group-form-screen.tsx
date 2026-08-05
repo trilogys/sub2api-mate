@@ -21,6 +21,7 @@ const colors = {
 };
 
 const PLATFORMS: GroupPlatform[] = ['anthropic', 'openai', 'gemini', 'antigravity', 'grok', 'composite'];
+const REASONING_EFFORTS = ['', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'] as const;
 
 function Field({ label, value, onChangeText, placeholder, keyboardType = 'default', multiline = false }: {
   label: string;
@@ -84,6 +85,17 @@ function nullableNumber(value: string) {
   return value.trim() ? optionalNumber(value) : null;
 }
 
+function parseReasoningMappings(value: string) {
+  const mappings = value
+    .split(/[\n,]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => entry.split(/\s*(?:=>|=|→)\s*/, 2))
+    .filter((entry): entry is [string, string] => entry.length === 2 && Boolean(entry[0]) && Boolean(entry[1]))
+    .map(([from, to]) => ({ from, to }));
+  return [...new Map(mappings.map((item) => [item.from, item])).values()];
+}
+
 export function GroupFormScreen({ groupId }: { groupId?: number }) {
   const editing = Number.isFinite(groupId);
   const queryClient = useQueryClient();
@@ -98,6 +110,8 @@ export function GroupFormScreen({ groupId }: { groupId?: number }) {
   const [dailyLimit, setDailyLimit] = useState('');
   const [weeklyLimit, setWeeklyLimit] = useState('');
   const [monthlyLimit, setMonthlyLimit] = useState('');
+  const [maxReasoningEffort, setMaxReasoningEffort] = useState('');
+  const [reasoningMappings, setReasoningMappings] = useState('');
   const [error, setError] = useState('');
 
   const groupQuery = useQuery({
@@ -120,8 +134,11 @@ export function GroupFormScreen({ groupId }: { groupId?: number }) {
     setDailyLimit(group.daily_limit_usd == null ? '' : String(group.daily_limit_usd));
     setWeeklyLimit(group.weekly_limit_usd == null ? '' : String(group.weekly_limit_usd));
     setMonthlyLimit(group.monthly_limit_usd == null ? '' : String(group.monthly_limit_usd));
+    setMaxReasoningEffort(group.max_reasoning_effort ?? '');
+    setReasoningMappings((group.reasoning_effort_mappings ?? []).map((item) => `${item.from}=${item.to}`).join(', '));
   }, [groupQuery.data]);
 
+  const supportsReasoningPolicy = platform === 'openai' || platform === 'composite';
   const payload = useMemo<UpdateGroupRequest>(() => ({
     name: name.trim(),
     description: description.trim() || null,
@@ -134,7 +151,9 @@ export function GroupFormScreen({ groupId }: { groupId?: number }) {
     daily_limit_usd: nullableNumber(dailyLimit),
     weekly_limit_usd: nullableNumber(weeklyLimit),
     monthly_limit_usd: nullableNumber(monthlyLimit),
-  }), [dailyLimit, description, exclusive, monthlyLimit, name, platform, rateMultiplier, rpmLimit, status, subscriptionType, weeklyLimit]);
+    max_reasoning_effort: supportsReasoningPolicy ? maxReasoningEffort : '',
+    reasoning_effort_mappings: supportsReasoningPolicy ? parseReasoningMappings(reasoningMappings) : [],
+  }), [dailyLimit, description, exclusive, maxReasoningEffort, monthlyLimit, name, platform, rateMultiplier, reasoningMappings, rpmLimit, status, subscriptionType, supportsReasoningPolicy, weeklyLimit]);
 
   const saveMutation = useMutation({
     mutationFn: () => {
@@ -197,6 +216,18 @@ export function GroupFormScreen({ groupId }: { groupId?: number }) {
             <Field label="每日限额 USD（留空为不限）" value={dailyLimit} onChangeText={setDailyLimit} keyboardType="decimal-pad" />
             <Field label="每周限额 USD（留空为不限）" value={weeklyLimit} onChangeText={setWeeklyLimit} keyboardType="decimal-pad" />
             <Field label="每月限额 USD（留空为不限）" value={monthlyLimit} onChangeText={setMonthlyLimit} keyboardType="decimal-pad" />
+
+            {supportsReasoningPolicy ? (
+              <View style={{ marginTop: 4, borderRadius: 14, borderWidth: 1, borderColor: colors.border, backgroundColor: '#F8FAFD', padding: 12 }}>
+                <Text style={{ marginBottom: 4, fontSize: 14, fontWeight: '700', color: colors.text }}>推理强度策略</Text>
+                <Text style={{ marginBottom: 10, fontSize: 11, lineHeight: 17, color: colors.subtext }}>同时适用于 OpenAI 与 Composite 分组；上限为空表示不限制，映射只处理客户端明确传入的 effort。</Text>
+                <Text style={{ marginBottom: 7, fontSize: 12, color: colors.subtext }}>推理强度上限</Text>
+                <View style={{ marginBottom: 12, flexDirection: 'row', flexWrap: 'wrap', gap: 7 }}>
+                  {REASONING_EFFORTS.map((effort) => <Toggle key={effort || 'unlimited'} label={effort || '不限制'} active={maxReasoningEffort === effort} onPress={() => setMaxReasoningEffort(effort)} />)}
+                </View>
+                <Field label="精确映射（逗号或换行分隔）" value={reasoningMappings} onChangeText={setReasoningMappings} placeholder="例如 max=xhigh, xhigh=high" multiline />
+              </View>
+            ) : null}
           </View>
 
           {groupQuery.error || error ? (

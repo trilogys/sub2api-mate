@@ -1414,18 +1414,6 @@ export const officialAdminOperations: readonly OfficialAdminOperation[] = [
     "transport": "http"
   },
   {
-    "id": "POST /api/v1/admin/openai/accounts/:id/quota/refresh",
-    "name": "officialOpenAIOAuthRefreshQuota",
-    "module": "openai",
-    "method": "POST",
-    "path": "/api/v1/admin/openai/accounts/:id/quota/refresh",
-    "handler": "h.Admin.OpenAIOAuth.RefreshQuota",
-    "pathParams": [
-      "id"
-    ],
-    "transport": "http"
-  },
-  {
     "id": "POST /api/v1/admin/openai/accounts/:id/refresh",
     "name": "officialOpenAIOAuthRefreshAccountToken",
     "module": "openai",
@@ -3246,10 +3234,6 @@ export function officialGroupUpdateSortOrder(input: OfficialAdminCallInput = {})
 
 export function officialGroupGetUsageSummary(input: OfficialAdminCallInput = {}) {
   return officialAdminRequest<unknown>('GET', '/api/v1/admin/groups/usage-summary', input);
-}
-
-export function officialOpenAIOAuthRefreshQuota(input: OfficialAdminCallInput = {}) {
-  return officialAdminRequest<unknown>('POST', '/api/v1/admin/openai/accounts/:id/quota/refresh', input);
 }
 
 export function officialOpenAIOAuthRefreshAccountToken(input: OfficialAdminCallInput = {}) {

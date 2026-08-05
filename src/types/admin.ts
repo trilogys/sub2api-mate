@@ -112,6 +112,29 @@ export type AdminSettings = {
   risk_control_enabled?: boolean;
   available_channels_enabled?: boolean;
   allow_user_view_error_requests?: boolean;
+  turnstile_enabled?: boolean;
+  turnstile_site_key?: string;
+  turnstile_secret_key_configured?: boolean;
+  turnstile_secret_key?: string;
+  tencent_captcha_enabled?: boolean;
+  tencent_captcha_app_id?: string;
+  tencent_captcha_app_secret_key_configured?: boolean;
+  tencent_captcha_cloud_secret_id_configured?: boolean;
+  tencent_captcha_cloud_secret_key_configured?: boolean;
+  tencent_captcha_app_secret_key?: string;
+  tencent_captcha_cloud_secret_id?: string;
+  tencent_captcha_cloud_secret_key?: string;
+  aliyun_captcha_enabled?: boolean;
+  aliyun_captcha_access_key_id?: string;
+  aliyun_captcha_access_key_secret_configured?: boolean;
+  aliyun_captcha_access_key_secret?: string;
+  aliyun_captcha_scene_id?: string;
+  aliyun_captcha_prefix?: string;
+  aliyun_captcha_region?: string;
+  openai_codex_user_agent?: string;
+  openai_codex_client_version?: string;
+  openai_codex_client_version_synced?: string;
+  openai_codex_version_auto_sync_enabled?: boolean;
   [key: string]: string | number | boolean | null | string[] | undefined;
 };
 
@@ -179,6 +202,8 @@ export type AdminGroup = {
   platform: string;
   rate_multiplier?: number;
   rpm_limit?: number;
+  max_reasoning_effort?: string;
+  reasoning_effort_mappings?: ReasoningEffortMapping[];
   is_exclusive?: boolean;
   status?: string;
   subscription_type?: string;
@@ -290,6 +315,15 @@ export type OpenAIQuotaResetResult = {
     expires_at?: string;
   } | null;
   windows_reset: number;
+  quota?: OpenAIQuotaUsage | null;
+  account?: AdminAccount | null;
+  cache_refreshed: boolean;
+  account_state_recovered: boolean;
+  warning_code?: 'reset_credit_cache_refresh_failed' | 'account_state_recovery_failed' | 'account_state_refresh_failed';
+};
+
+export type OpenAIQuotaRefreshResult = OpenAIQuotaUsage & {
+  cache_persisted: boolean;
 };
 
 export type AdminAccount = {
@@ -426,6 +460,8 @@ export type UpdateUserRequest = {
 
 export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'grok' | 'composite';
 
+export type ReasoningEffortMapping = { from: string; to: string };
+
 export type CreateGroupRequest = {
   name: string;
   description?: string | null;
@@ -437,9 +473,43 @@ export type CreateGroupRequest = {
   weekly_limit_usd?: number | null;
   monthly_limit_usd?: number | null;
   rpm_limit?: number;
+  max_reasoning_effort?: string;
+  reasoning_effort_mappings?: ReasoningEffortMapping[];
 };
 
 export type UpdateGroupRequest = Partial<CreateGroupRequest> & { status?: 'active' | 'inactive' };
+
+export type PaymentOrder = {
+  id: number;
+  user_id: number;
+  amount: number;
+  pay_amount: number;
+  currency?: string;
+  fee_rate: number;
+  payment_type: string;
+  out_trade_no: string;
+  status: 'PENDING' | 'PAID' | 'RECHARGING' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED' | 'FAILED' | 'REFUND_REQUESTED' | 'REFUNDING' | 'REFUND_PENDING' | 'PARTIALLY_REFUNDED' | 'REFUNDED' | 'REFUND_FAILED';
+  order_type: 'balance' | 'subscription';
+  created_at: string;
+  expires_at: string;
+  paid_at?: string;
+  completed_at?: string;
+  refund_amount: number;
+  refund_reason?: string;
+  refund_requested_at?: string;
+  refund_requested_by?: number;
+  refund_request_reason?: string;
+  plan_id?: number;
+  provider_instance_id?: string;
+};
+
+export type RefundResult = {
+  success: boolean;
+  warning?: string;
+  require_force?: boolean;
+  balance_deducted?: number;
+  subscription_days_deducted?: number;
+};
 
 export type UpdateAccountRequest = {
   name?: string;

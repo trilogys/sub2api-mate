@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import { Pressable, View } from 'react-native';
 
-import { getAccountUsage, queryOpenAIQuota, resetOpenAIQuota, setAccountSchedulable } from '@/src/services/admin';
+import { getAccountUsage, refreshOpenAIQuota, resetOpenAIQuota, setAccountSchedulable } from '@/src/services/admin';
 import { clearAccountQuotaOverride, isAccountQuotaForceEnabled } from '@/src/store/account-quota-override';
 import type { AccountUsageProgress, AdminAccount } from '@/src/types/admin';
 import { Text, localizedAlert } from '@/src/components/localized-text';
@@ -60,7 +60,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
   });
   const creditsQuery = useQuery({
     queryKey: ['openai-quota-credits', account.id],
-    queryFn: () => queryOpenAIQuota(account.id),
+    queryFn: () => refreshOpenAIQuota(account.id),
     enabled: isOpenAIOAuth && autoQueryCredits,
     staleTime: 60_000,
     retry: false,
@@ -79,14 +79,35 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
   });
   const resetMutation = useMutation({
     mutationFn: () => resetOpenAIQuota(account.id),
-    onSuccess: async () => {
+    onSuccess: async (result) => {
+      if (result.quota) {
+        queryClient.setQueryData(['openai-quota-credits', account.id], { ...result.quota, cache_persisted: result.cache_refreshed });
+      }
+      if (result.account) queryClient.setQueryData(['account', account.id], result.account);
       await Promise.all([
-        creditsQuery.refetch(),
+        result.quota ? Promise.resolve() : creditsQuery.refetch(),
         usageQuery.refetch(),
         queryClient.invalidateQueries({ queryKey: ['accounts'] }),
       ]);
+      const details = [`已重置 ${result.windows_reset} 个额度窗口。`];
+      if (!result.cache_refreshed) details.push('重置次数缓存未刷新，请稍后重新查询。');
+      if (!result.account_state_recovered) details.push('账号运行状态未完全恢复，请使用“恢复状态”。');
+      if (result.warning_code) details.push(`警告：${result.warning_code}`);
+      localizedAlert(result.warning_code ? '重置完成（有警告）' : '重置成功', details.join('\n'));
     },
+    onError: (error) => localizedAlert('重置失败', error instanceof Error ? error.message : '请稍后重试。'),
   });
+
+  const queryResetCredits = async () => {
+    const result = await creditsQuery.refetch();
+    if (result.error) {
+      localizedAlert('查询失败', result.error instanceof Error ? result.error.message : '请稍后重试。');
+      return;
+    }
+    localizedAlert('查询成功', result.data?.cache_persisted === false
+      ? '已获取最新重置次数，但服务端缓存未能保存。'
+      : '已获取并保存最新重置次数。');
+  };
 
   useEffect(() => {
     const sevenDayExhausted = (usageQuery.data?.seven_day?.utilization ?? 0) >= 100;
@@ -132,7 +153,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
         </Pressable>
         {isOpenAIOAuth ? (
           <>
-            <Pressable disabled={creditsQuery.isFetching || resetMutation.isPending} onPress={(event) => { event.stopPropagation(); void creditsQuery.refetch(); }} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2.5 disabled:opacity-50">
+            <Pressable disabled={creditsQuery.isFetching || resetMutation.isPending} onPress={(event) => { event.stopPropagation(); void queryResetCredits(); }} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2.5 disabled:opacity-50">
               <Text className="text-xs font-bold text-[#2459C4]">{creditsQuery.isFetching ? '查询中…' : '查询重置'}</Text>
             </Pressable>
             <Pressable
@@ -155,7 +176,7 @@ export function AccountQuotaPanel({ account, compact = false, autoQueryCredits =
       {isOpenAIOAuth && creditsQuery.data && count <= 0 ? <Text className="text-[11px] text-[#7C8AA0] dark:text-[#9EABC0]">当前没有可用次数，已禁用重置。</Text> : null}
       {account.parent_account_id != null ? <Text className="text-[11px] text-[#7C8AA0] dark:text-[#9EABC0]">影子账号不能重置，请在母账号上操作。</Text> : null}
       {creditsQuery.error ? <Text className="text-xs text-[#D9475C]">{(creditsQuery.error as Error).message}</Text> : null}
-      {resetMutation.data ? <Text className="text-xs text-[#16794B]">重置成功，已重置 {resetMutation.data.windows_reset} 个窗口。</Text> : null}
+      {resetMutation.data ? <Text className="text-xs text-[#16794B]">重置成功，已重置 {resetMutation.data.windows_reset} 个窗口{resetMutation.data.account_state_recovered ? '，账号状态已恢复' : ''}。</Text> : null}
       {resetMutation.error ? <Text className="text-xs text-[#D9475C]">{(resetMutation.error as Error).message}</Text> : null}
     </View>
   );

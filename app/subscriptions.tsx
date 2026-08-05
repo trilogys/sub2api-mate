@@ -40,7 +40,12 @@ export default function SubscriptionsScreen() {
       else if (action === 'restore') await restoreSubscription(id);
       else await revokeSubscription(id);
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['subscriptions'] }),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: ['subscriptions'] });
+      const labels = { extend: '订阅已延期 30 天', reset: '订阅额度已重置', revoke: '订阅已撤销', restore: '订阅已恢复' } as const;
+      localizedAlert('操作成功', labels[variables.action]);
+    },
+    onError: (error) => localizedAlert('操作失败', error instanceof Error ? error.message : '请稍后重试。'),
   });
 
   return (
@@ -66,7 +71,7 @@ export default function SubscriptionsScreen() {
           <ListCard key={item.id} title={item.user?.email || `用户 #${item.user_id}`} meta={`${item.group?.name || `分组 #${item.group_id}`} · ${item.expires_at ? new Date(item.expires_at).toLocaleDateString() + ' 到期' : '永久'}`} badge={item.status} badgeTone={item.status === 'active' ? 'success' : item.status === 'revoked' ? 'danger' : 'muted'}>
             <Text className="text-xs text-[#6B778C] dark:text-[#9EABC0]">日 ${item.daily_usage_usd.toFixed(2)} · 周 ${item.weekly_usage_usd.toFixed(2)} · 月 ${item.monthly_usage_usd.toFixed(2)} USD</Text>
             <View className="mt-3 flex-row flex-wrap gap-2">
-              {item.status === 'revoked' ? <Pressable onPress={() => actionMutation.mutate({ id: item.id, action: 'restore' })} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Text className="text-xs font-bold text-[#2F6DF6]">恢复</Text></Pressable> : <><Pressable onPress={() => actionMutation.mutate({ id: item.id, action: 'extend' })} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Text className="text-xs font-bold text-[#2F6DF6]">延期 30 天</Text></Pressable><Pressable onPress={() => actionMutation.mutate({ id: item.id, action: 'reset' })} className="rounded-xl bg-[#E2E9F3] dark:bg-[#273449] px-3 py-2"><Text className="text-xs font-bold text-[#475467] dark:text-[#C2CCDB]">重置额度</Text></Pressable><Pressable onPress={() => localizedAlert('撤销订阅', '确认撤销该用户订阅？', [{ text: '取消', style: 'cancel' }, { text: '撤销', style: 'destructive', onPress: () => actionMutation.mutate({ id: item.id, action: 'revoke' }) }])} className="rounded-xl bg-[#FFF0F2] dark:bg-[#3A1720] px-3 py-2"><Text className="text-xs font-bold text-[#D9475C]">撤销</Text></Pressable></>}
+              {item.status === 'revoked' ? <Pressable onPress={() => actionMutation.mutate({ id: item.id, action: 'restore' })} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Text className="text-xs font-bold text-[#2F6DF6]">恢复</Text></Pressable> : <><Pressable onPress={() => actionMutation.mutate({ id: item.id, action: 'extend' })} className="rounded-xl bg-[#EAF2FF] dark:bg-[#172C55] px-3 py-2"><Text className="text-xs font-bold text-[#2F6DF6]">延期 30 天</Text></Pressable><Pressable onPress={() => localizedAlert('重置订阅额度', '确定重置该用户的订阅额度使用量吗？', [{ text: '取消', style: 'cancel' }, { text: '确认重置', style: 'destructive', onPress: () => actionMutation.mutate({ id: item.id, action: 'reset' }) }])} className="rounded-xl bg-[#E2E9F3] dark:bg-[#273449] px-3 py-2"><Text className="text-xs font-bold text-[#475467] dark:text-[#C2CCDB]">重置额度</Text></Pressable><Pressable onPress={() => localizedAlert('撤销订阅', '确认撤销该用户订阅？', [{ text: '取消', style: 'cancel' }, { text: '撤销', style: 'destructive', onPress: () => actionMutation.mutate({ id: item.id, action: 'revoke' }) }])} className="rounded-xl bg-[#FFF0F2] dark:bg-[#3A1720] px-3 py-2"><Text className="text-xs font-bold text-[#D9475C]">撤销</Text></Pressable></>}
             </View>
           </ListCard>
         ))}

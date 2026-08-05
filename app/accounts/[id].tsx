@@ -184,7 +184,13 @@ export default function AccountDetailScreen() {
         router.replace(`/accounts/${String(result.id)}`);
         return;
       }
-      setFeedback('操作完成');
+      const labels: Partial<Record<AccountAction, string>> = {
+        refresh: '账号凭据已刷新', recover: '账号运行状态已恢复', 'clear-error': '账号错误已清除',
+        'clear-rate-limit': '账号限流状态已清除', 'reset-quota': '本地额度已重置', 'clear-temp': '临时停用状态已清除',
+      };
+      const message = labels[action] || '操作完成';
+      setFeedback(message);
+      if (action === 'reset-quota') localizedAlert('重置成功', message);
       await refreshQueries();
     },
     onError: (value) => setFeedback(value instanceof Error ? value.message : '操作失败'),
@@ -238,7 +244,7 @@ export default function AccountDetailScreen() {
             <Text style={{ marginBottom: 10, fontSize: 18, fontWeight: '700', color: colors.text }}>维护操作</Text>
             <View style={{ gap: 10 }}>
               <View style={{ flexDirection: 'row', gap: 10 }}>
-                <ActionButton label="选择模型测试" disabled={busy} onPress={() => setTestModalVisible(true)} />
+                <ActionButton label="测试连接" disabled={busy} onPress={() => setTestModalVisible(true)} />
                 <ActionButton label="刷新凭据" disabled={busy} onPress={() => actionMutation.mutate('refresh')} />
               </View>
               <View style={{ flexDirection: 'row', gap: 10 }}>
