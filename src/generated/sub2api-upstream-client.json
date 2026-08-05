@@ -2,9 +2,9 @@
   "source": "Wei-Shaw/sub2api frontend/src/api/admin and backend/internal/handler/admin",
   "counts": {
     "services": 293,
-    "types": 263,
-    "backend_types": 143,
-    "handlers": 287
+    "types": 264,
+    "backend_types": 145,
+    "handlers": 288
   },
   "entries": [
     {
@@ -1242,10 +1242,10 @@
     {
       "kind": "upstream_service",
       "source": "accounts",
-      "name": "queryOpenAIQuota",
+      "name": "refreshOpenAIQuota",
       "signature": "id: number",
-      "method": "GET",
-      "endpoint": "/api/v1/admin/openai/accounts/:id/quota"
+      "method": "POST",
+      "endpoint": "/api/v1/admin/openai/accounts/:id/quota/refresh"
     },
     {
       "kind": "upstream_service",
@@ -4426,6 +4426,14 @@
     {
       "kind": "upstream_type",
       "source": "accounts",
+      "name": "OpenAIQuotaRefreshResult",
+      "fields": [
+        "cache_persisted"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
       "name": "OpenAIQuotaResetCredit",
       "fields": [
         "id?",
@@ -4444,7 +4452,12 @@
       "fields": [
         "code",
         "credit?",
-        "windows_reset"
+        "windows_reset",
+        "quota?",
+        "account?",
+        "cache_refreshed",
+        "account_state_recovered",
+        "warning_code?"
       ]
     },
     {
@@ -7890,6 +7903,26 @@
     {
       "kind": "upstream_backend_type",
       "source": "openai_oauth_handler",
+      "name": "openAIQuotaRefreshResponse",
+      "fields": [
+        "cache_persisted"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "openai_oauth_handler",
+      "name": "openAIQuotaResetResponse",
+      "fields": [
+        "quota",
+        "account",
+        "cache_refreshed",
+        "account_state_recovered",
+        "warning_code"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "openai_oauth_handler",
       "name": "OpenAIRefreshTokenRequest",
       "fields": [
         "refresh_token",
@@ -11005,6 +11038,16 @@
       "kind": "upstream_handler",
       "source": "openai_oauth_handler",
       "name": "RefreshAccountToken",
+      "path_parameters": [
+        "id"
+      ],
+      "query_parameters": [],
+      "request_types": []
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "openai_oauth_handler",
+      "name": "RefreshQuota",
       "path_parameters": [
         "id"
       ],

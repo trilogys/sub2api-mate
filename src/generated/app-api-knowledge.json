@@ -3,13 +3,13 @@
   "routes_sha256": "e7820877db604511a61f42f27d58c5886063a6159129745980e6c110637f5125",
   "counts": {
     "routes": 384,
-    "services": 406,
-    "types": 99,
-    "screens": 54,
+    "services": 409,
+    "types": 101,
+    "screens": 55,
     "upstream_services": 293,
-    "upstream_types": 263,
-    "upstream_backend_types": 143,
-    "upstream_handlers": 287
+    "upstream_types": 264,
+    "upstream_backend_types": 145,
+    "upstream_handlers": 288
   },
   "entries": [
     {
@@ -495,6 +495,22 @@
     },
     {
       "kind": "screen",
+      "title": "支付订单",
+      "app_route": "/payment-orders",
+      "fields": [
+        "退款金额",
+        "退款原因"
+      ],
+      "sections": [
+        "检索订单"
+      ],
+      "placeholders": [
+        "订单号 / 用户",
+        "请填写退款原因"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "优惠码",
       "app_route": "/promo-codes",
       "fields": [
@@ -617,14 +633,29 @@
       "kind": "screen",
       "title": "/system-settings",
       "app_route": "/system-settings",
-      "fields": [],
-      "sections": [],
-      "placeholders": [
+      "fields": [
         "站点名称",
         "站点副标题",
         "默认余额",
         "默认并发",
-        "默认 RPM，0 为无限"
+        "默认 RPM（0 为无限）",
+        "Site Key",
+        "Captcha App ID",
+        "AccessKey ID",
+        "Scene ID",
+        "Prefix",
+        "手动版本覆盖（可选）",
+        "OpenAI Codex User-Agent（可选）"
+      ],
+      "sections": [
+        "站点信息",
+        "新用户默认值",
+        "功能开关",
+        "人机验证",
+        "Codex 客户端身份"
+      ],
+      "placeholders": [
+        "例如 0.148.0"
       ]
     },
     {
@@ -1132,11 +1163,47 @@
     },
     {
       "kind": "service",
+      "name": "refreshOpenAIQuota",
+      "signature": "accountId: number",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/openai/accounts/:accountId/quota/refresh"
+      ]
+    },
+    {
+      "kind": "service",
       "name": "resetOpenAIQuota",
       "signature": "accountId: number",
       "method": "POST",
       "endpoints": [
         "/api/v1/admin/openai/accounts/:accountId/reset-quota"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "listPaymentOrders",
+      "signature": "params: { page?: number; page_size?: number; status?: string; keyword?: string } = {}",
+      "method": "GET",
+      "endpoints": [
+        "/api/v1/admin/payment/orders:buildQuery({ page: params.page ?? 1, page_size: params.page_size ?? 20, status: params.status, keyword: params.keyword )}"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "refundPaymentOrder",
+      "signature": "orderId: number, body: { amount: number; reason: string; deduct_balance?: boolean; force?: boolean }",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/payment/orders/:orderId/refund"
+      ]
+    },
+    {
+      "kind": "service",
+      "name": "queryPaymentRefund",
+      "signature": "orderId: number",
+      "method": "POST",
+      "endpoints": [
+        "/api/v1/admin/payment/orders/:orderId/refund/query"
       ]
     },
     {
@@ -3096,15 +3163,6 @@
     },
     {
       "kind": "service",
-      "name": "officialOpenAIOAuthRefreshQuota",
-      "signature": "input: OfficialAdminCallInput = {}",
-      "method": "POST",
-      "endpoints": [
-        "/api/v1/admin/openai/accounts/:id/quota/refresh"
-      ]
-    },
-    {
-      "kind": "service",
       "name": "officialOpenAIOAuthRefreshAccountToken",
       "signature": "input: OfficialAdminCallInput = {}",
       "method": "POST",
@@ -4541,7 +4599,30 @@
         "payment_enabled?",
         "risk_control_enabled?",
         "available_channels_enabled?",
-        "allow_user_view_error_requests?"
+        "allow_user_view_error_requests?",
+        "turnstile_enabled?",
+        "turnstile_site_key?",
+        "turnstile_secret_key_configured?",
+        "turnstile_secret_key?",
+        "tencent_captcha_enabled?",
+        "tencent_captcha_app_id?",
+        "tencent_captcha_app_secret_key_configured?",
+        "tencent_captcha_cloud_secret_id_configured?",
+        "tencent_captcha_cloud_secret_key_configured?",
+        "tencent_captcha_app_secret_key?",
+        "tencent_captcha_cloud_secret_id?",
+        "tencent_captcha_cloud_secret_key?",
+        "aliyun_captcha_enabled?",
+        "aliyun_captcha_access_key_id?",
+        "aliyun_captcha_access_key_secret_configured?",
+        "aliyun_captcha_access_key_secret?",
+        "aliyun_captcha_scene_id?",
+        "aliyun_captcha_prefix?",
+        "aliyun_captcha_region?",
+        "openai_codex_user_agent?",
+        "openai_codex_client_version?",
+        "openai_codex_client_version_synced?",
+        "openai_codex_version_auto_sync_enabled?"
       ]
     },
     {
@@ -4615,6 +4696,8 @@
         "platform",
         "rate_multiplier?",
         "rpm_limit?",
+        "max_reasoning_effort?",
+        "reasoning_effort_mappings?",
         "is_exclusive?",
         "status?",
         "subscription_type?",
@@ -4756,7 +4839,12 @@
         "reset_type?",
         "status?",
         "expires_at?",
-        "windows_reset"
+        "windows_reset",
+        "quota?",
+        "account?",
+        "cache_refreshed",
+        "account_state_recovered",
+        "warning_code?"
       ]
     },
     {
@@ -4926,7 +5014,47 @@
         "daily_limit_usd?",
         "weekly_limit_usd?",
         "monthly_limit_usd?",
-        "rpm_limit?"
+        "rpm_limit?",
+        "max_reasoning_effort?",
+        "reasoning_effort_mappings?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "PaymentOrder",
+      "fields": [
+        "id",
+        "user_id",
+        "amount",
+        "pay_amount",
+        "currency?",
+        "fee_rate",
+        "payment_type",
+        "out_trade_no",
+        "status",
+        "order_type",
+        "created_at",
+        "expires_at",
+        "paid_at?",
+        "completed_at?",
+        "refund_amount",
+        "refund_reason?",
+        "refund_requested_at?",
+        "refund_requested_by?",
+        "refund_request_reason?",
+        "plan_id?",
+        "provider_instance_id?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "RefundResult",
+      "fields": [
+        "success",
+        "warning?",
+        "require_force?",
+        "balance_deducted?",
+        "subscription_days_deducted?"
       ]
     },
     {
@@ -7264,10 +7392,10 @@
     {
       "kind": "upstream_service",
       "source": "accounts",
-      "name": "queryOpenAIQuota",
+      "name": "refreshOpenAIQuota",
       "signature": "id: number",
-      "method": "GET",
-      "endpoint": "/api/v1/admin/openai/accounts/:id/quota"
+      "method": "POST",
+      "endpoint": "/api/v1/admin/openai/accounts/:id/quota/refresh"
     },
     {
       "kind": "upstream_service",
@@ -10448,6 +10576,14 @@
     {
       "kind": "upstream_type",
       "source": "accounts",
+      "name": "OpenAIQuotaRefreshResult",
+      "fields": [
+        "cache_persisted"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
       "name": "OpenAIQuotaResetCredit",
       "fields": [
         "id?",
@@ -10466,7 +10602,12 @@
       "fields": [
         "code",
         "credit?",
-        "windows_reset"
+        "windows_reset",
+        "quota?",
+        "account?",
+        "cache_refreshed",
+        "account_state_recovered",
+        "warning_code?"
       ]
     },
     {
@@ -13912,6 +14053,26 @@
     {
       "kind": "upstream_backend_type",
       "source": "openai_oauth_handler",
+      "name": "openAIQuotaRefreshResponse",
+      "fields": [
+        "cache_persisted"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "openai_oauth_handler",
+      "name": "openAIQuotaResetResponse",
+      "fields": [
+        "quota",
+        "account",
+        "cache_refreshed",
+        "account_state_recovered",
+        "warning_code"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "openai_oauth_handler",
       "name": "OpenAIRefreshTokenRequest",
       "fields": [
         "refresh_token",
@@ -17027,6 +17188,16 @@
       "kind": "upstream_handler",
       "source": "openai_oauth_handler",
       "name": "RefreshAccountToken",
+      "path_parameters": [
+        "id"
+      ],
+      "query_parameters": [],
+      "request_types": []
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "openai_oauth_handler",
+      "name": "RefreshQuota",
       "path_parameters": [
         "id"
       ],
