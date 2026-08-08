@@ -100,6 +100,14 @@
     },
     {
       "kind": "screen",
+      "title": "/accounts/:id",
+      "app_route": "/accounts/:id",
+      "fields": [],
+      "sections": [],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
       "title": "添加账号",
       "app_route": "/accounts/create",
       "fields": [
@@ -151,14 +159,6 @@
       "kind": "screen",
       "title": "/accounts/overview",
       "app_route": "/accounts/overview",
-      "fields": [],
-      "sections": [],
-      "placeholders": []
-    },
-    {
-      "kind": "screen",
-      "title": "/accounts/:id",
-      "app_route": "/accounts/:id",
       "fields": [],
       "sections": [],
       "placeholders": []
@@ -386,16 +386,16 @@
     },
     {
       "kind": "screen",
-      "title": "/groups/create",
-      "app_route": "/groups/create",
+      "title": "/groups/:id",
+      "app_route": "/groups/:id",
       "fields": [],
       "sections": [],
       "placeholders": []
     },
     {
       "kind": "screen",
-      "title": "/groups/:id",
-      "app_route": "/groups/:id",
+      "title": "/groups/create",
+      "app_route": "/groups/create",
       "fields": [],
       "sections": [],
       "placeholders": []
@@ -704,6 +704,18 @@
     },
     {
       "kind": "screen",
+      "title": "/users/:id",
+      "app_route": "/users/:id",
+      "fields": [],
+      "sections": [],
+      "placeholders": [
+        "搜索名称 / Key / 分组",
+        "输入金额，例如 10",
+        "备注（可选）"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "/users/api-key",
       "app_route": "/users/api-key",
       "fields": [],
@@ -761,18 +773,6 @@
       "fields": [],
       "sections": [],
       "placeholders": []
-    },
-    {
-      "kind": "screen",
-      "title": "/users/:id",
-      "app_route": "/users/:id",
-      "fields": [],
-      "sections": [],
-      "placeholders": [
-        "搜索名称 / Key / 分组",
-        "输入金额，例如 10",
-        "备注（可选）"
-      ]
     },
     {
       "kind": "service",
@@ -8353,7 +8353,7 @@
       "kind": "upstream_service",
       "source": "usage",
       "name": "getStats",
-      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
+      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean upstream_model_mismatch?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
       "method": "GET",
       "endpoint": "/api/v1/admin/usage/stats"
     },
@@ -8694,6 +8694,7 @@
         "user_id?",
         "exact_total?",
         "billing_mode?",
+        "upstream_model_mismatch?",
         "sort_by?",
         "sort_order?",
         "error_phase?",
@@ -10300,7 +10301,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -10527,7 +10529,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -11756,6 +11759,18 @@
         "turnstile_enabled",
         "turnstile_site_key",
         "turnstile_secret_key_configured",
+        "tencent_captcha_enabled",
+        "tencent_captcha_app_id",
+        "tencent_captcha_app_secret_key_configured",
+        "tencent_captcha_cloud_secret_id_configured",
+        "tencent_captcha_cloud_secret_key_configured",
+        "tencent_captcha_region",
+        "aliyun_captcha_enabled",
+        "aliyun_captcha_access_key_id",
+        "aliyun_captcha_access_key_secret_configured",
+        "aliyun_captcha_scene_id",
+        "aliyun_captcha_prefix",
+        "aliyun_captcha_region",
         "api_key_acl_trust_forwarded_ip",
         "forwarded_client_ip_headers",
         "linuxdo_connect_enabled",
@@ -11851,6 +11866,9 @@
         "enable_client_dateline_normalization",
         "antigravity_user_agent_version",
         "openai_codex_user_agent",
+        "openai_codex_client_version",
+        "openai_codex_client_version_synced",
+        "openai_codex_version_auto_sync_enabled",
         "min_codex_version",
         "max_codex_version",
         "codex_cli_only_blacklist",
@@ -12038,7 +12056,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -12338,6 +12357,18 @@
         "turnstile_enabled?",
         "turnstile_site_key?",
         "turnstile_secret_key?",
+        "tencent_captcha_enabled?",
+        "tencent_captcha_app_id?",
+        "tencent_captcha_app_secret_key?",
+        "tencent_captcha_cloud_secret_id?",
+        "tencent_captcha_cloud_secret_key?",
+        "tencent_captcha_region?",
+        "aliyun_captcha_enabled?",
+        "aliyun_captcha_access_key_id?",
+        "aliyun_captcha_access_key_secret?",
+        "aliyun_captcha_scene_id?",
+        "aliyun_captcha_prefix?",
+        "aliyun_captcha_region?",
         "api_key_acl_trust_forwarded_ip?",
         "forwarded_client_ip_headers?",
         "linuxdo_connect_enabled?",
@@ -12433,6 +12464,8 @@
         "enable_client_dateline_normalization?",
         "antigravity_user_agent_version?",
         "openai_codex_user_agent?",
+        "openai_codex_client_version?",
+        "openai_codex_version_auto_sync_enabled?",
         "min_codex_version?",
         "max_codex_version?",
         "codex_cli_only_blacklist?",
@@ -13717,7 +13750,8 @@
         "model_source",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -13736,6 +13770,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "include_stats",
         "include_trend",
         "include_models",
@@ -13783,7 +13818,8 @@
         "model",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -14569,6 +14605,18 @@
         "turnstile_enabled",
         "turnstile_site_key",
         "turnstile_secret_key",
+        "tencent_captcha_enabled",
+        "tencent_captcha_app_id",
+        "tencent_captcha_app_secret_key",
+        "tencent_captcha_cloud_secret_id",
+        "tencent_captcha_cloud_secret_key",
+        "tencent_captcha_region",
+        "aliyun_captcha_enabled",
+        "aliyun_captcha_access_key_id",
+        "aliyun_captcha_access_key_secret",
+        "aliyun_captcha_scene_id",
+        "aliyun_captcha_prefix",
+        "aliyun_captcha_region",
         "api_key_acl_trust_forwarded_ip",
         "forwarded_client_ip_headers",
         "linuxdo_connect_enabled",
@@ -14725,6 +14773,8 @@
         "enable_client_dateline_normalization",
         "antigravity_user_agent_version",
         "openai_codex_user_agent",
+        "openai_codex_client_version",
+        "openai_codex_version_auto_sync_enabled",
         "min_codex_version",
         "max_codex_version",
         "codex_cli_only_blacklist",
@@ -14870,7 +14920,8 @@
         "billing_mode",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -16774,6 +16825,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "timezone",
         "start_date",
         "end_date",
@@ -17504,6 +17556,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "timezone",
         "start_date",
         "end_date",
