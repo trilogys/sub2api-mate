@@ -12,12 +12,12 @@ import type { AdminUsageLog } from '@/src/types/admin';
 import { Text, TextInput } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 
-const KEY = 'sub2api_usage_visible_fields_v1';
+const KEY = 'sub2api_usage_visible_fields_v2';
 const fieldOptions = [
-  ['status', '状态'], ['user', '用户'], ['api_key', 'API 密钥'], ['account', '上游账号'], ['group', '分组'], ['ip', 'IP'], ['request_id', '请求 ID'], ['model', '请求模型'], ['upstream_model', '上游模型'], ['platform', '平台'], ['service_tier', '服务等级'], ['request_type', '请求类型'], ['stream', '流式'], ['tokens', 'Token 明细'], ['cost', '费用'], ['duration', '总耗时'], ['first_token', '首字耗时'], ['billing', '计费模式'], ['endpoints', '端点'], ['time', '时间'],
+  ['status', '状态'], ['user', '用户'], ['api_key', 'API 密钥'], ['account', '上游账号'], ['group', '分组'], ['ip', 'IP'], ['request_id', '请求 ID'], ['model', '请求模型'], ['upstream_model', '上游模型'], ['platform', '平台'], ['service_tier', '服务等级'], ['reasoning_effort', '推理强度'], ['request_type', '请求类型'], ['stream', '流式'], ['tokens', 'Token 明细'], ['cost', '费用'], ['duration', '总耗时'], ['first_token', '首字耗时'], ['billing', '计费模式'], ['endpoints', '端点'], ['time', '时间'],
 ] as const;
 type FieldId = typeof fieldOptions[number][0];
-const defaultFields: FieldId[] = ['status','user','account','model','upstream_model','request_type','stream','tokens','cost','duration','first_token','time'];
+const defaultFields: FieldId[] = ['status','user','account','model','upstream_model','reasoning_effort','request_type','stream','tokens','cost','duration','first_token','time'];
 
 async function loadFields() { try { const raw = Platform.OS === 'web' ? globalThis.localStorage?.getItem(KEY) : await SecureStore.getItemAsync(KEY); return raw ? JSON.parse(raw) as FieldId[] : defaultFields; } catch { return defaultFields; } }
 async function saveFields(fields: FieldId[]) { const raw = JSON.stringify(fields); if (Platform.OS === 'web') globalThis.localStorage?.setItem(KEY, raw); else await SecureStore.setItemAsync(KEY, raw); }
@@ -38,7 +38,7 @@ function UsageCard({ item, fields }: { item: AdminUsageLog; fields: FieldId[] })
   const [expanded, setExpanded] = useState(false);
   const show = (id: FieldId) => fields.includes(id); const inputTokens = item.input_tokens ?? 0; const outputTokens = item.output_tokens ?? 0; const cacheCreationTokens = item.cache_creation_tokens ?? 0; const cacheReadTokens = item.cache_read_tokens ?? 0; const tokens = inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens; const ok = !item.status_code || item.status_code < 400;
   const pairs: Array<[FieldId, string, string]> = [
-    ['user','User',item.user?.email || `#${item.user_id}`], ['api_key','API Key',item.api_key?.name || `#${item.api_key_id}`], ['account','Account',item.account?.name || `#${item.account_id ?? '--'}`], ['group','Group',item.group?.name || (item.group_id ? `#${item.group_id}` : '--')], ['ip','IP',item.client_ip || '--'], ['request_id','Request ID',item.request_id], ['upstream_model','Upstream model',item.upstream_model || '--'], ['platform','Platform',item.platform || '--'], ['service_tier','Service tier',item.service_tier || '--'], ['request_type','Request type',item.request_type || '--'], ['stream','Stream',item.stream ? 'Yes' : 'No'], ['tokens','Token usage',`${tokens.toLocaleString()} (input ${inputTokens} / output ${outputTokens} / cache write ${cacheCreationTokens} / cache read ${cacheReadTokens})`], ['cost','Cost',`Standard $${item.total_cost.toFixed(4)} / Charged $${item.actual_cost.toFixed(4)}`], ['duration','Duration',item.duration_ms == null ? '--' : `${item.duration_ms} ms`], ['first_token','TTFT',item.first_token_ms == null ? '--' : `${item.first_token_ms} ms`], ['billing','Billing mode',item.billing_mode || '--'], ['endpoints','Endpoints',`${item.request_path || item.inbound_endpoint || '--'} → ${item.upstream_endpoint || '--'}`], ['time','Time',new Date(item.created_at).toLocaleString()],
+    ['user','User',item.user?.email || `#${item.user_id}`], ['api_key','API Key',item.api_key?.name || `#${item.api_key_id}`], ['account','Account',item.account?.name || `#${item.account_id ?? '--'}`], ['group','Group',item.group?.name || (item.group_id ? `#${item.group_id}` : '--')], ['ip','IP',item.client_ip || '--'], ['request_id','Request ID',item.request_id], ['upstream_model','Upstream model',item.upstream_model || '--'], ['platform','Platform',item.platform || '--'], ['service_tier','Service tier',item.service_tier || '--'], ['reasoning_effort','Reasoning effort',formatReasoningEffort(item.reasoning_effort)], ['request_type','Request type',item.request_type || '--'], ['stream','Stream',item.stream ? 'Yes' : 'No'], ['tokens','Token usage',`${tokens.toLocaleString()} (input ${inputTokens} / output ${outputTokens} / cache write ${cacheCreationTokens} / cache read ${cacheReadTokens})`], ['cost','Cost',`Standard $${item.total_cost.toFixed(4)} / Charged $${item.actual_cost.toFixed(4)}`], ['duration','Duration',item.duration_ms == null ? '--' : `${item.duration_ms} ms`], ['first_token','TTFT',item.first_token_ms == null ? '--' : `${item.first_token_ms} ms`], ['billing','Billing mode',item.billing_mode || '--'], ['endpoints','Endpoints',`${item.request_path || item.inbound_endpoint || '--'} → ${item.upstream_endpoint || '--'}`], ['time','Time',new Date(item.created_at).toLocaleString()],
   ];
   const coreDetails: Array<[string, string, string]> = [
     ['endpoint', 'Endpoints', `${item.request_path || item.inbound_endpoint || '--'} → ${item.upstream_endpoint || '--'}`],
@@ -62,3 +62,9 @@ function UsageCard({ item, fields }: { item: AdminUsageLog; fields: FieldId[] })
 }
 
 function Metric({ label, value }: { label: string; value: string }) { return <View className="min-h-14 flex-1 items-center justify-center rounded-xl border border-[#E2E9F3] bg-[#F4F7FC] dark:border-[#273449] dark:bg-[#0B1220] px-1 py-2"><Text numberOfLines={1} className="text-center text-[10px] font-semibold text-[#8B97A8] dark:text-[#9EABC0]">{label}</Text><Text numberOfLines={1} className="mt-1 text-center text-[10px] font-bold text-[#172033] dark:text-[#F4F7FB]">{value}</Text></View>; }
+
+function formatReasoningEffort(value?: string | null) {
+  const effort = value?.trim();
+  if (!effort) return 'Default';
+  return effort.toLowerCase() === 'xhigh' ? 'Xhigh' : `${effort.charAt(0).toUpperCase()}${effort.slice(1).toLowerCase()}`;
+}

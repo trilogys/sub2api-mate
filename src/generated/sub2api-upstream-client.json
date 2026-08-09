@@ -1,10 +1,10 @@
 {
   "source": "Wei-Shaw/sub2api frontend/src/api/admin and backend/internal/handler/admin",
   "counts": {
-    "services": 293,
-    "types": 264,
-    "backend_types": 145,
-    "handlers": 288
+    "services": 297,
+    "types": 266,
+    "backend_types": 148,
+    "handlers": 291
   },
   "entries": [
     {
@@ -366,6 +366,14 @@
       "signature": "settings: UpstreamBillingProbeSettings",
       "method": "PUT",
       "endpoint": "/api/v1/admin/accounts/upstream-billing-probe/settings"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "accounts",
+      "name": "getBatchUsage",
+      "signature": "accountIds: number[], force?: boolean",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/accounts/usage/batch"
     },
     {
       "kind": "upstream_service",
@@ -1082,6 +1090,14 @@
     {
       "kind": "upstream_service",
       "source": "grok",
+      "name": "getCapabilities",
+      "signature": "",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/grok/oauth/capabilities"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "grok",
       "name": "exchangeCode",
       "signature": "payload: GrokExchangeCodeRequest",
       "method": "POST",
@@ -1090,10 +1106,26 @@
     {
       "kind": "upstream_service",
       "source": "grok",
+      "name": "authorizePassword",
+      "signature": "emailAndPassword: string, proxyId?: number | null",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/grok/oauth/password"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "grok",
       "name": "refreshGrokToken",
       "signature": "refreshToken: string, proxyId?: number | null",
       "method": "POST",
       "endpoint": "/api/v1/admin/grok/oauth/refresh-token"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "grok",
+      "name": "validateSSOToken",
+      "signature": "ssoToken: string, proxyId?: number | null",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/grok/oauth/sso-token"
     },
     {
       "kind": "upstream_service",
@@ -2203,7 +2235,7 @@
       "kind": "upstream_service",
       "source": "usage",
       "name": "getStats",
-      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
+      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean upstream_model_mismatch?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
       "method": "GET",
       "endpoint": "/api/v1/admin/usage/stats"
     },
@@ -2544,6 +2576,7 @@
         "user_id?",
         "exact_total?",
         "billing_mode?",
+        "upstream_model_mismatch?",
         "sort_by?",
         "sort_order?",
         "error_phase?",
@@ -2997,6 +3030,15 @@
       "name": "BalanceHistoryResponse",
       "fields": [
         "total_recharged"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
+      "name": "BatchAccountUsageResponse",
+      "fields": [
+        "usage",
+        "errors"
       ]
     },
     {
@@ -3975,6 +4017,14 @@
     {
       "kind": "upstream_type",
       "source": "grok",
+      "name": "GrokOAuthCapabilities",
+      "fields": [
+        "password_auth_enabled"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "grok",
       "name": "GrokQuotaProbeResult",
       "fields": [
         "source",
@@ -4150,7 +4200,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -4377,7 +4428,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -5512,6 +5564,7 @@
         "registration_enabled",
         "email_verify_enabled",
         "registration_email_suffix_whitelist",
+        "registration_email_domain_quota_enabled",
         "promo_code_enabled",
         "password_reset_enabled",
         "frontend_url",
@@ -5606,6 +5659,18 @@
         "turnstile_enabled",
         "turnstile_site_key",
         "turnstile_secret_key_configured",
+        "tencent_captcha_enabled",
+        "tencent_captcha_app_id",
+        "tencent_captcha_app_secret_key_configured",
+        "tencent_captcha_cloud_secret_id_configured",
+        "tencent_captcha_cloud_secret_key_configured",
+        "tencent_captcha_region",
+        "aliyun_captcha_enabled",
+        "aliyun_captcha_access_key_id",
+        "aliyun_captcha_access_key_secret_configured",
+        "aliyun_captcha_scene_id",
+        "aliyun_captcha_prefix",
+        "aliyun_captcha_region",
         "api_key_acl_trust_forwarded_ip",
         "forwarded_client_ip_headers",
         "linuxdo_connect_enabled",
@@ -5681,6 +5746,10 @@
         "fallback_model_openai",
         "fallback_model_gemini",
         "fallback_model_antigravity",
+        "grok_default_text_model",
+        "grok_cross_client_model_map_enabled",
+        "grok_default_base_url_mode",
+        "account_scheduling_thresholds",
         "enable_identity_patch",
         "identity_patch_prompt",
         "ops_monitoring_enabled",
@@ -5701,6 +5770,9 @@
         "enable_client_dateline_normalization",
         "antigravity_user_agent_version",
         "openai_codex_user_agent",
+        "openai_codex_client_version",
+        "openai_codex_client_version_synced",
+        "openai_codex_version_auto_sync_enabled",
         "min_codex_version",
         "max_codex_version",
         "codex_cli_only_blacklist",
@@ -5772,7 +5844,9 @@
         "account_quota_notify_enabled",
         "account_quota_notify_emails",
         "channel_monitor_enabled",
+        "channel_monitor_mode?",
         "channel_monitor_default_interval_seconds",
+        "channel_monitor_hide_throughput?",
         "available_channels_enabled",
         "model_plaza_enabled",
         "model_plaza_require_auth",
@@ -5888,7 +5962,8 @@
         "group_id?",
         "request_type?",
         "stream?",
-        "billing_type?"
+        "billing_type?",
+        "upstream_model_mismatch?"
       ]
     },
     {
@@ -6098,6 +6173,7 @@
         "registration_enabled?",
         "email_verify_enabled?",
         "registration_email_suffix_whitelist?",
+        "registration_email_domain_quota_enabled?",
         "promo_code_enabled?",
         "password_reset_enabled?",
         "frontend_url?",
@@ -6188,6 +6264,18 @@
         "turnstile_enabled?",
         "turnstile_site_key?",
         "turnstile_secret_key?",
+        "tencent_captcha_enabled?",
+        "tencent_captcha_app_id?",
+        "tencent_captcha_app_secret_key?",
+        "tencent_captcha_cloud_secret_id?",
+        "tencent_captcha_cloud_secret_key?",
+        "tencent_captcha_region?",
+        "aliyun_captcha_enabled?",
+        "aliyun_captcha_access_key_id?",
+        "aliyun_captcha_access_key_secret?",
+        "aliyun_captcha_scene_id?",
+        "aliyun_captcha_prefix?",
+        "aliyun_captcha_region?",
         "api_key_acl_trust_forwarded_ip?",
         "forwarded_client_ip_headers?",
         "linuxdo_connect_enabled?",
@@ -6263,6 +6351,10 @@
         "fallback_model_openai?",
         "fallback_model_gemini?",
         "fallback_model_antigravity?",
+        "grok_default_text_model?",
+        "grok_cross_client_model_map_enabled?",
+        "grok_default_base_url_mode?",
+        "account_scheduling_thresholds?",
         "enable_identity_patch?",
         "identity_patch_prompt?",
         "ops_monitoring_enabled?",
@@ -6283,6 +6375,8 @@
         "enable_client_dateline_normalization?",
         "antigravity_user_agent_version?",
         "openai_codex_user_agent?",
+        "openai_codex_client_version?",
+        "openai_codex_version_auto_sync_enabled?",
         "min_codex_version?",
         "max_codex_version?",
         "codex_cli_only_blacklist?",
@@ -6342,7 +6436,9 @@
         "account_quota_notify_enabled?",
         "account_quota_notify_emails?",
         "channel_monitor_enabled?",
+        "channel_monitor_mode?",
         "channel_monitor_default_interval_seconds?",
+        "channel_monitor_hide_throughput?",
         "available_channels_enabled?",
         "model_plaza_enabled?",
         "model_plaza_require_auth?",
@@ -6835,6 +6931,14 @@
       "fields": [
         "user_ids",
         "all"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "account_handler",
+      "name": "BatchUsageRequest",
+      "fields": [
+        "force"
       ]
     },
     {
@@ -7395,7 +7499,12 @@
         "video_price_480p",
         "video_price_720p",
         "video_price_1080p",
+        "video_model_prices",
         "web_search_price_per_call",
+        "search_price_per_1k",
+        "audio_realtime_price_per_min",
+        "audio_tts_price_per_million_chars",
+        "audio_stt_price_per_hour",
         "claude_code_only",
         "fallback_group_id",
         "fallback_group_id_on_invalid_request",
@@ -7567,7 +7676,8 @@
         "model_source",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -7586,6 +7696,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "include_stats",
         "include_trend",
         "include_models",
@@ -7633,7 +7744,8 @@
         "model",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -7811,11 +7923,30 @@
     {
       "kind": "upstream_backend_type",
       "source": "grok_oauth_handler",
+      "name": "GrokPasswordAuthorizeRequest",
+      "fields": [
+        "email",
+        "password",
+        "proxy_id"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "grok_oauth_handler",
       "name": "GrokRefreshTokenRequest",
       "fields": [
         "refresh_token",
         "rt",
         "client_id",
+        "proxy_id"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "grok_oauth_handler",
+      "name": "GrokSSOTokenRequest",
+      "fields": [
+        "sso_token",
         "proxy_id"
       ]
     },
@@ -8102,7 +8233,9 @@
       "fields": [
         "model_id",
         "prompt",
-        "mode"
+        "mode",
+        "image_data_url",
+        "audio_data_url"
       ]
     },
     {
@@ -8274,7 +8407,12 @@
         "video_price_480p",
         "video_price_720p",
         "video_price_1080p",
+        "video_model_prices",
         "web_search_price_per_call",
+        "search_price_per_1k",
+        "audio_realtime_price_per_min",
+        "audio_tts_price_per_million_chars",
+        "audio_stt_price_per_hour",
         "claude_code_only",
         "fallback_group_id",
         "fallback_group_id_on_invalid_request",
@@ -8396,6 +8534,7 @@
         "registration_enabled",
         "email_verify_enabled",
         "registration_email_suffix_whitelist",
+        "registration_email_domain_quota_enabled",
         "promo_code_enabled",
         "password_reset_enabled",
         "frontend_url",
@@ -8419,6 +8558,18 @@
         "turnstile_enabled",
         "turnstile_site_key",
         "turnstile_secret_key",
+        "tencent_captcha_enabled",
+        "tencent_captcha_app_id",
+        "tencent_captcha_app_secret_key",
+        "tencent_captcha_cloud_secret_id",
+        "tencent_captcha_cloud_secret_key",
+        "tencent_captcha_region",
+        "aliyun_captcha_enabled",
+        "aliyun_captcha_access_key_id",
+        "aliyun_captcha_access_key_secret",
+        "aliyun_captcha_scene_id",
+        "aliyun_captcha_prefix",
+        "aliyun_captcha_region",
         "api_key_acl_trust_forwarded_ip",
         "forwarded_client_ip_headers",
         "linuxdo_connect_enabled",
@@ -8575,6 +8726,8 @@
         "enable_client_dateline_normalization",
         "antigravity_user_agent_version",
         "openai_codex_user_agent",
+        "openai_codex_client_version",
+        "openai_codex_version_auto_sync_enabled",
         "min_codex_version",
         "max_codex_version",
         "codex_cli_only_blacklist",
@@ -8631,7 +8784,12 @@
         "payment_alipay_force_qrcode",
         "payment_alipay_mobile_precreate_deep_link",
         "channel_monitor_enabled",
+        "channel_monitor_mode",
         "channel_monitor_default_interval_seconds",
+        "channel_monitor_hide_throughput",
+        "grok_default_text_model",
+        "grok_cross_client_model_map_enabled",
+        "grok_default_base_url_mode",
         "available_channels_enabled",
         "model_plaza_enabled",
         "model_plaza_require_auth",
@@ -8642,6 +8800,7 @@
         "cyber_session_block_ttl_seconds",
         "openai_fast_policy_settings",
         "default_platform_quotas",
+        "account_scheduling_thresholds",
         "auth_source_default_email_platform_quotas",
         "auth_source_default_linuxdo_platform_quotas",
         "auth_source_default_oidc_platform_quotas",
@@ -8720,7 +8879,8 @@
         "billing_mode",
         "request_type",
         "stream",
-        "billing_type"
+        "billing_type",
+        "upstream_model_mismatch"
       ]
     },
     {
@@ -8771,6 +8931,16 @@
       "query_parameters": [],
       "request_types": [
         "AssignSubscriptionRequest"
+      ]
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "grok_oauth_handler",
+      "name": "AuthorizePassword",
+      "path_parameters": [],
+      "query_parameters": [],
+      "request_types": [
+        "GrokPasswordAuthorizeRequest"
       ]
     },
     {
@@ -9801,6 +9971,16 @@
     },
     {
       "kind": "upstream_handler",
+      "source": "account_handler",
+      "name": "GetBatchUsage",
+      "path_parameters": [],
+      "query_parameters": [],
+      "request_types": [
+        "BatchUsageRequest"
+      ]
+    },
+    {
+      "kind": "upstream_handler",
       "source": "user_attribute_handler",
       "name": "GetBatchUserAttributes",
       "path_parameters": [],
@@ -10624,6 +10804,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "timezone",
         "start_date",
         "end_date",
@@ -11354,6 +11535,7 @@
         "request_type",
         "stream",
         "billing_type",
+        "upstream_model_mismatch",
         "timezone",
         "start_date",
         "end_date",
@@ -11934,6 +12116,16 @@
       "query_parameters": [],
       "request_types": [
         "service.WebSearchEmulationConfig"
+      ]
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "grok_oauth_handler",
+      "name": "ValidateSSOToken",
+      "path_parameters": [],
+      "query_parameters": [],
+      "request_types": [
+        "GrokSSOTokenRequest"
       ]
     }
   ]
