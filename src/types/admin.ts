@@ -852,6 +852,7 @@ export type AdminUsageLog = {
   model: string;
   upstream_model?: string | null;
   service_tier?: string | null;
+  reasoning_effort?: string | null;
   inbound_endpoint?: string | null;
   upstream_endpoint?: string | null;
   request_path?: string | null;

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { Activity, AlertTriangle, Cpu, Database, Gauge, MemoryStick, Server, ShieldCheck, Timer, Zap } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
@@ -33,7 +34,7 @@ import {
   updateOpsAdvancedSettings,
   updateOpsMetricThresholds,
 } from '@/src/services/ops';
-import type { OpsAdvancedSettings, OpsMetricThresholds, OpsQueryMode, OpsRequestDetail, OpsTimeRange } from '@/src/types/ops';
+import type { OpsAdvancedSettings, OpsDashboardOverview, OpsMetricThresholds, OpsQueryMode, OpsRequestDetail, OpsTimeRange } from '@/src/types/ops';
 
 type OpsTab = 'overview' | 'requests' | 'alerts' | 'logs' | 'settings';
 type RequestKind = 'all' | 'success' | 'error';
@@ -58,6 +59,56 @@ function timeLabel(value?: string | null) {
   if (!value) return '-';
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function clampScore(value: number) {
+  return Math.max(0, Math.min(100, value));
+}
+
+function ratePercent(value?: number | null) {
+  const next = Number(value ?? 0);
+  return clampScore(next >= 0 && next <= 1 ? next * 100 : next);
+}
+
+function healthBreakdown(overview?: OpsDashboardOverview) {
+  if (!overview) return null;
+
+  const requestErrorPercent = ratePercent(overview.error_rate);
+  const upstreamErrorPercent = ratePercent(overview.upstream_error_rate);
+  const worstErrorPercent = Math.max(requestErrorPercent, upstreamErrorPercent);
+  const errorScore = worstErrorPercent <= 1 ? 100 : worstErrorPercent <= 10 ? ((10 - worstErrorPercent) / 9) * 100 : 0;
+  const ttftP99 = Number(overview.ttft?.p99_ms ?? 0);
+  const ttftScore = ttftP99 <= 1000 ? 100 : ttftP99 <= 3000 ? ((3000 - ttftP99) / 2000) * 100 : 0;
+
+  const metrics = overview.system_metrics;
+  const storageScore = metrics?.db_ok === false ? 0 : metrics?.redis_ok === false ? 50 : 100;
+  const cpu = clampScore(Number(metrics?.cpu_usage_percent ?? 0));
+  const memory = clampScore(Number(metrics?.memory_usage_percent ?? 0));
+  const cpuScore = cpu <= 80 ? 100 : ((100 - cpu) / 20) * 100;
+  const memoryScore = memory <= 85 ? 100 : ((100 - memory) / 15) * 100;
+  const resourceScore = (clampScore(cpuScore) + clampScore(memoryScore)) / 2;
+
+  const now = Date.now();
+  const jobs = (overview.job_heartbeats ?? []).filter(Boolean);
+  const failedJobs = jobs.filter((job) => {
+    const lastError = job.last_error_at ? new Date(job.last_error_at).getTime() : 0;
+    const lastSuccess = job.last_success_at ? new Date(job.last_success_at).getTime() : 0;
+    return Boolean(lastError && (!lastSuccess || lastError > lastSuccess)) || Boolean(lastSuccess && now - lastSuccess > 15 * 60 * 1000);
+  });
+  const jobScore = jobs.length ? (1 - failedJobs.length / jobs.length) * 100 : 100;
+  const businessScore = errorScore * 0.5 + ttftScore * 0.5;
+  const infrastructureScore = storageScore * 0.4 + resourceScore * 0.3 + jobScore * 0.3;
+
+  return {
+    requestErrorPercent,
+    upstreamErrorPercent,
+    ttftP99,
+    cpu,
+    memory,
+    failedJobs,
+    businessScore: clampScore(businessScore),
+    infrastructureScore: clampScore(infrastructureScore),
+  };
 }
 
 export default function OpsCenterScreen() {
@@ -193,6 +244,8 @@ export default function OpsCenterScreen() {
   };
 
   const changeTab = (next: OpsTab) => { setTab(next); setSelectedRequest(null); };
+  const openFailedRequests = () => { setRequestKind('error'); setRequestPage(1); changeTab('requests'); };
+  const openSystemLogs = () => { setLogLevel('error'); setLogPage(1); changeTab('logs'); };
 
   return (
     <>
@@ -224,7 +277,20 @@ export default function OpsCenterScreen() {
         {tab === 'overview' ? (
           <>
             <AdminMessage error={coreQuery.error || latencyQuery.error || errorDistributionQuery.error} />
-            <View className="flex-row gap-2"><Metric label="健康评分" value={`${overview?.health_score ?? 0}`} icon={ShieldCheck} tone={(overview?.health_score ?? 0) >= 80 ? 'green' : 'amber'} /><Metric label="SLA" value={percent(overview?.sla)} icon={Gauge} tone={(overview?.sla ?? 100) >= 99 ? 'green' : 'red'} /></View>
+            <HealthOptimizationPanel
+              overview={overview}
+              firing={firing}
+              availability={platformAvailability}
+              refreshing={refreshing}
+              onRefresh={() => refresh().then(() => undefined)}
+              onUseRecentWindow={() => setTimeRange('5m')}
+              onOpenRequests={openFailedRequests}
+              onOpenAccounts={() => router.push('/accounts')}
+              onOpenProxies={() => router.push('/proxies')}
+              onOpenAlerts={() => changeTab('alerts')}
+              onOpenLogs={openSystemLogs}
+            />
+            <View className="flex-row gap-2"><Metric label="SLA" value={percent(overview?.sla)} icon={Gauge} tone={(overview?.sla ?? 100) >= 99 ? 'green' : 'red'} /><Metric label="活动告警" value={`${firing}`} icon={AlertTriangle} tone={firing ? 'red' : 'green'} /></View>
             <View className="flex-row gap-2"><Metric label="请求总数" value={compact(overview?.request_count_total)} icon={Activity} tone="blue" /><Metric label="Token" value={formatTokenValue(overview?.token_consumed ?? 0)} icon={Zap} tone="purple" /></View>
             <View className="flex-row gap-2"><Metric label="请求错误率" value={percent(overview?.error_rate)} icon={AlertTriangle} tone={(overview?.error_rate ?? 0) > 0 ? 'red' : 'green'} /><Metric label="上游错误率" value={percent(overview?.upstream_error_rate)} icon={Server} tone={(overview?.upstream_error_rate ?? 0) > 0 ? 'red' : 'green'} /></View>
 
@@ -331,6 +397,135 @@ export default function OpsCenterScreen() {
       </ScreenShell>
     </>
   );
+}
+
+type HealthAction = 'requests' | 'accounts' | 'proxies' | 'alerts' | 'logs';
+
+function HealthOptimizationPanel({
+  overview,
+  firing,
+  availability,
+  refreshing,
+  onRefresh,
+  onUseRecentWindow,
+  onOpenRequests,
+  onOpenAccounts,
+  onOpenProxies,
+  onOpenAlerts,
+  onOpenLogs,
+}: {
+  overview?: OpsDashboardOverview;
+  firing: number;
+  availability: Array<{ total_accounts: number; available_count: number; rate_limit_count: number; error_count: number }>;
+  refreshing: boolean;
+  onRefresh: () => void;
+  onUseRecentWindow: () => void;
+  onOpenRequests: () => void;
+  onOpenAccounts: () => void;
+  onOpenProxies: () => void;
+  onOpenAlerts: () => void;
+  onOpenLogs: () => void;
+}) {
+  const breakdown = healthBreakdown(overview);
+  const rawScore = overview?.health_score;
+  const score = rawScore == null ? null : clampScore(Number(rawScore));
+  const idle = Boolean(overview && overview.request_count_sla <= 0 && overview.request_count_total <= 0 && overview.error_count_total <= 0);
+  const status = score == null ? '等待数据' : idle ? '待机' : score >= 90 ? '健康' : score >= 75 ? '良好' : score >= 60 ? '需关注' : '异常';
+  const color = score == null ? '#7C8AA0' : score >= 90 ? '#169B68' : score >= 75 ? '#2F6DF6' : score >= 60 ? '#D88A18' : '#D9475C';
+  const issues: Array<{ key: string; title: string; detail: string; action: HealthAction }> = [];
+
+  if (breakdown && !idle) {
+    if (breakdown.requestErrorPercent > 1) issues.push({
+      key: 'request-errors',
+      title: '请求错误正在扣分',
+      detail: `请求错误率 ${breakdown.requestErrorPercent.toFixed(2)}%；官方规则超过 1% 开始扣分，达到 10% 时该项为 0。`,
+      action: 'requests',
+    });
+    if (breakdown.upstreamErrorPercent > 1) issues.push({
+      key: 'upstream-errors',
+      title: '上游错误正在扣分',
+      detail: `上游错误率 ${breakdown.upstreamErrorPercent.toFixed(2)}%；优先检查异常账号、限流和代理连通性。`,
+      action: 'accounts',
+    });
+    if (breakdown.ttftP99 > 1000) issues.push({
+      key: 'ttft',
+      title: '首 Token 延迟过高',
+      detail: `TTFT P99 为 ${Math.round(breakdown.ttftP99)} ms；超过 1 秒开始扣分，3 秒及以上该项为 0。`,
+      action: 'proxies',
+    });
+    if (overview?.system_metrics?.db_ok === false) issues.push({ key: 'db', title: '数据库连接异常', detail: '数据库故障会直接把存储健康降为 0，需要在服务器侧检查数据库连接和资源。', action: 'logs' });
+    if (overview?.system_metrics?.redis_ok === false) issues.push({ key: 'redis', title: 'Redis 连接异常', detail: 'Redis 故障会把存储健康降为 50，需要检查 Redis 服务和连接池。', action: 'logs' });
+    if (breakdown.cpu > 80 || breakdown.memory > 85) issues.push({
+      key: 'resources',
+      title: '服务器资源压力较高',
+      detail: `CPU ${breakdown.cpu.toFixed(1)}% · 内存 ${breakdown.memory.toFixed(1)}%；应降低并发或扩容服务器。`,
+      action: 'accounts',
+    });
+    if (breakdown.failedJobs.length) issues.push({
+      key: 'jobs',
+      title: '后台任务失败或超过 15 分钟未成功',
+      detail: breakdown.failedJobs.slice(0, 3).map((job) => job.job_name).join('、'),
+      action: 'logs',
+    });
+  }
+
+  const limitedAccounts = availability.reduce((sum, item) => sum + item.rate_limit_count, 0);
+  const errorAccounts = availability.reduce((sum, item) => sum + item.error_count, 0);
+  if (limitedAccounts || errorAccounts) issues.push({
+    key: 'accounts',
+    title: '账号池存在不可用账号',
+    detail: `限流 ${limitedAccounts} 个 · 异常 ${errorAccounts} 个；请恢复可恢复账号，并停用持续失败的账号。`,
+    action: 'accounts',
+  });
+  if (firing) issues.push({ key: 'alerts', title: '仍有活动告警', detail: `${firing} 条告警尚未处理。`, action: 'alerts' });
+  if (score != null && score < 90 && !idle && !issues.length) issues.push({
+    key: 'unknown',
+    title: '服务端返回低分但明细不足',
+    detail: '当前响应没有包含明确的扣分指标，请从错误日志确认服务器端故障原因。',
+    action: 'logs',
+  });
+
+  const actionHandlers: Record<HealthAction, { label: string; onPress: () => void }> = {
+    requests: { label: '查看失败请求', onPress: onOpenRequests },
+    accounts: { label: '处理异常账号', onPress: onOpenAccounts },
+    proxies: { label: '检测代理质量', onPress: onOpenProxies },
+    alerts: { label: '处理活动告警', onPress: onOpenAlerts },
+    logs: { label: '查看错误日志', onPress: onOpenLogs },
+  };
+  const actionKeys = new Set(issues.map((item) => item.action));
+  if ((breakdown?.upstreamErrorPercent ?? 0) > 1) actionKeys.add('proxies');
+  const actions = [...actionKeys].map((key) => actionHandlers[key]);
+
+  return (
+    <View className="gap-3 rounded-[22px] border border-[#E2E9F3] bg-white p-4 dark:border-[#273449] dark:bg-[#111827]">
+      <View className="flex-row items-start gap-3">
+        <View className="h-11 w-11 items-center justify-center rounded-2xl bg-[#EAF2FF] dark:bg-[#172C55]"><ShieldCheck size={21} color={color} /></View>
+        <View className="min-w-0 flex-1"><Text className="text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">服务健康度</Text><Text className="mt-1 text-[11px] leading-5 text-[#667085] dark:text-[#9EABC0]">官方服务端评分 · 业务健康 70% + 基础设施 30%</Text></View>
+        <View className="items-end"><Text style={{ color }} className="text-2xl font-extrabold">{score == null ? '--' : Math.round(score)}<Text className="text-xs"> /100</Text></Text><Text style={{ color }} className="mt-1 text-[10px] font-bold">{status}</Text></View>
+      </View>
+      <View className="h-2 overflow-hidden rounded-full bg-[#DCE6F4] dark:bg-[#273449]"><View style={{ width: `${score ?? 0}%`, backgroundColor: color }} className="h-full rounded-full" /></View>
+
+      {breakdown ? <View className="flex-row gap-2"><HealthSubscore label="业务健康" weight="70%" value={breakdown.businessScore} /><HealthSubscore label="基础设施" weight="30%" value={breakdown.infrastructureScore} /></View> : null}
+
+      {idle ? <Text className="rounded-xl bg-[#F4F7FC] px-3 py-2 text-[11px] leading-5 text-[#667085] dark:bg-[#0B1220] dark:text-[#9EABC0]">当前窗口没有请求，官方规则按待机状态返回 100 分。</Text> : issues.length ? <View className="gap-2"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">真实扣分与风险来源</Text>{issues.map((item) => <View key={item.key} className="rounded-xl bg-[#FFF7E8] px-3 py-2 dark:bg-[#3C2A11]"><Text className="text-[11px] font-bold text-[#A15C08] dark:text-[#F4C15D]">{item.title}</Text><Text className="mt-1 text-[10px] leading-4 text-[#8A6741] dark:text-[#D8B77A]">{item.detail}</Text></View>)}</View> : score != null ? <Text className="rounded-xl bg-[#ECFDF3] px-3 py-2 text-[11px] text-[#16794B] dark:bg-[#123325] dark:text-[#71D7A6]">当前指标未发现明显扣分项。</Text> : null}
+
+      <View className="flex-row flex-wrap gap-2">
+        {actions.map((action) => <HealthActionButton key={action.label} label={action.label} onPress={action.onPress} />)}
+        <HealthActionButton label="查看最近 5 分钟" onPress={onUseRecentWindow} />
+        <HealthActionButton label={refreshing ? '刷新中…' : '刷新评分'} onPress={onRefresh} disabled={refreshing} primary />
+      </View>
+      <Text className="text-[10px] leading-4 text-[#7C8AA0] dark:text-[#9EABC0]">修复后分数按所选统计窗口重新计算；1h/24h 仍包含之前的错误，使用 5m 窗口可以更快验证恢复是否真实生效。</Text>
+    </View>
+  );
+}
+
+function HealthSubscore({ label, weight, value }: { label: string; weight: string; value: number }) {
+  const color = value >= 90 ? '#169B68' : value >= 60 ? '#D88A18' : '#D9475C';
+  return <View className="min-w-0 flex-1 rounded-2xl bg-[#F4F7FC] p-3 dark:bg-[#0B1220]"><View className="flex-row items-center"><Text className="flex-1 text-[10px] text-[#667085] dark:text-[#9EABC0]">{label}</Text><Text className="text-[9px] text-[#98A2B3]">权重 {weight}</Text></View><Text style={{ color }} className="mt-2 text-lg font-extrabold">{Math.round(value)}<Text className="text-[10px]"> /100</Text></Text></View>;
+}
+
+function HealthActionButton({ label, onPress, disabled = false, primary = false }: { label: string; onPress: () => void; disabled?: boolean; primary?: boolean }) {
+  return <Pressable disabled={disabled} onPress={onPress} className={`rounded-xl px-3 py-2.5 disabled:opacity-50 ${primary ? 'bg-[#2F6DF6]' : 'bg-[#EAF2FF] dark:bg-[#172C55]'}`}><Text className={`text-xs font-bold ${primary ? 'text-white' : 'text-[#2459C4]'}`}>{label}</Text></Pressable>;
 }
 
 function Metric({ label, value, icon: Icon, tone, compactCard = false }: { label: string; value: string; icon: typeof Activity; tone: 'blue' | 'green' | 'red' | 'amber' | 'purple'; compactCard?: boolean }) {

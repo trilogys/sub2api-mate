@@ -19,6 +19,7 @@ import {
   Moon,
   Network,
   RadioTower,
+  RefreshCw,
   ScrollText,
   Settings2,
   Shield,
@@ -78,6 +79,7 @@ export function AppSidebar() {
   const draggingIdRef = useRef<string | undefined>(undefined);
   const dragResponderIdRef = useRef<string | undefined>(undefined);
   const [prefs, setPrefs] = useState<UIPreferences>(defaultUIPreferences);
+  const [serverVersionRefreshing, setServerVersionRefreshing] = useState(false);
   const prefsRef = useRef<UIPreferences>(defaultUIPreferences);
   const orderRef = useRef<string[]>([]);
   const suppressNavigationRef = useRef<string | undefined>(undefined);
@@ -221,6 +223,19 @@ export function AppSidebar() {
       { text: '忽略此版本', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: [...prefsRef.current.dismissedServerUpdateVersions, latest] }) },
       { text: '关闭全部提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: true }) },
     ]);
+  };
+
+  const refreshServerVersion = async () => {
+    if (serverVersionRefreshing) return;
+    setServerVersionRefreshing(true);
+    try {
+      const data = await checkSystemUpdates(true);
+      queryClient.setQueryData(['system-version', config.activeAccountId], data);
+    } catch (error) {
+      localizedAlert('刷新失败', error instanceof Error ? error.message : '暂时无法刷新服务端版本');
+    } finally {
+      setServerVersionRefreshing(false);
+    }
   };
 
   const openWebsite = async () => {
@@ -476,6 +491,17 @@ export function AppSidebar() {
                         style={{ maxWidth: 104, flexShrink: 1, borderRadius: 999, backgroundColor: serverUpdateWarningVisible ? (dark ? '#4A3513' : '#FFF0C2') : (dark ? '#1A2638' : '#EEF3F9'), paddingHorizontal: 9, paddingVertical: 4 }}
                       >
                         <Text numberOfLines={1} style={{ fontSize: 9, fontWeight: '800', color: serverUpdateWarningVisible ? (dark ? '#FFD66B' : '#946321') : (dark ? '#D5DDEA' : '#4B5A70') }}>{currentServerVersion}</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="刷新服务端版本"
+                        accessibilityState={{ disabled: serverVersionRefreshing, busy: serverVersionRefreshing }}
+                        disabled={serverVersionRefreshing}
+                        hitSlop={6}
+                        onPress={() => void refreshServerVersion()}
+                        style={{ width: 24, height: 24, alignItems: 'center', justifyContent: 'center', borderRadius: 8, backgroundColor: dark ? '#1A2638' : '#EEF3F9', opacity: serverVersionRefreshing ? 0.55 : 1 }}
+                      >
+                        <RefreshCw size={12} color={dark ? '#8BB4FF' : '#2F6DF6'} />
                       </Pressable>
                     </View>
                   ) : null}

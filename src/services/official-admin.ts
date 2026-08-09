@@ -459,6 +459,16 @@ export const officialAdminOperations: readonly OfficialAdminOperation[] = [
     "transport": "http"
   },
   {
+    "id": "POST /api/v1/admin/accounts/usage/batch",
+    "name": "officialAccountGetBatchUsage",
+    "module": "accounts",
+    "method": "POST",
+    "path": "/api/v1/admin/accounts/usage/batch",
+    "handler": "h.Admin.Account.GetBatchUsage",
+    "pathParams": [],
+    "transport": "http"
+  },
+  {
     "id": "GET /api/v1/admin/affiliates/invites",
     "name": "officialAffiliateListInviteRecords",
     "module": "affiliates",
@@ -1144,6 +1154,16 @@ export const officialAdminOperations: readonly OfficialAdminOperation[] = [
     "transport": "http"
   },
   {
+    "id": "GET /api/v1/admin/grok/oauth/capabilities",
+    "name": "officialGrokOAuthGetCapabilities",
+    "module": "grok",
+    "method": "GET",
+    "path": "/api/v1/admin/grok/oauth/capabilities",
+    "handler": "h.Admin.GrokOAuth.GetCapabilities",
+    "pathParams": [],
+    "transport": "http"
+  },
+  {
     "id": "POST /api/v1/admin/grok/oauth/create-from-oauth",
     "name": "officialGrokOAuthCreateAccountFromOAuth",
     "module": "grok",
@@ -1164,6 +1184,16 @@ export const officialAdminOperations: readonly OfficialAdminOperation[] = [
     "transport": "http"
   },
   {
+    "id": "POST /api/v1/admin/grok/oauth/password",
+    "name": "officialGrokOAuthAuthorizePassword",
+    "module": "grok",
+    "method": "POST",
+    "path": "/api/v1/admin/grok/oauth/password",
+    "handler": "h.Admin.GrokOAuth.AuthorizePassword",
+    "pathParams": [],
+    "transport": "http"
+  },
+  {
     "id": "POST /api/v1/admin/grok/oauth/reconcile",
     "name": "officialGrokOAuthReconcileOAuthAccounts",
     "module": "grok",
@@ -1180,6 +1210,16 @@ export const officialAdminOperations: readonly OfficialAdminOperation[] = [
     "method": "POST",
     "path": "/api/v1/admin/grok/oauth/refresh-token",
     "handler": "h.Admin.GrokOAuth.RefreshToken",
+    "pathParams": [],
+    "transport": "http"
+  },
+  {
+    "id": "POST /api/v1/admin/grok/oauth/sso-token",
+    "name": "officialGrokOAuthValidateSSOToken",
+    "module": "grok",
+    "method": "POST",
+    "path": "/api/v1/admin/grok/oauth/sso-token",
+    "handler": "h.Admin.GrokOAuth.ValidateSSOToken",
     "pathParams": [],
     "transport": "http"
   },
@@ -2888,6 +2928,10 @@ export function officialAccountUpdateUpstreamBillingProbeSettings(input: Officia
   return officialAdminRequest<unknown>('PUT', '/api/v1/admin/accounts/upstream-billing-probe/settings', input);
 }
 
+export function officialAccountGetBatchUsage(input: OfficialAdminCallInput = {}) {
+  return officialAdminRequest<unknown>('POST', '/api/v1/admin/accounts/usage/batch', input);
+}
+
 export function officialAffiliateListInviteRecords(input: OfficialAdminCallInput = {}) {
   return officialAdminRequest<unknown>('GET', '/api/v1/admin/affiliates/invites', input);
 }
@@ -3140,6 +3184,10 @@ export function officialGrokOAuthGenerateAuthURL(input: OfficialAdminCallInput =
   return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/auth-url', input);
 }
 
+export function officialGrokOAuthGetCapabilities(input: OfficialAdminCallInput = {}) {
+  return officialAdminRequest<unknown>('GET', '/api/v1/admin/grok/oauth/capabilities', input);
+}
+
 export function officialGrokOAuthCreateAccountFromOAuth(input: OfficialAdminCallInput = {}) {
   return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/create-from-oauth', input);
 }
@@ -3148,12 +3196,20 @@ export function officialGrokOAuthExchangeCode(input: OfficialAdminCallInput = {}
   return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/exchange-code', input);
 }
 
+export function officialGrokOAuthAuthorizePassword(input: OfficialAdminCallInput = {}) {
+  return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/password', input);
+}
+
 export function officialGrokOAuthReconcileOAuthAccounts(input: OfficialAdminCallInput = {}) {
   return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/reconcile', input);
 }
 
 export function officialGrokOAuthRefreshToken(input: OfficialAdminCallInput = {}) {
   return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/refresh-token', input);
+}
+
+export function officialGrokOAuthValidateSSOToken(input: OfficialAdminCallInput = {}) {
+  return officialAdminRequest<unknown>('POST', '/api/v1/admin/grok/oauth/sso-token', input);
 }
 
 export function officialGrokOAuthRuntimeSanity(input: OfficialAdminCallInput = {}) {

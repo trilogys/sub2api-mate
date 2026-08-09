@@ -1,7 +1,7 @@
 {
   "source": "https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/backend/internal/server/routes/admin.go",
-  "routes_sha256": "e7820877db604511a61f42f27d58c5886063a6159129745980e6c110637f5125",
-  "route_count": 384,
+  "routes_sha256": "13f1022c5b6a4987fada591973ef3dd9f8a48b901e6338b2d5711042d7f59583",
+  "route_count": 388,
   "routes": [
     {
       "method": "GET",
@@ -302,6 +302,11 @@
       "method": "PUT",
       "path": "/api/v1/admin/accounts/upstream-billing-probe/settings",
       "handler": "h.Admin.Account.UpdateUpstreamBillingProbeSettings"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/accounts/usage/batch",
+      "handler": "h.Admin.Account.GetBatchUsage"
     },
     {
       "method": "GET",
@@ -814,6 +819,11 @@
       "handler": "h.Admin.GrokOAuth.GenerateAuthURL"
     },
     {
+      "method": "GET",
+      "path": "/api/v1/admin/grok/oauth/capabilities",
+      "handler": "h.Admin.GrokOAuth.GetCapabilities"
+    },
+    {
       "method": "POST",
       "path": "/api/v1/admin/grok/oauth/create-from-oauth",
       "handler": "h.Admin.GrokOAuth.CreateAccountFromOAuth"
@@ -825,6 +835,11 @@
     },
     {
       "method": "POST",
+      "path": "/api/v1/admin/grok/oauth/password",
+      "handler": "h.Admin.GrokOAuth.AuthorizePassword"
+    },
+    {
+      "method": "POST",
       "path": "/api/v1/admin/grok/oauth/reconcile",
       "handler": "h.Admin.GrokOAuth.ReconcileOAuthAccounts"
     },
@@ -832,6 +847,11 @@
       "method": "POST",
       "path": "/api/v1/admin/grok/oauth/refresh-token",
       "handler": "h.Admin.GrokOAuth.RefreshToken"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/grok/oauth/sso-token",
+      "handler": "h.Admin.GrokOAuth.ValidateSSOToken"
     },
     {
       "method": "GET",
