@@ -4,8 +4,8 @@
   "counts": {
     "routes": 388,
     "services": 413,
-    "types": 114,
-    "screens": 57,
+    "types": 119,
+    "screens": 60,
     "upstream_services": 297,
     "upstream_types": 266,
     "upstream_backend_types": 148,
@@ -356,6 +356,29 @@
     },
     {
       "kind": "screen",
+      "title": "CLIProxy 凭据",
+      "app_route": "/cliproxy-auth-files",
+      "fields": [
+        "搜索",
+        "Vertex Location",
+        "显示名称",
+        "备注",
+        "Project ID"
+      ],
+      "sections": [
+        "凭据文件操作",
+        "账号文件列表"
+      ],
+      "placeholders": [
+        "名称、邮箱、提供商",
+        "us-central1",
+        "例如：Codex 主账号",
+        "账号用途",
+        "可选"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "CLIProxy 分组管理",
       "app_route": "/cliproxy-groups",
       "fields": [
@@ -363,7 +386,6 @@
         "专用 Client Key"
       ],
       "sections": [
-        "需要管理员权限",
         "插件状态",
         "CLIProxy 分组列表"
       ],
@@ -374,14 +396,52 @@
     },
     {
       "kind": "screen",
+      "title": "CLIProxy 日志与统计",
+      "app_route": "/cliproxy-observability",
+      "fields": [
+        "筛选日志"
+      ],
+      "sections": [
+        "观测设置",
+        "API Key 使用统计",
+        "运行日志",
+        "请求错误日志"
+      ],
+      "placeholders": [
+        "请求 ID、模型、错误文本"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxy 系统设置",
+      "app_route": "/cliproxy-system",
+      "fields": [
+        "全局代理 URL",
+        "请求重试次数",
+        "最大重试间隔（秒）",
+        "日志总大小 MiB",
+        "错误日志保留数"
+      ],
+      "sections": [
+        "运行状态",
+        "常用运行参数",
+        "插件商店",
+        "完整 config.yaml"
+      ],
+      "placeholders": [
+        "http://127.0.0.1:7890 或 socks5://…"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "CLIProxyAPI 管理",
       "app_route": "/cliproxy",
       "fields": [
         "CLIProxyAPI 服务地址",
-        "Management Key"
+        "Management Key",
+        "OAuth 回调 URL（远程/无自动回调时）"
       ],
       "sections": [
-        "需要管理员权限",
         "1. 连接 CLIProxyAPI",
         "2. CLIProxy 分组与 Client Key",
         "3. CLI 账号授权",
@@ -390,7 +450,8 @@
       ],
       "placeholders": [
         "例如：http://192.168.1.10:8317",
-        "remote-management.secret-key"
+        "remote-management.secret-key",
+        "http://localhost/…?code=…&state=…"
       ]
     },
     {
@@ -454,6 +515,7 @@
       "fields": [],
       "sections": [],
       "placeholders": [
+        "http://192.168.1.10:8317",
         "https://sub2api.example.com",
         "name@example.com",
         "••••••••"
@@ -6093,6 +6155,70 @@
         "deny_unmapped",
         "allow_shared_auths",
         "groups"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyLogResult",
+      "fields": [
+        "lines",
+        "lineCount",
+        "latestTimestamp",
+        "nextCursor?",
+        "cursorReset?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyRequestErrorLog",
+      "fields": [
+        "name",
+        "size",
+        "modified"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyAPIKeyUsageEntry",
+      "fields": [
+        "provider",
+        "identity",
+        "baseUrl",
+        "maskedKey",
+        "success",
+        "failed",
+        "recentRequests"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginStoreEntry",
+      "fields": [
+        "store_id",
+        "source_id",
+        "source_name?",
+        "id",
+        "name",
+        "description?",
+        "author?",
+        "version?",
+        "installed?",
+        "installed_version?",
+        "enabled?",
+        "effective_enabled?",
+        "update_available?",
+        "auth_required?",
+        "auth_configured?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginStore",
+      "fields": [
+        "plugins_enabled",
+        "plugins_dir",
+        "sources",
+        "plugins"
       ]
     },
     {

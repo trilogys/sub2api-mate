@@ -12,17 +12,30 @@ CLIProxyAPI
 
 CLIProxy 分组不会读取或复用 Sub2API 分组。Mate 只是同一个管理客户端，不会把两套业务数据合并。
 
+## 工作区切换
+
+登录页顶部提供 `Sub2API / CLIProxyAPI` 工作区选择：
+
+- Sub2API 工作区只展示 Sub2API 登录、导航和管理页面。
+- CLIProxyAPI 工作区直接使用 CLIProxyAPI 地址与 Management Key 连接，不要求先登录 Sub2API。
+- 两侧栏底部均提供切换按钮；切换后立即隐藏另一工作区的页面。
+- 当前工作区会持久化保存，下次启动自动回到上次使用的工作区。
+- Sub2API 与 CLIProxyAPI 凭据分别存储，切换工作区不会复制或复用任何凭据。
+
 ## 当前功能
 
 - CLIProxyAPI 地址、Management Key 和连通测试。
 - CLIProxy Client Key、模型列表和原生管理页入口。
-- Claude、Codex、Antigravity、Kimi、Grok OAuth。
+- Claude、Codex、Gemini CLI、Antigravity、Kimi、Grok OAuth，支持远程环境手工提交回调 URL。
 - 账号池状态、凭据启停和配额冷却清除。
 - Codex 5h/7d、Gemini CLI、Antigravity 实时配额。
 - 30 秒、1/5/15 分钟前台自动刷新。
 - 单实例 CLIProxy 独立分组：专用 Client Key、组内凭据、Round Robin / Fill First、组启停和组配额汇总。
-
-完整 YAML、插件商店、请求日志、错误日志以及全部高级 Provider 配置仍由 CLIProxyAPI 原生管理页提供。
+- 凭据 JSON 多文件导入、Vertex 服务账号导入、敏感导出/分享、元数据编辑、支持模型查看和受保护删除。
+- API Key 近期使用统计、文件日志筛选与前台自动刷新、错误日志导出和日志清理。
+- Debug、全局代理、重试、日志、用量统计、WebSocket 鉴权、配额切换和全局调度等常用运行参数。
+- 完整 `config.yaml` 读取、编辑、服务端校验和热重载，覆盖高级 Provider、OpenAI 兼容、模型别名与排除模型。
+- CLIProxyAPI 已配置可信源的插件商店浏览、安装与更新；Group Router 不在商店源时仍通过 `.so` 安装。
 
 ## 为什么需要 Group Router 插件
 
@@ -85,17 +98,16 @@ CLIProxyAPI 官方 Compose 已把本地 `./plugins` 挂载为 `/CLIProxyAPI/plug
 
 ## 3. 在 Mate 中创建 CLIProxy 分组
 
-1. 使用管理员身份登录 Mate。
-2. 打开“更多管理” → “CLIProxyAPI 管理”。
-3. 保存 CLIProxyAPI 地址和 Management Key。
-4. 打开“CLIProxy 分组管理”。
-5. 确认 `CLIProxy Group Router 已生效`。
-6. 创建分组并设置：
+1. 在登录页选择 `CLIProxyAPI` 工作区。
+2. 输入 CLIProxyAPI 地址和 Management Key 并连接；不需要登录 Sub2API。
+3. 打开“CLIProxy 分组”。
+4. 确认 `CLIProxy Group Router 已生效`。
+5. 创建分组并设置：
    - 分组名称
    - 专用 Client Key
    - Round Robin 或 Fill First
    - 一个或多个 CLIProxy OAuth 凭据
-7. 保存后，Mate 会同步插件配置和 CLIProxyAPI 顶层 `api-keys`。
+6. 保存后，Mate 会同步插件配置和 CLIProxyAPI 顶层 `api-keys`。
 
 Client Key 只属于 CLIProxy 分组，不会写入 Sub2API 分组或 Sub2API API Key 数据。
 

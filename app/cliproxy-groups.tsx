@@ -1,5 +1,4 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { router } from 'expo-router';
 import { Copy, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AppState, Pressable, View } from 'react-native';
@@ -20,8 +19,8 @@ import {
   saveCLIProxyGroupRouterConfig,
   setCLIProxyAuthFileFields,
 } from '@/src/services/cliproxy';
-import { adminConfigState } from '@/src/store/admin-config';
 import { cliProxyConfigState, hydrateCLIProxyConfig } from '@/src/store/cliproxy-config';
+import { workspaceModeState } from '@/src/store/workspace-mode';
 import type { CLIProxyConnection, CLIProxyGroup, CLIProxyGroupRouterConfig, CLIProxyGroupStrategy } from '@/src/types/cliproxy';
 
 const { useSnapshot } = require('valtio/react');
@@ -53,11 +52,10 @@ function generateClientKey() {
 
 export default function CLIProxyGroupsScreen() {
   const client = useQueryClient();
-  const adminSession = useSnapshot(adminConfigState);
+  const workspace = useSnapshot(workspaceModeState);
   const stored = useSnapshot(cliProxyConfigState);
-  const admin = adminSession.authMode === 'admin_key' || adminSession.user?.role === 'admin';
   const connection = useMemo<CLIProxyConnection>(() => ({ baseUrl: stored.baseUrl, managementKey: stored.managementKey }), [stored.baseUrl, stored.managementKey]);
-  const configured = admin && stored.hydrated && Boolean(connection.baseUrl && connection.managementKey);
+  const configured = workspace.mode === 'cliproxy' && stored.hydrated && Boolean(connection.baseUrl && connection.managementKey);
   const [editingID, setEditingID] = useState('');
   const [name, setName] = useState('');
   const [apiKey, setAPIKey] = useState('');
@@ -68,8 +66,8 @@ export default function CLIProxyGroupsScreen() {
   const autoRefreshRunningRef = useRef(false);
 
   useEffect(() => {
-    if (admin) void hydrateCLIProxyConfig();
-  }, [admin]);
+    if (workspace.mode === 'cliproxy') void hydrateCLIProxyConfig();
+  }, [workspace.mode]);
 
   const pluginsQuery = useQuery({
     queryKey: ['cliproxy', 'plugins', stored.baseUrl, stored.revision],
@@ -218,16 +216,7 @@ export default function CLIProxyGroupsScreen() {
     },
   });
 
-  if (!admin) {
-    return (
-      <>
-        <LocalizedStackScreen options={{ title: 'CLIProxy 分组管理', headerShown: true }} />
-        <ScreenShell title="CLIProxy 分组管理" subtitle="需要管理员权限" safeAreaEdges={['bottom']} bottomInsetClassName="pb-10">
-          <AdminSection title="需要管理员权限"><AdminButton label="返回更多管理" onPress={() => router.replace('/manage')} /></AdminSection>
-        </ScreenShell>
-      </>
-    );
-  }
+  if (workspace.mode !== 'cliproxy') return null;
 
   return (
     <>
@@ -313,6 +302,8 @@ export default function CLIProxyGroupsScreen() {
             });
             const exhausted = reports.filter((report) => report.status === 'exhausted').length;
             const errors = reports.filter((report) => report.status === 'error').length;
+            const remainingValues = reports.flatMap((report) => report.windows.flatMap((window) => window.remainingPercent === null ? [] : [window.remainingPercent]));
+            const minimumRemaining = remainingValues.length ? Math.min(...remainingValues) : undefined;
             return (
               <View key={group.id} className="gap-3 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]">
                 <View className="flex-row items-start gap-3">
@@ -321,10 +312,19 @@ export default function CLIProxyGroupsScreen() {
                     <Text className="text-sm font-bold text-[#172033] dark:text-[#F4F7FB]">{group.name}</Text>
                     <Text className="mt-1 text-[10px] text-[#6B778C] dark:text-[#9EABC0]">{group.strategy} · {group.auth_ids.length} 个凭据 · {group.enabled ? '启用' : '停用'}</Text>
                     <Text className="mt-1 text-[10px] text-[#6B778C] dark:text-[#9EABC0]">Key：{maskKey(group.api_keys[0] || '')}</Text>
-                    {reports.length ? <Text className="mt-1 text-[10px] text-[#6B778C] dark:text-[#9EABC0]">配额：{reports.length} 份 · 耗尽 {exhausted} · 错误 {errors}</Text> : null}
+                    {reports.length ? <Text className="mt-1 text-[10px] text-[#6B778C] dark:text-[#9EABC0]">组内配额：{reports.length} 份 · 最低剩余 {minimumRemaining === undefined ? '—' : `${minimumRemaining.toFixed(0)}%`} · 耗尽 {exhausted} · 错误 {errors}</Text> : null}
                   </View>
                   <Pressable onPress={() => void copyWithFeedback(group.api_keys[0] || '', 'CLIProxy Group Key')}><Copy size={16} color="#2F6DF6" /></Pressable>
                 </View>
+                {reports.length ? (
+                  <View className="gap-1 rounded-xl bg-white p-2.5 dark:bg-[#111827]">
+                    {reports.map((report) => {
+                      const values = report.windows.flatMap((window) => window.remainingPercent === null ? [] : [window.remainingPercent]);
+                      const remaining = values.length ? Math.min(...values) : undefined;
+                      return <Text key={report.authIndex} className="text-[9px] text-[#6B778C] dark:text-[#9EABC0]">{report.name} · {report.status} · {remaining === undefined ? '—' : `${remaining.toFixed(0)}%`}</Text>;
+                    })}
+                  </View>
+                ) : null}
                 <View className="flex-row gap-2">
                   <Pressable onPress={() => editGroup(group)} className="flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-[#EAF2FF] py-2.5 dark:bg-[#172C55]"><Pencil size={13} color="#2F6DF6" /><Text className="text-[10px] font-bold text-[#2F6DF6]">编辑</Text></Pressable>
                   <Pressable disabled={deleteMutation.isPending} onPress={() => localizedAlert('删除 CLIProxy 分组？', '删除后该组 Client Key 将立即失效，且不会路由到其他组。', [{ text: '取消', style: 'cancel' }, { text: '删除', style: 'destructive', onPress: () => deleteMutation.mutate(group.id) }])} className="flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-[#FFF0F2] py-2.5 disabled:opacity-50 dark:bg-[#3A1720]"><Trash2 size={13} color="#D9475C" /><Text className="text-[10px] font-bold text-[#D9475C]">删除</Text></Pressable>

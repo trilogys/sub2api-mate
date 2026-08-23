@@ -42,7 +42,7 @@ export type CLIProxyAuthFile = {
   id_token?: Record<string, unknown>;
 };
 
-export type CLIProxyOAuthProvider = 'anthropic' | 'codex' | 'antigravity' | 'kimi' | 'xai';
+export type CLIProxyOAuthProvider = 'anthropic' | 'codex' | 'gemini-cli' | 'antigravity' | 'kimi' | 'xai';
 
 export type CLIProxyOAuthSession = {
   status: 'ok' | 'wait' | 'error' | string;
@@ -129,4 +129,72 @@ export type CLIProxyGroupRouterConfig = {
   deny_unmapped: boolean;
   allow_shared_auths: boolean;
   groups: CLIProxyGroup[];
+};
+
+export type CLIProxyRuntimeConfig = Record<string, unknown> & {
+  debug?: boolean;
+  'proxy-url'?: string;
+  'request-retry'?: number;
+  'max-retry-interval'?: number;
+  'request-log'?: boolean;
+  'logging-to-file'?: boolean;
+  'usage-statistics-enabled'?: boolean;
+  'ws-auth'?: boolean;
+  'force-model-prefix'?: boolean;
+  'logs-max-total-size-mb'?: number;
+  'error-logs-max-files'?: number;
+  routing?: { strategy?: CLIProxyGroupStrategy };
+  'quota-exceeded'?: {
+    'switch-project'?: boolean;
+    'switch-preview-model'?: boolean;
+  };
+};
+
+export type CLIProxyLogResult = {
+  lines: string[];
+  lineCount: number;
+  latestTimestamp: number;
+  nextCursor?: string;
+  cursorReset?: boolean;
+};
+
+export type CLIProxyRequestErrorLog = {
+  name: string;
+  size: number;
+  modified: number;
+};
+
+export type CLIProxyAPIKeyUsageEntry = {
+  provider: string;
+  identity: string;
+  baseUrl: string;
+  maskedKey: string;
+  success: number;
+  failed: number;
+  recentRequests: CLIProxyRequestBucket[];
+};
+
+export type CLIProxyPluginStoreEntry = {
+  store_id: string;
+  source_id: string;
+  source_name?: string;
+  id: string;
+  name: string;
+  description?: string;
+  author?: string;
+  version?: string;
+  installed?: boolean;
+  installed_version?: string;
+  enabled?: boolean;
+  effective_enabled?: boolean;
+  update_available?: boolean;
+  auth_required?: boolean;
+  auth_configured?: boolean;
+};
+
+export type CLIProxyPluginStore = {
+  plugins_enabled: boolean;
+  plugins_dir: string;
+  sources: Array<{ id: string; name?: string; url?: string; error?: string }>;
+  plugins: CLIProxyPluginStoreEntry[];
 };

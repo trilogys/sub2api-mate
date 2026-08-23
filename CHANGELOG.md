@@ -7,6 +7,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-24
+
+### Added
+
+- Top-level Sub2API / CLIProxyAPI workspace switcher with independent connection forms, navigation, route guards, and persisted active workspace.
+- CLIProxy credential-file management: multi-file JSON import, sensitive export/share, metadata editing, per-credential model inspection, and guarded deletion.
+- CLIProxy system management for runtime flags, retries, proxy, logging, quota failover, global routing, complete validated `config.yaml`, update checks, and trusted plugin-store installs.
+- CLIProxy observability page with filtered/auto-refreshed logs, error-log export, log clearing, and non-destructive per-provider API-key usage statistics.
+
 ## [1.6.0] - 2026-08-24
 
 ### Added

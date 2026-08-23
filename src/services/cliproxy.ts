@@ -1,17 +1,22 @@
 import { fetchWithWebProxy } from '@/src/lib/admin-fetch';
 import type {
   CLIProxyAuthFile,
+  CLIProxyAPIKeyUsageEntry,
   CLIProxyConnection,
   CLIProxyConnectionTest,
   CLIProxyGroupRouterConfig,
   CLIProxyGroupStrategy,
+  CLIProxyLogResult,
   CLIProxyModel,
   CLIProxyOAuthProvider,
   CLIProxyOAuthSession,
   CLIProxyOAuthStatus,
   CLIProxyPluginList,
+  CLIProxyPluginStore,
   CLIProxyQuotaReport,
   CLIProxyQuotaWindow,
+  CLIProxyRequestErrorLog,
+  CLIProxyRuntimeConfig,
 } from '@/src/types/cliproxy';
 
 export const CLIPROXY_GROUP_ROUTER_PLUGIN_ID = 'cliproxy-group-router';
@@ -69,19 +74,72 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return payload as T;
 }
 
-async function managementFetch<T>(connection: CLIProxyConnection, path: string, init: RequestInit = {}) {
+async function managementResponse(connection: CLIProxyConnection, path: string, init: RequestInit = {}) {
   const validated = validateConnection(connection);
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const headers = new Headers(init.headers);
   headers.set('Authorization', `Bearer ${validated.managementKey}`);
-  if (init.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-  const response = await fetchWithWebProxy(`${validated.baseUrl}/v0/management${normalizedPath}`, { ...init, headers });
+  const isFormData = typeof FormData !== 'undefined' && init.body instanceof FormData;
+  if (init.body && !isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  return fetchWithWebProxy(`${validated.baseUrl}/v0/management${normalizedPath}`, { ...init, headers });
+}
+
+async function managementFetch<T>(connection: CLIProxyConnection, path: string, init: RequestInit = {}) {
+  const response = await managementResponse(connection, path, init);
   return parseResponse<T>(response);
+}
+
+async function managementTextFetch(connection: CLIProxyConnection, path: string, init: RequestInit = {}) {
+  const response = await managementResponse(connection, path, init);
+  if (!response.ok) return parseResponse<never>(response);
+  return response.text();
 }
 
 export async function listCLIProxyAuthFiles(connection: CLIProxyConnection) {
   const payload = await managementFetch<{ files?: CLIProxyAuthFile[] }>(connection, '/auth-files');
   return Array.isArray(payload.files) ? payload.files : [];
+}
+
+export function uploadCLIProxyAuthFile(connection: CLIProxyConnection, name: string, json: string) {
+  const normalizedName = name.trim();
+  if (!normalizedName.toLowerCase().endsWith('.json')) throw new Error('凭据文件名必须以 .json 结尾。');
+  try {
+    JSON.parse(json);
+  } catch {
+    throw new Error('凭据文件不是有效 JSON。');
+  }
+  return managementFetch<{ status: string }>(connection, `/auth-files?name=${encodeURIComponent(normalizedName)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: json,
+  });
+}
+
+export function importCLIProxyVertexCredential(
+  connection: CLIProxyConnection,
+  file: Blob | { uri: string; name: string; type: string },
+  location = 'us-central1',
+) {
+  const form = new FormData();
+  form.append('file', file as Blob);
+  form.append('location', location.trim() || 'us-central1');
+  return managementFetch<{ status: string; 'auth-file'?: string; project_id?: string; email?: string; location?: string }>(connection, '/vertex/import', {
+    method: 'POST',
+    body: form,
+  });
+}
+
+export function downloadCLIProxyAuthFile(connection: CLIProxyConnection, name: string) {
+  return managementTextFetch(connection, `/auth-files/download?name=${encodeURIComponent(name)}`);
+}
+
+export function deleteCLIProxyAuthFile(connection: CLIProxyConnection, name: string) {
+  return managementFetch<{ status: string }>(connection, `/auth-files?name=${encodeURIComponent(name)}`, { method: 'DELETE' });
+}
+
+export async function listCLIProxyAuthFileModels(connection: CLIProxyConnection, nameOrID: string) {
+  const payload = await managementFetch<{ models?: CLIProxyModel[] }>(connection, `/auth-files/models?name=${encodeURIComponent(nameOrID)}`);
+  return Array.isArray(payload.models) ? payload.models : [];
 }
 
 export async function getCLIProxyAPIKeys(connection: CLIProxyConnection) {
@@ -97,8 +155,125 @@ export function putCLIProxyAPIKeys(connection: CLIProxyConnection, keys: string[
   });
 }
 
+export async function getCLIProxyAPIKeyUsage(connection: CLIProxyConnection) {
+  const payload = await managementFetch<Record<string, unknown>>(connection, '/api-key-usage');
+  const entries: CLIProxyAPIKeyUsageEntry[] = [];
+  for (const [provider, providerValue] of Object.entries(payload)) {
+    const providerEntries = record(providerValue);
+    if (!providerEntries) continue;
+    for (const [identity, rawValue] of Object.entries(providerEntries)) {
+      const value = record(rawValue);
+      if (!value) continue;
+      const separator = identity.lastIndexOf('|');
+      const baseUrl = separator >= 0 ? identity.slice(0, separator) : '';
+      const key = separator >= 0 ? identity.slice(separator + 1) : identity;
+      const recentRequests = Array.isArray(value.recent_requests) ? value.recent_requests.flatMap((item) => {
+        const bucket = record(item);
+        if (!bucket) return [];
+        return [{ time: stringValue(bucket.time), success: numberValue(bucket.success) ?? 0, failed: numberValue(bucket.failed) ?? 0 }];
+      }) : [];
+      entries.push({
+        provider,
+        identity,
+        baseUrl,
+        maskedKey: key.length > 10 ? `${key.slice(0, 5)}••••${key.slice(-4)}` : `${key.slice(0, 2)}••••${key.slice(-2)}`,
+        success: numberValue(value.success) ?? 0,
+        failed: numberValue(value.failed) ?? 0,
+        recentRequests,
+      });
+    }
+  }
+  return entries.sort((a, b) => (b.success + b.failed) - (a.success + a.failed));
+}
+
+export function getCLIProxyRuntimeConfig(connection: CLIProxyConnection) {
+  return managementFetch<CLIProxyRuntimeConfig>(connection, '/config');
+}
+
+export async function getCLIProxyLatestVersion(connection: CLIProxyConnection) {
+  const payload = await managementFetch<{ 'latest-version'?: string }>(connection, '/latest-version');
+  return stringValue(payload['latest-version']);
+}
+
+export function getCLIProxyConfigYAML(connection: CLIProxyConnection) {
+  return managementTextFetch(connection, '/config.yaml');
+}
+
+export function putCLIProxyConfigYAML(connection: CLIProxyConnection, yaml: string) {
+  if (!yaml.trim()) throw new Error('配置 YAML 不能为空。');
+  return managementFetch<{ ok?: boolean; changed?: string[] }>(connection, '/config.yaml', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/yaml' },
+    body: yaml,
+  });
+}
+
+export type CLIProxyRuntimeSettingPath =
+  | 'debug'
+  | 'proxy-url'
+  | 'request-retry'
+  | 'max-retry-interval'
+  | 'request-log'
+  | 'logging-to-file'
+  | 'usage-statistics-enabled'
+  | 'ws-auth'
+  | 'force-model-prefix'
+  | 'logs-max-total-size-mb'
+  | 'error-logs-max-files'
+  | 'quota-exceeded/switch-project'
+  | 'quota-exceeded/switch-preview-model'
+  | 'routing/strategy';
+
+export function setCLIProxyRuntimeSetting(connection: CLIProxyConnection, path: CLIProxyRuntimeSettingPath, value: boolean | number | string) {
+  return managementFetch<{ status: string }>(connection, `/${path}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ value }),
+  });
+}
+
+export async function getCLIProxyLogs(connection: CLIProxyConnection, options: { limit?: number; cursor?: string; after?: number } = {}): Promise<CLIProxyLogResult> {
+  const query = new URLSearchParams();
+  if (options.limit) query.set('limit', String(options.limit));
+  if (options.cursor) query.set('cursor', options.cursor);
+  if (options.after) query.set('after', String(options.after));
+  const queryString = query.toString();
+  const payload = await managementFetch<Record<string, unknown>>(connection, `/logs${queryString ? `?${queryString}` : ''}`);
+  return {
+    lines: Array.isArray(payload.lines) ? payload.lines.filter((line): line is string => typeof line === 'string') : [],
+    lineCount: numberValue(payload['line-count']) ?? 0,
+    latestTimestamp: numberValue(payload['latest-timestamp']) ?? 0,
+    nextCursor: stringValue(payload['next-cursor']) || undefined,
+    cursorReset: payload['cursor-reset'] === true,
+  };
+}
+
+export function clearCLIProxyLogs(connection: CLIProxyConnection) {
+  return managementFetch<{ success?: boolean; removed?: number }>(connection, '/logs', { method: 'DELETE' });
+}
+
+export async function listCLIProxyRequestErrorLogs(connection: CLIProxyConnection) {
+  const payload = await managementFetch<{ files?: CLIProxyRequestErrorLog[] }>(connection, '/request-error-logs');
+  return Array.isArray(payload.files) ? payload.files : [];
+}
+
+export function downloadCLIProxyRequestErrorLog(connection: CLIProxyConnection, name: string) {
+  return managementTextFetch(connection, `/request-error-logs/${encodeURIComponent(name)}`);
+}
+
 export function listCLIProxyPlugins(connection: CLIProxyConnection) {
   return managementFetch<CLIProxyPluginList>(connection, '/plugins');
+}
+
+export function listCLIProxyPluginStore(connection: CLIProxyConnection) {
+  return managementFetch<CLIProxyPluginStore>(connection, '/plugin-store');
+}
+
+export function installCLIProxyStorePlugin(connection: CLIProxyConnection, id: string, sourceID: string, version?: string) {
+  const query = sourceID ? `?source=${encodeURIComponent(sourceID)}` : '';
+  return managementFetch<{ status?: string; restart_required?: boolean; version?: string }>(connection, `/plugin-store/${encodeURIComponent(id)}/install${query}`, {
+    method: 'POST',
+    body: JSON.stringify(version ? { version } : {}),
+  });
 }
 
 function normalizeGroupRouterConfig(value: unknown): CLIProxyGroupRouterConfig {
@@ -193,13 +368,14 @@ export function resetCLIProxyQuota(connection: CLIProxyConnection, authIndex: st
 const oauthEndpoints: Record<CLIProxyOAuthProvider, string> = {
   anthropic: 'anthropic-auth-url',
   codex: 'codex-auth-url',
+  'gemini-cli': 'gemini-cli-auth-url',
   antigravity: 'antigravity-auth-url',
   kimi: 'kimi-auth-url',
   xai: 'xai-auth-url',
 };
 
 export function startCLIProxyOAuth(connection: CLIProxyConnection, provider: CLIProxyOAuthProvider) {
-  const webUIQuery = provider === 'anthropic' || provider === 'codex' || provider === 'antigravity' ? '?is_webui=true' : '';
+  const webUIQuery = provider === 'anthropic' || provider === 'codex' || provider === 'gemini-cli' || provider === 'antigravity' ? '?is_webui=true' : '';
   return managementFetch<CLIProxyOAuthSession>(connection, `/${oauthEndpoints[provider]}${webUIQuery}`);
 }
 
@@ -210,6 +386,19 @@ export function getCLIProxyOAuthStatus(connection: CLIProxyConnection, state: st
 export function cancelCLIProxyOAuth(connection: CLIProxyConnection, state: string) {
   return managementFetch<{ status: string; cancelled?: boolean }>(connection, `/oauth-session?state=${encodeURIComponent(state)}`, {
     method: 'DELETE',
+  });
+}
+
+export function submitCLIProxyOAuthCallback(
+  connection: CLIProxyConnection,
+  provider: CLIProxyOAuthProvider,
+  state: string,
+  redirectUrl: string,
+) {
+  if (!redirectUrl.trim()) throw new Error('请粘贴 OAuth 回调 URL。');
+  return managementFetch<{ status: string; error?: string }>(connection, '/oauth-callback', {
+    method: 'POST',
+    body: JSON.stringify({ provider, state, redirect_url: redirectUrl.trim() }),
   });
 }
 

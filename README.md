@@ -103,7 +103,7 @@ Admin Key authentication does not carry a current-user identity. Personal key CR
 - Display key status, group, limits, validity windows, and compatible endpoint information returned by the server.
 - User and group CRUD, user key inspection, account grouping, and role-aware administration.
 - Proxy CRUD with connectivity and quality-test actions available directly from the proxy list.
-- CLIProxyAPI is managed as an independent domain with CLI OAuth credentials, client keys, foreground quota refresh, and a single-instance Group Router plugin that enforces `key → CLI group → credential pool` isolation without reusing Sub2API groups. See the [CLIProxyAPI management and grouping guide](docs/CLIPROXYAPI_INTEGRATION.md).
+- A top-level workspace switcher shows either Sub2API or CLIProxyAPI login, navigation, and pages at a time. The CLIProxy workspace includes OAuth and JSON credential management, client keys, live quotas, logs and usage statistics, runtime/YAML settings, the plugin store, and a single-instance Group Router enforcing `key → CLI group → credential pool` isolation. See the [CLIProxyAPI management and grouping guide](docs/CLIPROXYAPI_INTEGRATION.md).
 - IP allow-list and block-list management; IP Management is hidden from the default menu but remains available for administrators.
 
 ### Usage records

@@ -21,10 +21,11 @@ import {
   resetCLIProxyQuota,
   setCLIProxyAuthFileDisabled,
   startCLIProxyOAuth,
+  submitCLIProxyOAuthCallback,
   testCLIProxyConnection,
 } from '@/src/services/cliproxy';
 import { cliProxyConfigState, hydrateCLIProxyConfig, saveCLIProxyConfig, updateCLIProxyRefresh } from '@/src/store/cliproxy-config';
-import { adminConfigState } from '@/src/store/admin-config';
+import { workspaceModeState } from '@/src/store/workspace-mode';
 import type { CLIProxyAuthFile, CLIProxyConnection, CLIProxyOAuthProvider, CLIProxyOAuthSession, CLIProxyQuotaReport } from '@/src/types/cliproxy';
 
 const { useSnapshot } = require('valtio/react');
@@ -32,6 +33,7 @@ const { useSnapshot } = require('valtio/react');
 const OAUTH_PROVIDERS: Array<{ value: CLIProxyOAuthProvider; label: string }> = [
   { value: 'anthropic', label: 'Claude' },
   { value: 'codex', label: 'Codex' },
+  { value: 'gemini-cli', label: 'Gemini CLI' },
   { value: 'antigravity', label: 'Antigravity' },
   { value: 'kimi', label: 'Kimi' },
   { value: 'xai', label: 'Grok' },
@@ -77,32 +79,32 @@ function formatDateTime(value?: string) {
 
 export default function CLIProxyScreen() {
   const queryClient = useQueryClient();
-  const adminSession = useSnapshot(adminConfigState);
-  const admin = adminSession.authMode === 'admin_key' || adminSession.user?.role === 'admin';
+  const workspace = useSnapshot(workspaceModeState);
   const stored = useSnapshot(cliProxyConfigState);
   const [baseUrl, setBaseUrl] = useState('');
   const [managementKey, setManagementKey] = useState('');
   const [selectedAPIKey, setSelectedAPIKey] = useState('');
   const [provider, setProvider] = useState<CLIProxyOAuthProvider>('codex');
   const [oauthSession, setOAuthSession] = useState<CLIProxyOAuthSession | null>(null);
+  const [oauthCallbackUrl, setOAuthCallbackUrl] = useState('');
   const [refreshCountdown, setRefreshCountdown] = useState(stored.autoRefreshIntervalSeconds);
   const refreshCountdownRef = useRef(stored.autoRefreshIntervalSeconds);
   const refreshRunningRef = useRef(false);
   const [refreshRunning, setRefreshRunning] = useState(false);
 
   useEffect(() => {
-    if (!admin) return;
+    if (workspace.mode !== 'cliproxy') return;
     hydrateCLIProxyConfig().then((connection) => {
       setBaseUrl(connection.baseUrl);
       setManagementKey(connection.managementKey);
     });
-  }, [admin]);
+  }, [workspace.mode]);
 
   const connection = useMemo<CLIProxyConnection>(() => ({
     baseUrl: stored.baseUrl,
     managementKey: stored.managementKey,
   }), [stored.baseUrl, stored.managementKey]);
-  const configured = admin && stored.hydrated && Boolean(connection.baseUrl && connection.managementKey);
+  const configured = workspace.mode === 'cliproxy' && stored.hydrated && Boolean(connection.baseUrl && connection.managementKey);
   const openAIBaseUrl = getCLIProxyOpenAIBaseUrl(connection.baseUrl);
 
   const authFilesQuery = useQuery({
@@ -179,6 +181,13 @@ export default function CLIProxyScreen() {
     mutationFn: () => cancelCLIProxyOAuth(connection, oauthSession!.state),
     onSuccess: () => setOAuthSession(null),
   });
+  const callbackOAuthMutation = useMutation({
+    mutationFn: () => submitCLIProxyOAuthCallback(connection, provider, oauthSession!.state, oauthCallbackUrl),
+    onSuccess: async () => {
+      setOAuthCallbackUrl('');
+      await oauthStatusQuery.refetch();
+    },
+  });
   const oauthStatusQuery = useQuery({
     queryKey: ['cliproxy', 'oauth-status', oauthSession?.state],
     queryFn: () => getCLIProxyOAuthStatus(connection, oauthSession!.state),
@@ -250,18 +259,7 @@ export default function CLIProxyScreen() {
   const testResult = saveMutation.data;
   const models = modelMutation.data ?? [];
 
-  if (!admin) {
-    return (
-      <>
-        <LocalizedStackScreen options={{ title: 'CLIProxyAPI 管理', headerShown: true }} />
-        <ScreenShell title="CLIProxyAPI 管理" subtitle="需要管理员权限" safeAreaEdges={['bottom']} bottomInsetClassName="pb-10">
-          <AdminSection title="需要管理员权限" detail="普通用户不能访问 CLIProxyAPI 管理密钥或账号池。">
-            <AdminButton label="返回更多管理" onPress={() => router.replace('/manage')} />
-          </AdminSection>
-        </ScreenShell>
-      </>
-    );
-  }
+  if (workspace.mode !== 'cliproxy') return null;
 
   return (
     <>
@@ -353,7 +351,7 @@ export default function CLIProxyScreen() {
             {OAUTH_PROVIDERS.map((item) => <AdminChip key={item.value} label={item.label} selected={provider === item.value} onPress={() => { setProvider(item.value); setOAuthSession(null); startOAuthMutation.reset(); }} />)}
           </View>
           <AdminButton label="生成授权会话" pending={startOAuthMutation.isPending} disabled={!configured} onPress={() => startOAuthMutation.mutate()} />
-          <AdminMessage error={startOAuthMutation.error || oauthStatusQuery.error || cancelOAuthMutation.error} />
+          <AdminMessage error={startOAuthMutation.error || oauthStatusQuery.error || cancelOAuthMutation.error || callbackOAuthMutation.error} />
           {oauthSession ? (
             <View className="gap-3 rounded-2xl border border-[#BDD0FA] bg-[#EEF4FF] p-3 dark:border-[#315189] dark:bg-[#172C55]">
               <Text selectable className="text-xs leading-5 text-[#344054] dark:text-[#D5DDEA]">{oauthSession.url}</Text>
@@ -367,6 +365,12 @@ export default function CLIProxyScreen() {
                 <Text className="flex-1 text-xs font-bold text-[#344054] dark:text-[#D5DDEA]">授权状态：{oauthStatusQuery.data?.status || 'wait'}</Text>
                 <Pressable onPress={() => oauthStatusQuery.refetch()}><Text className="text-xs font-bold text-[#2F6DF6]">立即刷新</Text></Pressable>
               </View>
+              {oauthSession.flow !== 'device' && oauthStatusQuery.data?.status !== 'ok' ? (
+                <View className="gap-2">
+                  <AdminField label="OAuth 回调 URL（远程/无自动回调时）" value={oauthCallbackUrl} onChangeText={setOAuthCallbackUrl} autoCapitalize="none" autoCorrect={false} placeholder="http://localhost/…?code=…&state=…" />
+                  <AdminButton label="提交回调 URL" pending={callbackOAuthMutation.isPending} disabled={!oauthCallbackUrl.trim()} tone="muted" onPress={() => callbackOAuthMutation.mutate()} />
+                </View>
+              ) : null}
               {oauthStatusQuery.data?.error ? <Text className="text-xs text-[#D9475C]">{oauthStatusQuery.data.error}</Text> : null}
               {oauthStatusQuery.data?.status !== 'ok' ? <AdminButton label="取消授权会话" tone="danger" pending={cancelOAuthMutation.isPending} onPress={() => cancelOAuthMutation.mutate()} /> : null}
             </View>

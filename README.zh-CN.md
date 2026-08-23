@@ -104,7 +104,7 @@ Admin Key 本身不包含“当前用户”身份，因此个人密钥增删改�
 - 支持用户与分组增删改查、用户密钥查看、账号分组和角色权限管理。
 - 代理支持增删改查，列表外层可直接进行连通测试和质量检测。
 - 支持 IP 白名单和黑名单；IP 管理默认不显示在菜单中，但管理员仍可添加。
-- CLIProxyAPI 作为独立管理域：支持 CLI OAuth 账号池、Client Key、Codex/Gemini CLI/Antigravity 实时配额与前台自动刷新，并通过单实例 Group Router 插件实现 `Key → CLI 分组 → 凭据池` 强制隔离。完整说明见 [CLIProxyAPI 独立管理与分组指南](docs/CLIPROXYAPI_INTEGRATION.md)。
+- 顶层可在 Sub2API 与 CLIProxyAPI 工作区之间切换，一次只显示当前工作区的登录、导航和页面。CLIProxyAPI 支持 OAuth 账号池、凭据 JSON 导入导出、Client Key、实时配额、日志统计、运行参数、完整 YAML、插件商店与单实例 Group Router 强制分组。完整说明见 [CLIProxyAPI 独立管理与分组指南](docs/CLIPROXYAPI_INTEGRATION.md)。
 
 ### 使用记录
 

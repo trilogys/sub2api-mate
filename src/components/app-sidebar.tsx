@@ -20,6 +20,7 @@ import {
   Network,
   RadioTower,
   RefreshCw,
+  Repeat2,
   ScrollText,
   Settings2,
   Shield,
@@ -38,7 +39,9 @@ import { getServerRootUrl } from '@/src/lib/server-url';
 import { checkSystemUpdates } from '@/src/services/admin';
 import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
+import { cliProxyConfigState, hydrateCLIProxyConfig } from '@/src/store/cliproxy-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
+import { setWorkspaceMode } from '@/src/store/workspace-mode';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 
 const { useSnapshot } = require('valtio/react');
@@ -72,6 +75,7 @@ const items: MenuItem[] = [
 export function AppSidebar() {
   const path = usePathname();
   const config = useSnapshot(adminConfigState);
+  useSnapshot(cliProxyConfigState);
   const [expanded, setExpanded] = useState(false);
   const [customizing, setCustomizing] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
@@ -168,7 +172,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.6.0'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.7.0'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
@@ -262,6 +266,17 @@ export function AppSidebar() {
         },
       },
     ]);
+  };
+
+  const switchToCLIProxy = async () => {
+    await hydrateCLIProxyConfig();
+    await setWorkspaceMode('cliproxy');
+    setExpanded(false);
+    if (cliProxyConfigState.baseUrl && cliProxyConfigState.managementKey) {
+      router.replace('/cliproxy');
+      return;
+    }
+    router.replace('/login');
   };
 
   const navigateTo = (item: MenuItem) => {
@@ -463,6 +478,7 @@ export function AppSidebar() {
             return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showAppUpdate ? '#D88A18' : showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{showAppUpdate ? <Text style={{ position: 'absolute', right: 2, top: 2, borderRadius: 999, backgroundColor: dark ? '#4A3513' : '#FFF0C2', paddingHorizontal: 3, paddingVertical: 1, fontSize: 6, fontWeight: '900', color: dark ? '#FFD66B' : '#946321' }}>NEW</Text> : prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
           })}</ScrollView>
           <View style={{ borderTopWidth: 1, borderTopColor: dark ? '#273449' : '#E1E8F2', paddingHorizontal: 5, paddingTop: 7 }}>
+            <Pressable accessibilityLabel="切换到 CLIProxyAPI" onPress={() => void switchToCLIProxy()} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><Repeat2 size={19} color="#2F6DF6" /></Pressable>
             <Pressable accessibilityLabel="退出账号" onPress={requestLogout} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><LogOut size={19} color="#D9475C" /></Pressable>
             <Pressable accessibilityLabel="展开侧边菜单" onPress={() => setExpanded(true)} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronRight size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /></Pressable>
           </View>
@@ -530,6 +546,7 @@ export function AppSidebar() {
                   {selectedId ? <Pressable onPress={() => update({ ...prefsRef.current, defaultMenuId: prefs.defaultMenuId === selectedId ? null : selectedId })} style={{ alignItems: 'center', borderRadius: 13, backgroundColor: prefs.defaultMenuId === selectedId ? '#FFF0F3' : dark ? '#172C55' : '#EAF2FF', paddingVertical: 9 }}><Text style={{ fontSize: 11, fontWeight: '800', color: prefs.defaultMenuId === selectedId ? '#D9475C' : dark ? '#8BB4FF' : '#2F6DF6' }}>{prefs.defaultMenuId === selectedId ? '取消默认启动页面' : '设为默认启动页面'}</Text></Pressable> : null}
                   <Text style={{ marginTop: 7, textAlign: 'center', fontSize: 10, lineHeight: 15, color: dark ? '#9EABC0' : '#7B8798' }}>长按菜单并拖到目标位置，松手后自动保存。</Text>
                 </View> : null}
+                <Pressable onPress={() => void switchToCLIProxy()} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><Repeat2 size={17} color="#2F6DF6" /><Text style={{ color: '#2F6DF6', fontSize: 12, fontWeight: '800' }}>切换到 CLIProxyAPI</Text></Pressable>
                 <Pressable onPress={requestLogout} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13 }}><LogOut size={17} color="#D9475C" /><Text style={{ color: '#D9475C', fontSize: 12, fontWeight: '800' }}>退出账号</Text></Pressable>
                 <Pressable accessibilityLabel="收起侧边菜单" onPress={() => setExpanded(false)} style={{ height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronLeft size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ color: dark ? '#8BB4FF' : '#2F6DF6', fontSize: 12, fontWeight: '800' }}>收起菜单</Text></Pressable>
               </View>
