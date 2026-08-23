@@ -7,6 +7,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-24
+
 ### Added
 
 - Open-source baseline documentation:
@@ -20,6 +22,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - `app/users/create-user.tsx` for creating users via `/api/v1/admin/users`
   - `app/accounts/create.tsx` for creating accounts via `/api/v1/admin/accounts`
 - New users tab quick action to open the create-user screen.
+- Independent CLIProxyAPI management with secure connection settings, OAuth account-pool controls, live quota refresh, and a native single-instance Group Router plugin enforcing client-key-to-credential-pool isolation without coupling to Sub2API groups.
 
 ### Changed
 

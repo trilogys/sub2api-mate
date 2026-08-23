@@ -1,0 +1,42 @@
+name: CLIProxy Group Router
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "integrations/cliproxy-group-router/**"
+      - ".github/workflows/cliproxy-group-router-build.yml"
+  pull_request:
+    paths:
+      - "integrations/cliproxy-group-router/**"
+      - ".github/workflows/cliproxy-group-router-build.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  linux-amd64:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: integrations/cliproxy-group-router
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.26.7"
+          cache-dependency-path: integrations/cliproxy-group-router/go.mod
+      - name: Download modules
+        run: go mod download
+      - name: Test plugin and router
+        run: CGO_ENABLED=0 go test . ./router
+      - name: Build native plugin
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=1 go build -trimpath -buildmode=c-shared -ldflags="-s -w" -o dist/cliproxy-group-router.so .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cliproxy-group-router-linux-amd64
+          path: |
+            integrations/cliproxy-group-router/dist/cliproxy-group-router.so
+            integrations/cliproxy-group-router/dist/cliproxy-group-router.h

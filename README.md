@@ -103,6 +103,7 @@ Admin Key authentication does not carry a current-user identity. Personal key CR
 - Display key status, group, limits, validity windows, and compatible endpoint information returned by the server.
 - User and group CRUD, user key inspection, account grouping, and role-aware administration.
 - Proxy CRUD with connectivity and quality-test actions available directly from the proxy list.
+- CLIProxyAPI is managed as an independent domain with CLI OAuth credentials, client keys, foreground quota refresh, and a single-instance Group Router plugin that enforces `key → CLI group → credential pool` isolation without reusing Sub2API groups. See the [CLIProxyAPI management and grouping guide](docs/CLIPROXYAPI_INTEGRATION.md).
 - IP allow-list and block-list management; IP Management is hidden from the default menu but remains available for administrators.
 
 ### Usage records
@@ -117,7 +118,7 @@ Admin Key authentication does not carry a current-user identity. Personal key CR
 
 The More Management section consolidates the current server/session information, language, appearance, account switching, and advanced administration entry points. It intentionally does not add arbitrary server records; use logout and the remembered-account selector to switch deployments.
 
-Advanced pages include redeem codes, subscriptions, channels, risk control, compliance, audit logs, announcements, promotion codes, prompt audits, backups, system maintenance, user attributes, traffic policies, scheduled tests, channel monitors, affiliates, the operations center, OAuth, the universal API console, GitHub settings, and build controls.
+Advanced pages include redeem codes, subscriptions, channels, risk control, compliance, audit logs, announcements, promotion codes, prompt audits, backups, system maintenance, user attributes, traffic policies, scheduled tests, channel monitors, affiliates, the operations center, OAuth, independent CLIProxyAPI management, the universal API console, GitHub settings, and build controls.
 
 ### API discovery and coverage
 

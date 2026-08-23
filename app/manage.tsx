@@ -36,6 +36,7 @@ const modules = [
   { title: '推广返利', detail: '管理推广用户、邀请、返利与划转记录', route: '/affiliates', icon: Share2, admin: true },
   { title: '运维中心', detail: '处理告警事件并检索结构化系统日志', route: '/ops-center', icon: Siren, admin: true },
   { title: 'OAuth 授权', detail: '完成各平台账号授权码与 Token 交换', route: '/oauth-center', icon: KeyRound, admin: true },
+  { title: 'CLIProxyAPI 管理', detail: '独立管理 CLI 分组、Client Key、账号池与配额', route: '/cliproxy', icon: Server, admin: true },
   { title: '构建与同步', detail: '手机触发 EAS 构建、下载 APK 和同步上游', route: '/build-center', icon: Blocks, admin: true },
   { title: 'AI 助手', detail: '独立对话、接口诊断并生成受控修复 PR', route: '/ai-assistant', icon: MessageCircle },
   { title: 'GitHub 配置', detail: '保存目标仓库、基础分支和 GitHub Token', route: '/github-settings', icon: Github, admin: true },

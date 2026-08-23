@@ -4,8 +4,8 @@
   "counts": {
     "routes": 388,
     "services": 413,
-    "types": 101,
-    "screens": 55,
+    "types": 114,
+    "screens": 57,
     "upstream_services": 297,
     "upstream_types": 266,
     "upstream_backend_types": 148,
@@ -352,6 +352,45 @@
       "sections": [],
       "placeholders": [
         "搜索渠道"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxy 分组管理",
+      "app_route": "/cliproxy-groups",
+      "fields": [
+        "分组名称",
+        "专用 Client Key"
+      ],
+      "sections": [
+        "需要管理员权限",
+        "插件状态",
+        "CLIProxy 分组列表"
+      ],
+      "placeholders": [
+        "例如：Codex Team A",
+        "cpa_grp_…"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxyAPI 管理",
+      "app_route": "/cliproxy",
+      "fields": [
+        "CLIProxyAPI 服务地址",
+        "Management Key"
+      ],
+      "sections": [
+        "需要管理员权限",
+        "1. 连接 CLIProxyAPI",
+        "2. CLIProxy 分组与 Client Key",
+        "3. CLI 账号授权",
+        "4. 配额与自动刷新",
+        "5. CLIProxyAPI 账号池"
+      ],
+      "placeholders": [
+        "例如：http://192.168.1.10:8317",
+        "remote-management.secret-key"
       ]
     },
     {
@@ -5468,6 +5507,7 @@
         "model",
         "upstream_model?",
         "service_tier?",
+        "reasoning_effort?",
         "inbound_endpoint?",
         "upstream_endpoint?",
         "request_path?",
@@ -5887,6 +5927,172 @@
         "auth_url",
         "session_id",
         "state?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyConnection",
+      "fields": [
+        "baseUrl",
+        "managementKey"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyRequestBucket",
+      "fields": [
+        "time",
+        "success",
+        "failed"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyAuthFile",
+      "fields": [
+        "id?",
+        "auth_index?",
+        "name",
+        "provider?",
+        "type?",
+        "label?",
+        "status?",
+        "status_message?",
+        "disabled?",
+        "unavailable?",
+        "runtime_only?",
+        "source?",
+        "size?",
+        "modtime?",
+        "success?",
+        "failed?",
+        "recent_requests?",
+        "email?",
+        "account_type?",
+        "account?",
+        "created_at?",
+        "updated_at?",
+        "last_refresh?",
+        "next_retry_after?",
+        "project_id?",
+        "priority?",
+        "weight?",
+        "note?",
+        "request_retry?",
+        "id_token?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyOAuthSession",
+      "fields": [
+        "status",
+        "url",
+        "state",
+        "flow?",
+        "user_code?",
+        "expires_in?",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyOAuthStatus",
+      "fields": [
+        "status",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyModel",
+      "fields": [
+        "id",
+        "object?",
+        "created?",
+        "owned_by?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyConnectionTest",
+      "fields": [
+        "credentialCount",
+        "availableCredentialCount",
+        "apiKeyCount"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyQuotaWindow",
+      "fields": [
+        "id",
+        "label",
+        "remainingPercent",
+        "usedPercent?",
+        "resetAt?",
+        "exhausted"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyQuotaReport",
+      "fields": [
+        "provider",
+        "name",
+        "authIndex",
+        "planType?",
+        "status",
+        "windows",
+        "fetchedAt",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginEntry",
+      "fields": [
+        "id",
+        "path?",
+        "configured?",
+        "registered?",
+        "enabled?",
+        "effective_enabled?",
+        "metadata?",
+        "name?",
+        "version?",
+        "author?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginList",
+      "fields": [
+        "plugins_enabled",
+        "plugins_dir",
+        "plugins"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyGroup",
+      "fields": [
+        "id",
+        "name",
+        "enabled",
+        "strategy",
+        "api_keys",
+        "auth_ids"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyGroupRouterConfig",
+      "fields": [
+        "enabled",
+        "deny_unmapped",
+        "allow_shared_auths",
+        "groups"
       ]
     },
     {
