@@ -54,7 +54,7 @@ const exactEnglish: Record<string, string> = {
   '未分组 Key、停用组或组内无可用凭据时会直接拒绝，不会回退到其他组的账号。分组数据只写入 CLIProxy 插件配置。': 'Ungrouped keys, disabled groups, and groups without an available credential are rejected without falling back to another group. Group data is stored only in CLIProxy plugin configuration.',
   '打开 CLIProxy 分组管理': 'Open CLIProxy group management',
   '已注册 Client Key': 'Registered client keys',
-  '授权由 CLIProxyAPI 处理；Mate 只轮询状态，凭据保存在 CLIProxyAPI。': 'CLIProxyAPI handles authorization. Mate only polls status; credentials remain in CLIProxyAPI.',
+  '授权由 CLIProxyAPI 处理；GateNest 只轮询状态，凭据保存在 CLIProxyAPI。': 'CLIProxyAPI handles authorization. GateNest only polls status; credentials remain in CLIProxyAPI.',
   '仅在 CLIProxy 管理页面前台时定时刷新账号状态与真实配额，不在后台持续唤醒。': 'Refresh account status and live quotas only while a CLIProxy management page is in the foreground.',
   'CLIProxy 分组管理': 'CLIProxy group management',
   '单实例 · Key 到凭据池的强制路由': 'Single instance · enforced key-to-credential-pool routing',

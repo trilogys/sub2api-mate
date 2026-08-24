@@ -1,4 +1,4 @@
-# Expo and Android Release Guide
+# GateNest Expo and Android Release Guide
 
 [English README](../README.md) | [中文 README](../README.zh-CN.md)
 
@@ -9,11 +9,11 @@ The application is currently bound to:
 - Expo owner: `trilogys`
 - Expo slug: `sub2api-mobile`
 - Expo project ID: `13df808b-fe18-475e-b188-f4dd64e90e7e`
-- Android package: `com.ppx.sub2apimobile`
-- iOS bundle identifier: `com.ppx.sub2apimobile`
+- Android package: `com.ppx.sub2apimate` (preserved for upgrade compatibility)
+- iOS bundle identifier: `com.ppx.sub2apimate` (preserved for upgrade compatibility)
 - Runtime version policy: `appVersion`
 
-The public application name is `sub2api`.
+The public application name is `GateNest`. The existing Expo slug and native package identifiers remain unchanged so installed users can upgrade in place.
 
 ## Choose a build method
 
@@ -27,10 +27,10 @@ The in-app Build Center defaults to the GitHub native workflow. Use EAS when man
 
 ## GitHub native APK
 
-The workflow is `.github/workflows/android-native-build.yml` and is named **Native Android APK**.
+The workflow is `.github/workflows/android-native-build.yml` and is named **GateNest Android APK**.
 
 1. Open the repository's **Actions** page.
-2. Select **Native Android APK**.
+2. Select **GateNest Android APK**.
 3. Select **Run workflow**.
 4. Choose `release` or `debug`.
 5. Follow the job steps until **Upload APK** completes.
@@ -47,7 +47,7 @@ When triggered from the app, GitHub Jobs API data is used to show each step's wa
 Run the first EAS build on a computer so project ownership and Android signing credentials can be confirmed:
 
 ```powershell
-cd D:\Project\node\sub2api-mobile
+cd sub2api-mate
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest whoami
@@ -66,12 +66,19 @@ Add the following repository secret under **Settings → Secrets and variables �
 EXPO_TOKEN
 ```
 
-Then run the **EAS Build** workflow from `.github/workflows/eas-build.yml` and choose:
+Then run the **GateNest EAS Android Build** workflow from `.github/workflows/eas-build.yml` and choose:
 
 - `profile`: `preview` or `production`
 - `platform`: `android`, `ios`, or `all`
 
 The workflow waits for EAS and uploads a preview Android APK when a direct build URL is available. Preview APK artifacts are retained for 30 days.
+
+## Release naming
+
+- Release title: `GateNest vX.Y.Z`
+- Android APKs: `gatenest-vX.Y.Z-arm64-v8a.apk`, `gatenest-vX.Y.Z-armeabi-v7a.apk`, and `gatenest-vX.Y.Z-x86_64.apk`
+- GitHub Actions artifacts: `gatenest-<variant>-<architecture>-apk-<run-number>`
+- CLIProxy Group Router keeps its independent plugin name and asset naming.
 
 ## Local development and debugging
 

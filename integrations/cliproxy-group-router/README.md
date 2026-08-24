@@ -1,6 +1,6 @@
 # CLIProxy Group Router
 
-`CLIProxy Group Router` is an independent CLIProxyAPI scheduler plugin used by Sub2API Mate. It adds a real single-instance grouping boundary:
+`CLIProxy Group Router` is an independent CLIProxyAPI scheduler plugin used by GateNest. It adds a real single-instance grouping boundary:
 
 ```text
 Client API Key -> CLIProxy Group -> allowed auth IDs -> group-local scheduler
@@ -10,7 +10,7 @@ The plugin reads CLIProxyAPI's irreversible `caller_scope` from scheduler metada
 
 ## Configuration
 
-The Mate group screen writes the following object to `plugins.configs.cliproxy-group-router` and keeps every group key in CLIProxyAPI's top-level `api-keys` list:
+The GateNest group screen writes the following object to `plugins.configs.cliproxy-group-router` and keeps every group key in CLIProxyAPI's top-level `api-keys` list:
 
 ```yaml
 plugins:
@@ -43,7 +43,7 @@ Linux (recommended for the official Docker deployment):
 docker build --output type=local,dest=./dist integrations/cliproxy-group-router
 ```
 
-Copy `dist/cliproxy-group-router.so` into the configured CLIProxyAPI plugin directory, enable `plugins.enabled`, restart CLIProxyAPI once, then manage groups from Mate.
+Copy `dist/cliproxy-group-router.so` into the configured CLIProxyAPI plugin directory, enable `plugins.enabled`, restart CLIProxyAPI once, then manage groups from GateNest.
 
 The repository workflow also builds and uploads a Linux AMD64 artifact.
 

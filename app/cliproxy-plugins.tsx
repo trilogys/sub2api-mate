@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Braces, Puzzle, Trash2 } from 'lucide-react-native';
+import { Braces, ExternalLink, Github, Pencil, Puzzle, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { Linking, Pressable, View } from 'react-native';
 
 import { AdminButton, AdminMessage, AdminSection, EmptyState } from '@/src/components/admin-ui';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
@@ -10,9 +10,25 @@ import { ScreenShell } from '@/src/components/screen-shell';
 import { CLIPROXY_GROUP_ROUTER_PLUGIN_ID, deleteCLIProxyPlugin, getCLIProxyPluginConfig, listCLIProxyPlugins, saveCLIProxyPluginConfig, setCLIProxyPluginEnabled } from '@/src/services/cliproxy';
 import { cliProxyConfigState } from '@/src/store/cliproxy-config';
 import { workspaceModeState } from '@/src/store/workspace-mode';
-import type { CLIProxyConnection, CLIProxyPluginEntry } from '@/src/types/cliproxy';
+import type { CLIProxyConnection, CLIProxyPluginEntry, CLIProxyPluginMenu } from '@/src/types/cliproxy';
 
 const { useSnapshot } = require('valtio/react');
+
+function pluginMenus(plugin: CLIProxyPluginEntry) {
+  return plugin.menus?.length ? plugin.menus : plugin.metadata?.menus ?? [];
+}
+
+function menuLabel(menu: CLIProxyPluginMenu, index: number) {
+  return menu.title || menu.label || menu.name || menu.id || `插件页面 ${index + 1}`;
+}
+
+function pluginMenuURL(baseUrl: string, pluginID: string, menu: CLIProxyPluginMenu) {
+  const value = (menu.url || menu.href || menu.path || '').trim();
+  if (/^https?:\/\//i.test(value)) return value;
+  const base = baseUrl.replace(/\/+$/, '');
+  if (value.startsWith('/')) return `${base}${value}`;
+  return `${base}/v0/resource/plugins/${encodeURIComponent(pluginID)}/${value || 'index.html'}`;
+}
 
 export default function CLIProxyPluginsScreen() {
   const queryClient = useQueryClient();
@@ -37,6 +53,9 @@ export default function CLIProxyPluginsScreen() {
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['cliproxy'] }); localizedAlert('插件配置已保存', 'CLIProxyAPI 已重新配置插件。'); },
   });
   const deleteMutation = useMutation({ mutationFn: (plugin: CLIProxyPluginEntry) => deleteCLIProxyPlugin(connection, plugin.id), onSuccess: async (result) => { setSelected(null); await queryClient.invalidateQueries({ queryKey: ['cliproxy'] }); if (result.restart_required) localizedAlert('需要重启', '插件文件已处理，但 CLIProxyAPI 需要重启后才能完全卸载。'); } });
+  const openPluginMenu = (plugin: CLIProxyPluginEntry, menu: CLIProxyPluginMenu) => {
+    void Linking.openURL(pluginMenuURL(connection.baseUrl, plugin.id, menu)).catch(() => localizedAlert('无法打开插件页面', pluginMenuURL(connection.baseUrl, plugin.id, menu)));
+  };
 
   if (workspace.mode !== 'cliproxy') return null;
   return (
@@ -49,11 +68,13 @@ export default function CLIProxyPluginsScreen() {
           {(pluginsQuery.data?.plugins ?? []).map((plugin) => {
             const active = plugin.effective_enabled === true;
             const protectedPlugin = plugin.id === CLIPROXY_GROUP_ROUTER_PLUGIN_ID;
-            return <View key={plugin.id} className="gap-3 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]"><View className="flex-row items-center gap-3"><View className={`h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-[#E8F8F0] dark:bg-[#143A2C]' : 'bg-[#E2E9F3] dark:bg-[#273449]'}`}><Puzzle size={17} color={active ? '#1C9B62' : '#7B8798'} /></View><Pressable className="flex-1" onPress={() => setSelected(plugin)}><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">{plugin.metadata?.name || plugin.id}</Text><Text className="mt-1 text-[9px] text-[#7B8798] dark:text-[#9EABC0]">{plugin.id} · {plugin.metadata?.version || '—'} · {active ? '运行中' : plugin.enabled ? '已配置但未生效' : '已停用'}</Text></Pressable></View><View className="flex-row gap-2"><View className="flex-1"><AdminButton label={active ? '停用' : '启用'} tone="muted" pending={toggleMutation.isPending} onPress={() => toggleMutation.mutate(plugin)} /></View><Pressable disabled={protectedPlugin || deleteMutation.isPending} onPress={() => localizedAlert('卸载插件？', `将删除 ${plugin.id} 的插件文件和配置。`, [{ text: '取消', style: 'cancel' }, { text: '卸载', style: 'destructive', onPress: () => deleteMutation.mutate(plugin) }])} className="h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0F2] disabled:opacity-30 dark:bg-[#3A1720]"><Trash2 size={16} color="#D9475C" /></Pressable></View>{protectedPlugin ? <Text className="text-[9px] text-[#946321] dark:text-[#FFD66B]">Group Router 由分组页面管理，为防止现有 Client Key 失效，这里禁止直接卸载。</Text> : null}</View>;
+            const menus = pluginMenus(plugin);
+            const fields = plugin.config_fields?.length ? plugin.config_fields : plugin.metadata?.config_fields ?? [];
+            return <View key={plugin.id} className="gap-3 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]"><View className="flex-row items-center gap-3"><View className={`h-9 w-9 items-center justify-center rounded-xl ${active ? 'bg-[#E8F8F0] dark:bg-[#143A2C]' : 'bg-[#E2E9F3] dark:bg-[#273449]'}`}><Puzzle size={17} color={active ? '#1C9B62' : '#7B8798'} /></View><View className="flex-1"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">{plugin.metadata?.name || plugin.id}</Text><Text className="mt-1 text-[9px] text-[#7B8798] dark:text-[#9EABC0]">{plugin.id} · {plugin.metadata?.version || '—'} · {active ? '运行中' : plugin.enabled ? '已配置但未生效' : '已停用'}</Text><Text className="mt-1 text-[9px] text-[#7B8798] dark:text-[#9EABC0]">配置字段 {fields.length} · 插件页面 {menus.length}</Text></View></View>{menus.map((menu, index) => <AdminButton key={`${menu.id || menu.path || index}`} label={`打开 ${menuLabel(menu, index)}`} disabled={!active} onPress={() => openPluginMenu(plugin, menu)} />)}<View className="flex-row gap-2"><View className="flex-1"><AdminButton label="编辑配置" tone="muted" onPress={() => { setSelected(plugin); saveMutation.reset(); }} /></View><View className="flex-1"><AdminButton label={active ? '停用' : '启用'} tone="muted" pending={toggleMutation.isPending} onPress={() => toggleMutation.mutate(plugin)} /></View><Pressable disabled={protectedPlugin || deleteMutation.isPending} onPress={() => localizedAlert('卸载插件？', `将删除 ${plugin.id} 的插件文件和配置。`, [{ text: '取消', style: 'cancel' }, { text: '卸载', style: 'destructive', onPress: () => deleteMutation.mutate(plugin) }])} className="h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF0F2] disabled:opacity-30 dark:bg-[#3A1720]"><Trash2 size={16} color="#D9475C" /></Pressable></View>{plugin.metadata?.github_repository ? <Pressable onPress={() => void Linking.openURL(plugin.metadata!.github_repository!)} className="flex-row items-center gap-2"><Github size={13} color="#2F6DF6" /><Text className="text-[10px] font-bold text-[#2F6DF6]">打开插件仓库</Text><ExternalLink size={12} color="#2F6DF6" /></Pressable> : null}{protectedPlugin ? <Text className="text-[9px] text-[#946321] dark:text-[#FFD66B]">Group Router 由分组页面管理，为防止现有 Client Key 失效，这里禁止直接卸载。</Text> : null}</View>;
           })}
           <AdminMessage error={pluginsQuery.error || toggleMutation.error || deleteMutation.error} />
         </AdminSection>
-        {selected ? <AdminSection title={`插件配置 · ${selected.metadata?.name || selected.id}`} detail="保存时完整替换该插件的配置对象。"><View className="flex-row items-center gap-2"><Braces size={16} color="#2F6DF6" /><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">JSON 配置</Text></View><TextInput value={json} onChangeText={setJSON} multiline autoCapitalize="none" autoCorrect={false} textAlignVertical="top" className="min-h-[300px] rounded-2xl border border-[#E2E9F3] bg-[#0F1726] p-3 font-mono text-[10px] leading-5 text-[#D8E3F4] dark:border-[#273449]" /><View className="flex-row gap-2"><View className="flex-1"><AdminButton label="保存插件配置" pending={saveMutation.isPending} disabled={!configQuery.isSuccess} onPress={() => saveMutation.mutate()} /></View><View className="flex-1"><AdminButton label="关闭编辑" tone="muted" onPress={() => setSelected(null)} /></View></View><AdminMessage error={configQuery.error || saveMutation.error} /></AdminSection> : null}
+        {selected ? <AdminSection title={`插件配置 · ${selected.metadata?.name || selected.id}`} detail="保存时完整替换该插件的配置对象。"><View className="flex-row items-center gap-2"><Pencil size={16} color="#2F6DF6" /><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">可编辑配置</Text></View>{(selected.config_fields?.length ? selected.config_fields : selected.metadata?.config_fields ?? []).map((field) => <View key={field.name} className="rounded-xl bg-[#F6F8FC] p-2.5 dark:bg-[#152033]"><Text className="text-[10px] font-bold text-[#475467] dark:text-[#C2CCDB]">{field.name} · {field.type || 'unknown'}</Text>{field.description ? <Text className="mt-1 text-[9px] leading-4 text-[#7B8798] dark:text-[#9EABC0]">{field.description}</Text> : null}</View>)}<View className="flex-row items-center gap-2"><Braces size={16} color="#2F6DF6" /><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">JSON 配置</Text></View><TextInput value={json} onChangeText={setJSON} multiline autoCapitalize="none" autoCorrect={false} textAlignVertical="top" className="min-h-[300px] rounded-2xl border border-[#E2E9F3] bg-[#0F1726] p-3 font-mono text-[10px] leading-5 text-[#D8E3F4] dark:border-[#273449]" /><View className="flex-row gap-2"><View className="flex-1"><AdminButton label="保存插件配置" pending={saveMutation.isPending} disabled={!configQuery.isSuccess} onPress={() => saveMutation.mutate()} /></View><View className="flex-1"><AdminButton label="关闭编辑" tone="muted" onPress={() => setSelected(null)} /></View></View><AdminMessage error={configQuery.error || saveMutation.error} /></AdminSection> : null}
       </ScreenShell>
     </>
   );

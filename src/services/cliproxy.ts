@@ -6,6 +6,15 @@ import type {
   CLIProxyConnectionTest,
   CLIProxyGroupRouterConfig,
   CLIProxyGroupStrategy,
+  CLIProxyKeyPolicyAlias,
+  CLIProxyKeyPolicyCatalogEntry,
+  CLIProxyKeyPolicyClassifyRule,
+  CLIProxyKeyPolicyKey,
+  CLIProxyKeyPolicyKeySecret,
+  CLIProxyKeyPolicyKeyUsage,
+  CLIProxyKeyPolicyKeyWrite,
+  CLIProxyKeyPolicyPreview,
+  CLIProxyKeyPolicyStatus,
   CLIProxyLogResult,
   CLIProxyModel,
   CLIProxyOAuthProvider,
@@ -284,6 +293,143 @@ export function setCLIProxyPluginEnabled(connection: CLIProxyConnection, id: str
 
 export function deleteCLIProxyPlugin(connection: CLIProxyConnection, id: string) {
   return managementFetch<{ status?: string; restart_required?: boolean }>(connection, `/plugins/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+const CLIPROXY_KEY_POLICY_BASE = '/plugins/cpa-key-policy';
+
+export function getCLIProxyKeyPolicyStatus(connection: CLIProxyConnection) {
+  return managementFetch<CLIProxyKeyPolicyStatus>(connection, `${CLIPROXY_KEY_POLICY_BASE}/status`);
+}
+
+export async function listCLIProxyKeyPolicyKeys(connection: CLIProxyConnection) {
+  const payload = await managementFetch<{ keys?: CLIProxyKeyPolicyKey[] }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys`);
+  return Array.isArray(payload.keys) ? payload.keys : [];
+}
+
+export function createCLIProxyKeyPolicyKey(connection: CLIProxyConnection, input: CLIProxyKeyPolicyKeyWrite) {
+  return managementFetch<CLIProxyKeyPolicyKeySecret>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function updateCLIProxyKeyPolicyKey(connection: CLIProxyConnection, input: CLIProxyKeyPolicyKeyWrite) {
+  const payload = await managementFetch<{ key: CLIProxyKeyPolicyKey }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+  return payload.key;
+}
+
+export function deleteCLIProxyKeyPolicyKey(connection: CLIProxyConnection, id: string) {
+  return managementFetch<{ deleted: boolean; id?: string }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+export function rotateCLIProxyKeyPolicyKey(connection: CLIProxyConnection, id: string) {
+  return managementFetch<CLIProxyKeyPolicyKeySecret>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys/rotate`, {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+  });
+}
+
+export function resetCLIProxyKeyPolicyRPM(connection: CLIProxyConnection, id: string) {
+  return managementFetch<{ reset: boolean; id?: string }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys/reset-rpm`, {
+    method: 'POST',
+    body: JSON.stringify({ id }),
+  });
+}
+
+export function getCLIProxyKeyPolicyKeyUsage(connection: CLIProxyConnection, id: string) {
+  return managementFetch<CLIProxyKeyPolicyKeyUsage>(connection, `${CLIPROXY_KEY_POLICY_BASE}/keys/usage?id=${encodeURIComponent(id)}`);
+}
+
+export async function listCLIProxyKeyPolicyAliases(connection: CLIProxyConnection) {
+  const payload = await managementFetch<{ aliases?: CLIProxyKeyPolicyAlias[] }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/aliases`);
+  return Array.isArray(payload.aliases) ? payload.aliases : [];
+}
+
+export async function saveCLIProxyKeyPolicyAlias(connection: CLIProxyConnection, alias: CLIProxyKeyPolicyAlias) {
+  const payload = await managementFetch<{ alias: CLIProxyKeyPolicyAlias }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/aliases`, {
+    method: 'POST',
+    body: JSON.stringify(alias),
+  });
+  return payload.alias;
+}
+
+export function deleteCLIProxyKeyPolicyAlias(connection: CLIProxyConnection, alias: string) {
+  return managementFetch<{ deleted: boolean }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/aliases`, {
+    method: 'DELETE',
+    body: JSON.stringify({ alias }),
+  });
+}
+
+export async function listCLIProxyKeyPolicyClassifyRules(connection: CLIProxyConnection) {
+  const payload = await managementFetch<{ rules?: CLIProxyKeyPolicyClassifyRule[] }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/classify-rules`);
+  return Array.isArray(payload.rules) ? payload.rules : [];
+}
+
+export async function saveCLIProxyKeyPolicyClassifyRule(connection: CLIProxyConnection, rule: CLIProxyKeyPolicyClassifyRule) {
+  const payload = await managementFetch<{ rule: CLIProxyKeyPolicyClassifyRule }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/classify-rules`, {
+    method: 'POST',
+    body: JSON.stringify(rule),
+  });
+  return payload.rule;
+}
+
+export function deleteCLIProxyKeyPolicyClassifyRule(connection: CLIProxyConnection, name: string) {
+  return managementFetch<{ deleted: boolean }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/classify-rules`, {
+    method: 'DELETE',
+    body: JSON.stringify({ name }),
+  });
+}
+
+export function reorderCLIProxyKeyPolicyClassifyRules(connection: CLIProxyConnection, names: string[]) {
+  return managementFetch<{ reordered: boolean }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/classify-rules/reorder`, {
+    method: 'POST',
+    body: JSON.stringify({ names }),
+  });
+}
+
+function keyPolicyCredentialDescriptors(files: CLIProxyAuthFile[]) {
+  return files.flatMap((file) => {
+    const id = stringValue(file.id, file.name);
+    const provider = stringValue(file.provider, file.type).toLowerCase();
+    if (!id || !provider) return [];
+    const attributes: Record<string, string> = {};
+    const planType = stringValue(file.plan_type, codexPlanType(file));
+    if (planType) attributes.plan_type = planType.toLowerCase();
+    if (file.tier?.trim()) attributes.tier = file.tier.trim().toLowerCase();
+    return [{ id, provider, attributes }];
+  });
+}
+
+export async function previewCLIProxyKeyPolicyClassifyRules(
+  connection: CLIProxyConnection,
+  rules?: CLIProxyKeyPolicyClassifyRule[],
+) {
+  const files = await listCLIProxyAuthFiles(connection);
+  return managementFetch<CLIProxyKeyPolicyPreview>(connection, `${CLIPROXY_KEY_POLICY_BASE}/classify-preview`, {
+    method: 'POST',
+    body: JSON.stringify({ descriptors: keyPolicyCredentialDescriptors(files), ...(rules?.length ? { rules } : {}) }),
+  });
+}
+
+export async function getCLIProxyKeyPolicyCatalog(connection: CLIProxyConnection) {
+  const files = await listCLIProxyAuthFiles(connection);
+  const descriptors = keyPolicyCredentialDescriptors(files);
+  const credentials = await Promise.all(descriptors.map(async (descriptor) => {
+    try {
+      const models = await listCLIProxyAuthFileModels(connection, descriptor.id);
+      return { ...descriptor, models: models.map((model) => model.id).filter(Boolean) };
+    } catch {
+      return { ...descriptor, models: [] as string[] };
+    }
+  }));
+  const payload = await managementFetch<{ entries?: CLIProxyKeyPolicyCatalogEntry[] }>(connection, `${CLIPROXY_KEY_POLICY_BASE}/catalog`, {
+    method: 'POST',
+    body: JSON.stringify({ credentials: credentials.filter((item) => item.models.length) }),
+  });
+  return Array.isArray(payload.entries) ? payload.entries : [];
 }
 
 export function listCLIProxyPluginStore(connection: CLIProxyConnection) {

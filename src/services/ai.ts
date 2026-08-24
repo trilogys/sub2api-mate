@@ -122,7 +122,7 @@ export async function createAIResponse(config: AIProviderConfig, messages: AICha
     body: JSON.stringify({
       model: config.model.trim(),
       instructions: [
-        'You are the built-in assistant for the Sub2API Mobile administration app.',
+        'You are the built-in assistant for GateNest, a Sub2API and CLIProxyAPI administration app.',
         'Reply in concise Chinese unless the user explicitly requests another language.',
         'You may explain Sub2API administration, troubleshooting, and the Android EAS build process.',
         'Never claim that a build or another external action has run.',
@@ -154,7 +154,7 @@ export async function createAIFixProposal(
     body: JSON.stringify({
       model: config.model.trim(),
       instructions: [
-        'Diagnose the reported Sub2API Mobile API problem and propose the smallest safe source-code fix.',
+        'Diagnose the reported GateNest API problem and propose the smallest safe source-code fix.',
         'Return JSON only, without Markdown fences or commentary.',
         'The JSON shape is {"title":string,"summary":string,"prBody":string,"changes":[{"path":string,"reason":string,"replacements":[{"old":string,"new":string}]}]}.',
         'Use only files and exact source substrings supplied below. Each old string must occur exactly once and new must contain the complete replacement.',

@@ -7,6 +7,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-24
+
+### Changed
+
+- Renamed the public application brand from Sub2API Mate to GateNest across the app UI, documentation, build workflows, and future release artifact conventions while preserving existing native package identifiers and repository URLs for upgrade compatibility.
+- Switching between Sub2API and CLIProxyAPI workspaces now requires explicit confirmation.
+- Installed CLIProxy plugins now expose visible configuration editing, enable/disable, repository, and plugin-provided resource-menu actions.
+- CLIProxy grouping now offers the official-store CPA Key Policy path when GateNest Group Router is unavailable, while keeping explicit manual installation instructions for auth-ID routing.
+- Added native GateNest management for CPA Key Policy keys, rotation, RPM counters, usage, aliases, pricing, credential classification rules, real-account previews, and model catalog targets.
+
+### Fixed
+
+- CLIProxy quota auto-refresh now shows a live foreground countdown and persists the last refresh time and result for both automatic and manual refreshes.
+
 ## [1.7.1] - 2026-08-24
 
 ### Added

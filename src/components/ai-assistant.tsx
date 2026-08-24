@@ -24,7 +24,7 @@ const FLOATING_MARGIN = 10;
 const welcomeMessage: ChatItem = {
   id: 'welcome',
   role: 'assistant',
-  text: '你好，我是 Sub2API 助手。你可以直接问管理、排错、接口、参数和页面位置问题。',
+  text: '你好，我是 GateNest 助手。你可以直接问 Sub2API、CLIProxyAPI 的管理、排错、接口、参数和页面位置问题。',
 };
 
 function messageId() {

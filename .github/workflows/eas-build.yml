@@ -1,4 +1,4 @@
-name: EAS Android Build
+name: GateNest EAS Android Build
 
 on:
   workflow_dispatch:
@@ -67,14 +67,14 @@ jobs:
         if: steps.apk.outputs.url != ''
         env:
           APK_URL: ${{ steps.apk.outputs.url }}
-        run: curl --fail --location --retry 3 "$APK_URL" --output sub2api-mobile.apk
+        run: curl --fail --location --retry 3 "$APK_URL" --output gatenest.apk
 
       - name: Upload APK artifact
         if: steps.apk.outputs.url != ''
         uses: actions/upload-artifact@v4
         with:
-          name: sub2api-mobile-apk-${{ github.run_number }}
-          path: sub2api-mobile.apk
+          name: gatenest-apk-${{ github.run_number }}
+          path: gatenest.apk
           retention-days: 30
 
       - name: Publish build links in workflow summary

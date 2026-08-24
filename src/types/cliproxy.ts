@@ -30,6 +30,8 @@ export type CLIProxyAuthFile = {
   email?: string;
   account_type?: string;
   account?: string;
+  plan_type?: string;
+  tier?: string;
   created_at?: string;
   updated_at?: string;
   last_refresh?: string;
@@ -100,11 +102,38 @@ export type CLIProxyPluginEntry = {
   registered?: boolean;
   enabled?: boolean;
   effective_enabled?: boolean;
+  supports_oauth?: boolean;
+  oauth_provider?: string;
+  logo?: string;
+  config_fields?: CLIProxyPluginConfigField[];
+  menus?: CLIProxyPluginMenu[];
   metadata?: {
     name?: string;
     version?: string;
     author?: string;
+    github_repository?: string;
+    logo?: string;
+    config_fields?: CLIProxyPluginConfigField[];
+    menus?: CLIProxyPluginMenu[];
   } | null;
+};
+
+export type CLIProxyPluginConfigField = {
+  name: string;
+  type?: 'string' | 'number' | 'integer' | 'boolean' | 'enum' | 'array' | 'object' | string;
+  enum_values?: string[];
+  description?: string;
+};
+
+export type CLIProxyPluginMenu = {
+  id?: string;
+  name?: string;
+  title?: string;
+  label?: string;
+  path?: string;
+  url?: string;
+  href?: string;
+  type?: string;
 };
 
 export type CLIProxyPluginList = {
@@ -197,4 +226,128 @@ export type CLIProxyPluginStore = {
   plugins_dir: string;
   sources: Array<{ id: string; name?: string; url?: string; error?: string }>;
   plugins: CLIProxyPluginStoreEntry[];
+};
+
+export type CLIProxyKeyPolicyAliasTarget = {
+  provider: string;
+  target_model: string;
+  group?: string;
+};
+
+export type CLIProxyKeyPolicyAlias = {
+  alias: string;
+  targets: CLIProxyKeyPolicyAliasTarget[];
+  dispatch: 'round-robin' | 'priority';
+  billing_mode: 'tokens' | 'per_call';
+  input_price_per_million?: number;
+  output_price_per_million?: number;
+  cache_read_price_per_million?: number;
+  per_call_usd?: number;
+};
+
+export type CLIProxyKeyPolicyAliasRef = {
+  alias: string;
+  input_price_per_million?: number | null;
+  output_price_per_million?: number | null;
+  cache_read_price_per_million?: number | null;
+  per_call_usd?: number | null;
+};
+
+export type CLIProxyKeyPolicyUsageSummary = {
+  daily_usd: number;
+  weekly_usd: number;
+  daily_limit_usd: number;
+  weekly_limit_usd: number;
+  daily_reset_at?: string;
+  weekly_reset_at?: string;
+  daily_call_count?: number;
+  weekly_call_count?: number;
+};
+
+export type CLIProxyKeyPolicyKey = {
+  id: string;
+  name: string;
+  enabled: boolean;
+  key_preview: string;
+  rpm: number;
+  aliases: CLIProxyKeyPolicyAliasRef[];
+  daily_limit_usd: number;
+  weekly_limit_usd: number;
+  allow_models_endpoint?: boolean;
+  usage: CLIProxyKeyPolicyUsageSummary;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type CLIProxyKeyPolicyKeyWrite = {
+  id: string;
+  name?: string;
+  enabled?: boolean;
+  key?: string;
+  rpm?: number;
+  aliases?: CLIProxyKeyPolicyAliasRef[];
+  daily_limit_usd?: number;
+  weekly_limit_usd?: number;
+  allow_models_endpoint?: boolean;
+};
+
+export type CLIProxyKeyPolicyKeySecret = {
+  key: CLIProxyKeyPolicyKey;
+  plain_key: string;
+  generated: boolean;
+};
+
+export type CLIProxyKeyPolicyClassifyRule = {
+  name: string;
+  field: string;
+  pattern: string;
+  group: string;
+  enabled: boolean;
+};
+
+export type CLIProxyKeyPolicyPreview = {
+  groups: Record<string, string[]>;
+  group_counts: Record<string, number>;
+};
+
+export type CLIProxyKeyPolicyCatalogEntry = {
+  provider: string;
+  group?: string;
+  models: string[];
+};
+
+export type CLIProxyKeyPolicyUsageWindow = {
+  total_usd: number;
+  window_start?: string;
+  cache_read_tokens?: number;
+  cache_cost_usd?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  call_count?: number;
+};
+
+export type CLIProxyKeyPolicyAliasUsage = {
+  alias: string;
+  provider?: string;
+  target_model?: string;
+  billing_mode?: 'tokens' | 'per_call';
+  per_call_usd?: number;
+  in_config: boolean;
+  daily: CLIProxyKeyPolicyUsageWindow;
+  weekly: CLIProxyKeyPolicyUsageWindow;
+};
+
+export type CLIProxyKeyPolicyKeyUsage = {
+  key_id: string;
+  key_name: string;
+  daily_limit_usd: number;
+  weekly_limit_usd: number;
+  aliases: CLIProxyKeyPolicyAliasUsage[];
+};
+
+export type CLIProxyKeyPolicyStatus = {
+  enabled: boolean;
+  state_file: string;
+  key_count: number;
+  rpm_usage?: Record<string, unknown>;
 };

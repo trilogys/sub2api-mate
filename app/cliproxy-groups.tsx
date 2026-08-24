@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 import { Copy, Pencil, Plus, RefreshCw, ShieldCheck, Trash2 } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, View } from 'react-native';
+import { AppState, Linking, Pressable, View } from 'react-native';
 
 import { AdminButton, AdminChip, AdminField, AdminMessage, AdminSection, EmptyState } from '@/src/components/admin-ui';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
@@ -14,11 +15,14 @@ import {
   getCLIProxyAPIKeys,
   getCLIProxyGroupRouterConfig,
   getCLIProxyQuotaReports,
+  installCLIProxyStorePlugin,
   listCLIProxyAuthFiles,
+  listCLIProxyPluginStore,
   listCLIProxyPlugins,
   putCLIProxyGroupRouterConfig,
   saveCLIProxyGroupRouterConfig,
   setCLIProxyAuthFileFields,
+  setCLIProxyPluginEnabled,
 } from '@/src/services/cliproxy';
 import { cliProxyConfigState, hydrateCLIProxyConfig } from '@/src/store/cliproxy-config';
 import { workspaceModeState } from '@/src/store/workspace-mode';
@@ -81,6 +85,15 @@ export default function CLIProxyGroupsScreen() {
   const pluginInstalled = Boolean(pluginEntry?.registered || pluginEntry?.path);
   const pluginConfigured = Boolean(pluginEntry?.configured);
   const pluginReady = Boolean(pluginsQuery.data?.plugins_enabled && pluginEntry?.effective_enabled);
+  const keyPolicyEntry = useMemo(() => (pluginsQuery.data?.plugins ?? []).find((item) => item.id === 'cpa-key-policy'), [pluginsQuery.data]);
+  const keyPolicyReady = Boolean(pluginsQuery.data?.plugins_enabled && keyPolicyEntry?.effective_enabled);
+  const pluginStoreQuery = useQuery({
+    queryKey: ['cliproxy', 'plugin-store', stored.baseUrl, stored.revision],
+    queryFn: () => listCLIProxyPluginStore(connection),
+    enabled: configured && !pluginInstalled,
+    retry: false,
+  });
+  const keyPolicyStoreEntry = useMemo(() => (pluginStoreQuery.data?.plugins ?? []).find((item) => item.id === 'cpa-key-policy'), [pluginStoreQuery.data]);
 
   const configQuery = useQuery({
     queryKey: ['cliproxy', 'group-router-config', stored.baseUrl, stored.revision],
@@ -216,6 +229,15 @@ export default function CLIProxyGroupsScreen() {
       await client.invalidateQueries({ queryKey: ['cliproxy', 'auth-files'] });
     },
   });
+  const keyPolicyMutation = useMutation<unknown, Error, void>({
+    mutationFn: () => keyPolicyEntry
+      ? setCLIProxyPluginEnabled(connection, keyPolicyEntry.id, true)
+      : keyPolicyStoreEntry
+        ? installCLIProxyStorePlugin(connection, keyPolicyStoreEntry.id, keyPolicyStoreEntry.source_id, keyPolicyStoreEntry.version)
+        : Promise.reject(new Error('官方插件商店未返回 CPA Key Policy。')),
+    onSuccess: async () => { await client.invalidateQueries({ queryKey: ['cliproxy'] }); },
+  });
+  const openKeyPolicy = () => router.push('/cliproxy-key-policy');
 
   if (workspace.mode !== 'cliproxy') return null;
 
@@ -245,6 +267,22 @@ export default function CLIProxyGroupsScreen() {
           {pluginInstalled && !pluginReady ? <AdminButton label="启用 Group Router 插件" pending={enablePluginMutation.isPending} disabled={!configQuery.isSuccess} tone="muted" onPress={() => localizedAlert('启用 Group Router？', '启用后，尚未加入 CLIProxy 分组的 Client Key 将被拒绝。请随后立即创建分组。', [{ text: '取消', style: 'cancel' }, { text: '启用', onPress: () => enablePluginMutation.mutate() }])} /> : null}
           <AdminMessage error={pluginsQuery.error || configQuery.error || enablePluginMutation.error || normalizePriorityMutation.error} />
         </AdminSection>
+
+        {!pluginInstalled ? (
+          <AdminSection title="选择可用的分组实现" detail="当前没有 CLIProxy Group Router，因此显式 auth ID 分组表单不会伪装成可用状态。请选择下面一种实际可安装的实现。">
+            <View className="gap-2 rounded-2xl border border-[#BDD0FA] bg-[#EEF4FF] p-3 dark:border-[#315189] dark:bg-[#172C55]">
+              <Text className="text-xs font-bold text-[#2F6DF6]">推荐：CPA Key Policy（官方插件商店已收录）</Text>
+              <Text className="text-[10px] leading-5 text-[#4B6290] dark:text-[#B8CCF4]">支持插件自有 Key、模型权限、RPM、日/周预算、Codex/Antigravity tier 和自定义正则凭据组；组内无匹配凭据时不会跨组回退。</Text>
+              {keyPolicyReady ? <AdminButton label="在 GateNest 中管理 CPA Key Policy" onPress={openKeyPolicy} /> : keyPolicyEntry || keyPolicyStoreEntry ? <AdminButton label={keyPolicyEntry ? '启用 CPA Key Policy' : '从官方商店安装 CPA Key Policy'} pending={keyPolicyMutation.isPending} onPress={() => keyPolicyMutation.mutate()} /> : <AdminButton label="打开插件商店检查" tone="muted" onPress={() => router.push('/cliproxy-plugin-store')} />}
+              <AdminMessage error={pluginStoreQuery.error || keyPolicyMutation.error} />
+            </View>
+            <View className="gap-2 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]">
+              <Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest Group Router（精确选择 auth IDs）</Text>
+              <Text className="text-[10px] leading-5 text-[#6B778C] dark:text-[#9EABC0]">适合必须在 GateNest 中逐个勾选凭据、强制一个凭据只属于一个组的场景。它尚未进入 CLIProxy 官方商店，需要把 Release 中的 `.so` 放入服务端插件目录并重启。</Text>
+              <View className="flex-row gap-2"><View className="flex-1"><AdminButton label="打开 GateNest Release" tone="muted" onPress={() => void Linking.openURL('https://github.com/trilogys/sub2api-mate/releases/latest')} /></View><View className="flex-1"><AdminButton label="复制 Docker 安装命令" tone="muted" onPress={() => void copyWithFeedback('unzip cliproxy-group-router-linux-amd64.zip -d cliproxy-group-router\ndocker cp cliproxy-group-router/cliproxy-group-router.so <container>:/CLIProxyAPI/plugins/\ndocker restart <container>', 'Group Router 安装命令')} /></View></View>
+            </View>
+          </AdminSection>
+        ) : null}
 
         {pluginInstalled && configQuery.isSuccess ? (
           <AdminSection title={editingID ? '编辑 CLIProxy 分组' : '新建 CLIProxy 分组'} detail="每个组使用独立 Client Key；一个凭据默认只能属于一个组。">

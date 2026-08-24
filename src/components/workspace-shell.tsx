@@ -14,6 +14,7 @@ const cliProxyRoutes = new Set([
   '/cliproxy-quick-start',
   '/cliproxy-providers',
   '/cliproxy-groups',
+  '/cliproxy-key-policy',
   '/cliproxy-auth-files',
   '/cliproxy-oauth',
   '/cliproxy-quotas',

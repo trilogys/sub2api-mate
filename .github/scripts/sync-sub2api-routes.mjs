@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path';
 
 const sourceUrl = 'https://raw.githubusercontent.com/Wei-Shaw/sub2api/main/backend/internal/server/routes/admin.go';
 const outputPath = resolve(process.argv[2] || 'src/generated/sub2api-admin-routes.json');
-const response = await fetch(sourceUrl, { headers: { 'User-Agent': 'sub2api-mobile-route-sync' } });
+const response = await fetch(sourceUrl, { headers: { 'User-Agent': 'gatenest-route-sync' } });
 
 if (!response.ok) {
   throw new Error(`Failed to download admin routes: HTTP ${response.status}`);

@@ -14,7 +14,7 @@ import { downloadAndInstallAndroidApk, type AndroidAppUpdateProgress } from '@/s
 import { APP_REPOSITORY_URL, APP_UPDATE_CHECK_INTERVAL_MS, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
-const currentVersion = Constants.expoConfig?.version ?? '1.7.1';
+const currentVersion = Constants.expoConfig?.version ?? '1.8.0';
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
@@ -122,7 +122,7 @@ export default function AboutScreen() {
       <ScreenShell title="关于应用" subtitle="版本、在线更新与开源信息" bottomInsetClassName="pb-8" refreshing={releaseQuery.isRefetching} onRefresh={() => releaseQuery.refetch().then(() => undefined)}>
         <View className="items-center rounded-[24px] border border-[#E2E9F3] bg-white px-5 py-6 dark:border-[#273449] dark:bg-[#111827]">
           <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80, borderRadius: 22 }} resizeMode="cover" />
-          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">Sub2API Mate</Text>
+          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest</Text>
           <Text className="mt-1 text-xs text-[#6B778C] dark:text-[#9EABC0]">版本 {currentVersion} · Expo SDK 54 · {Platform.OS === 'android' ? 'Android' : Platform.OS === 'ios' ? 'iOS' : 'Web'}</Text>
         </View>
 

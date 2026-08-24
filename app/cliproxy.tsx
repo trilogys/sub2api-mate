@@ -340,7 +340,7 @@ export default function CLIProxyScreen() {
           {models.length ? <Text selectable className="text-[11px] leading-5 text-[#6B778C] dark:text-[#9EABC0]">{models.slice(0, 12).map((model) => model.id).join(' · ')}</Text> : null}
         </AdminSection>
 
-        <AdminSection title="3. CLI 账号授权" detail="授权由 CLIProxyAPI 处理；Mate 只轮询状态，凭据保存在 CLIProxyAPI。">
+        <AdminSection title="3. CLI 账号授权" detail="授权由 CLIProxyAPI 处理；GateNest 只轮询状态，凭据保存在 CLIProxyAPI。">
           <View className="flex-row flex-wrap gap-2">
             {OAUTH_PROVIDERS.map((item) => <AdminChip key={item.value} label={item.label} selected={provider === item.value} onPress={() => { setProvider(item.value); setOAuthSession(null); startOAuthMutation.reset(); }} />)}
           </View>

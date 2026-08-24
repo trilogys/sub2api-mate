@@ -4,8 +4,8 @@
   "counts": {
     "routes": 388,
     "services": 413,
-    "types": 119,
-    "screens": 67,
+    "types": 135,
+    "screens": 68,
     "upstream_services": 297,
     "upstream_types": 266,
     "upstream_backend_types": 148,
@@ -387,6 +387,7 @@
       ],
       "sections": [
         "插件状态",
+        "选择可用的分组实现",
         "CLIProxy 分组列表"
       ],
       "placeholders": [
@@ -404,6 +405,43 @@
         "版本信息"
       ],
       "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "CPA Key Policy",
+      "app_route": "/cliproxy-key-policy",
+      "fields": [
+        "Key ID",
+        "显示名称",
+        "RPM（0 不限制）",
+        "每日 USD",
+        "每周 USD",
+        "Alias",
+        "输入 / 1M",
+        "输出 / 1M",
+        "缓存 / 1M",
+        "每次 USD",
+        "规则名称",
+        "匹配字段",
+        "目标组",
+        "Go 正则表达式"
+      ],
+      "sections": [
+        "插件状态",
+        "请立即保存新 Key",
+        "Keys",
+        "Aliases",
+        "Classification Rules"
+      ],
+      "placeholders": [
+        "team-a",
+        "Team A",
+        "fast",
+        "team-codex",
+        "filename",
+        "vip",
+        "(?i)team|business"
+      ]
     },
     {
       "kind": "screen",
@@ -6112,6 +6150,8 @@
         "email?",
         "account_type?",
         "account?",
+        "plan_type?",
+        "tier?",
         "created_at?",
         "updated_at?",
         "last_refresh?",
@@ -6200,10 +6240,40 @@
         "registered?",
         "enabled?",
         "effective_enabled?",
+        "supports_oauth?",
+        "oauth_provider?",
+        "logo?",
+        "config_fields?",
+        "menus?",
         "metadata?",
         "name?",
         "version?",
-        "author?"
+        "author?",
+        "github_repository?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginConfigField",
+      "fields": [
+        "name",
+        "type?",
+        "enum_values?",
+        "description?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginMenu",
+      "fields": [
+        "id?",
+        "name?",
+        "title?",
+        "label?",
+        "path?",
+        "url?",
+        "href?",
+        "type?"
       ]
     },
     {
@@ -6299,6 +6369,172 @@
         "plugins_dir",
         "sources",
         "plugins"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasTarget",
+      "fields": [
+        "provider",
+        "target_model",
+        "group?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAlias",
+      "fields": [
+        "alias",
+        "targets",
+        "dispatch",
+        "billing_mode",
+        "input_price_per_million?",
+        "output_price_per_million?",
+        "cache_read_price_per_million?",
+        "per_call_usd?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasRef",
+      "fields": [
+        "alias",
+        "input_price_per_million?",
+        "output_price_per_million?",
+        "cache_read_price_per_million?",
+        "per_call_usd?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyUsageSummary",
+      "fields": [
+        "daily_usd",
+        "weekly_usd",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "daily_reset_at?",
+        "weekly_reset_at?",
+        "daily_call_count?",
+        "weekly_call_count?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKey",
+      "fields": [
+        "id",
+        "name",
+        "enabled",
+        "key_preview",
+        "rpm",
+        "aliases",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "allow_models_endpoint?",
+        "usage",
+        "created_at?",
+        "updated_at?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeyWrite",
+      "fields": [
+        "id",
+        "name?",
+        "enabled?",
+        "key?",
+        "rpm?",
+        "aliases?",
+        "daily_limit_usd?",
+        "weekly_limit_usd?",
+        "allow_models_endpoint?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeySecret",
+      "fields": [
+        "key",
+        "plain_key",
+        "generated"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyClassifyRule",
+      "fields": [
+        "name",
+        "field",
+        "pattern",
+        "group",
+        "enabled"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyPreview",
+      "fields": [
+        "groups",
+        "group_counts"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyCatalogEntry",
+      "fields": [
+        "provider",
+        "group?",
+        "models"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyUsageWindow",
+      "fields": [
+        "total_usd",
+        "window_start?",
+        "cache_read_tokens?",
+        "cache_cost_usd?",
+        "input_tokens?",
+        "output_tokens?",
+        "call_count?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasUsage",
+      "fields": [
+        "alias",
+        "provider?",
+        "target_model?",
+        "billing_mode?",
+        "per_call_usd?",
+        "in_config",
+        "daily",
+        "weekly"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeyUsage",
+      "fields": [
+        "key_id",
+        "key_name",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "aliases"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyStatus",
+      "fields": [
+        "enabled",
+        "state_file",
+        "key_count",
+        "rpm_usage?"
       ]
     },
     {

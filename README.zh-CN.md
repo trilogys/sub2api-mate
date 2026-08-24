@@ -1,13 +1,13 @@
 [English](README.md) | [**简体中文**](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="Sub2API Mate 应用图标" width="120" />
+  <img src="assets/icon.png" alt="GateNest 应用图标" width="120" />
 </p>
 
-<h1 align="center">Sub2API Mate</h1>
+<h1 align="center">GateNest</h1>
 
 <p align="center">
-  基于 Expo SDK 54 和 React Native 构建的 Sub2API 独立移动管理助手与控制台。
+  基于 Expo SDK 54 和 React Native 构建的 Sub2API / CLIProxyAPI 双工作区移动控制台。
 </p>
 
 > [!IMPORTANT]
@@ -17,15 +17,15 @@
 
 ## 项目简介
 
-Sub2API Mate 把 Sub2API 部署的日常管理、诊断和构建流程带到 Android、iOS 与 Web。它是由社区独立维护的移动伴侣，并非 Sub2API 官方客户端。项目提供按角色区分的权限、适配手机的蓝白卡片界面、完整的管理接口入口、移动端专用页面、可选 AI 助手，以及可以在手机上触发的云端 APK 构建。
+GateNest 把 Sub2API 与 CLIProxyAPI 的日常管理、诊断、配额、路由、插件和构建流程带到 Android、iOS 与 Web。两套服务使用相互隔离的工作区、凭据、导航和数据。GateNest 由社区独立维护，不是任一上游项目的官方客户端。
 
 > [!NOTE]
 > **测试范围：** 当前版本仅在 Android 平台进行了测试。项目通过 Expo 包含 iOS 和 Web 目标，但这两个平台尚未经过完整验证。
 
-当前生成的 API 覆盖报告包含 **382 条管理路由**：
+当前生成的 API 覆盖报告包含 **388 条管理路由**：
 
-- **132** 条已有移动端专用服务封装。
-- 另外 **250** 条可通过通用 API 控制台访问。
+- **388** 条已有应用服务覆盖。
+- 仅依赖通用 API 控制台的路由为 **0**。
 - 已发现但无法访问的路由为 **0**。
 
 ## 界面预览
@@ -166,7 +166,7 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 在 GitHub 网页中：
 
 1. 打开 **Actions**。
-2. 选择 **Native Android APK**。
+2. 选择 **GateNest Android APK**。
 3. 点击 **Run workflow**。
 4. `release` 用于可独立安装的 APK，`debug` 用于开发排错。
 5. 构建完成后从运行页面的 **Artifacts** 下载 APK。
@@ -185,12 +185,14 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 
 目标仓库可以切换，默认是 `trilogys/sub2api-mate`。
 
+正式 Release 标题统一使用 `GateNest vX.Y.Z`，分架构 APK 使用 `gatenest-vX.Y.Z-arm64-v8a.apk` 等名称。
+
 ### EAS Preview APK
 
 `eas.json` 的 `preview` 使用 internal distribution，并配置 `android.buildType: apk`。
 
 ```powershell
-cd D:\Project\node\sub2api-mobile
+cd sub2api-mate
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview

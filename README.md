@@ -1,13 +1,13 @@
 [**English**](README.md) | [简体中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="Sub2API Mate app icon" width="120" />
+  <img src="assets/icon.png" alt="GateNest app icon" width="120" />
 </p>
 
-<h1 align="center">Sub2API Mate</h1>
+<h1 align="center">GateNest</h1>
 
 <p align="center">
-  An independent mobile companion and administration console for Sub2API, built with Expo SDK 54 and React Native.
+  One mobile control plane for isolated Sub2API and CLIProxyAPI workspaces, built with Expo SDK 54 and React Native.
 </p>
 
 > [!IMPORTANT]
@@ -17,15 +17,15 @@ The maintained repository is [trilogys/sub2api-mate](https://github.com/trilogys
 
 ## Overview
 
-Sub2API Mate brings the day-to-day administration, diagnostics, and build workflows of a Sub2API deployment to Android, iOS, and the web. It is an independently maintained community companion rather than an official Sub2API client. It provides role-aware access, a responsive blue-and-white card interface, full access to generated administration routes, mobile-friendly dedicated pages, an optional AI assistant, and cloud APK builds that can be started from a phone.
+GateNest brings day-to-day administration, diagnostics, quotas, routing, plugins, and build workflows for Sub2API and CLIProxyAPI to Android, iOS, and the web. The two services remain isolated workspaces with separate credentials, navigation, and data. GateNest is independently maintained and is not an official client of either upstream project.
 
 > [!NOTE]
 > **Testing scope:** The current release has only been tested on Android. Expo includes iOS and Web targets, but those targets have not yet been fully verified.
 
-Generated API coverage currently contains **382 administration routes**:
+Generated API coverage currently contains **388 administration routes**:
 
-- **132** routes have dedicated mobile service wrappers.
-- **250** additional routes are available through the universal API console.
+- **388** routes have dedicated application service coverage.
+- **0** routes depend only on the universal API console.
 - **0** discovered routes are uncovered.
 
 ## Screenshots
@@ -166,7 +166,7 @@ The Build Center defaults to **GitHub Native Build**. EAS Build remains availabl
 From GitHub:
 
 1. Open **Actions**.
-2. Select **Native Android APK**.
+2. Select **GateNest Android APK**.
 3. Select **Run workflow**.
 4. Choose `release` for a standalone APK or `debug` for development diagnostics.
 5. Download the APK from the run's **Artifacts** section after the workflow completes.
@@ -185,12 +185,14 @@ From the app, configure a GitHub token with Actions permission, choose the repos
 
 The target repository can be changed in the app; `trilogys/sub2api-mate` is the default.
 
+Published releases use the title `GateNest vX.Y.Z`; architecture-specific APK assets use names such as `gatenest-vX.Y.Z-arm64-v8a.apk`.
+
 ### EAS preview APK
 
 The `preview` profile in `eas.json` uses internal distribution and `android.buildType: apk`.
 
 ```powershell
-cd D:\Project\node\sub2api-mobile
+cd sub2api-mate
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview

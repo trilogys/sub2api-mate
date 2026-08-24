@@ -1,6 +1,6 @@
 # CLIProxyAPI 独立管理与单实例分组
 
-Sub2API Mate 同时提供 Sub2API 管理和 CLIProxyAPI 管理，但两套数据域完全独立：
+GateNest 同时提供 Sub2API 管理和 CLIProxyAPI 管理，但两套数据域完全独立：
 
 ```text
 Sub2API
@@ -10,7 +10,7 @@ CLIProxyAPI
   └─ Client Key、CLI 分组、OAuth 凭据池、调度、实时配额
 ```
 
-CLIProxy 分组不会读取或复用 Sub2API 分组。Mate 只是同一个管理客户端，不会把两套业务数据合并。
+CLIProxy 分组不会读取或复用 Sub2API 分组。GateNest 只是同一个管理客户端，不会把两套业务数据合并。
 
 ## 工作区切换
 
@@ -38,6 +38,9 @@ CLIProxy 分组不会读取或复用 Sub2API 分组。Mate 只是同一个管理
 - CLIProxyAPI 已配置可信源的插件商店浏览、安装与更新；Group Router 不在商店源时仍通过 `.so` 安装。
 - 与原生管理中心一致的独立菜单入口：仪表盘、快速开始、AI 提供商、认证文件、OAuth 登录、配额管理、日志查看、配置面板、插件管理、插件商店和中心信息。
 - 配额颜色按最低剩余比例分级：≤20% 红色、21–50% 橙色、51–80% 黄色、>80% 绿色；同时兼容上游 0–1 比例和 0–100 百分比格式。
+- 已安装插件可直接打开插件声明的资源菜单、编辑 JSON 配置、启停、查看仓库或卸载。
+- 未安装 Group Router 时，分组页可以从官方插件商店安装 `CPA Key Policy` 并打开其凭据分类界面；需要精确绑定 auth IDs 时仍使用 GateNest Group Router 的 `.so`。
+- `CPA Key Policy` 安装后可直接在 GateNest 的 `Key Policy` 页面管理 Keys、轮换、RPM、日/周预算、用量、Aliases、计费、Classification Rules、真实凭据预览和模型目录。
 
 ## 为什么需要 Group Router 插件
 
@@ -59,12 +62,12 @@ Client Key
 - 停用组直接拒绝。
 - 组内无可用凭据时直接拒绝，不跨组回退。
 - 默认禁止同一凭据属于多个组。
-- Mate 保存分组时会把当前 CLIProxy 实例的全部凭据统一到优先级 `0`，保证 Scheduler 在分组过滤前能看到每个组的候选凭据；组内顺序和策略由 Group Router 接管。
-- 分组配置保存失败时，Mate 会尝试回滚顶层 `api-keys`。
+- GateNest 保存分组时会把当前 CLIProxy 实例的全部凭据统一到优先级 `0`，保证 Scheduler 在分组过滤前能看到每个组的候选凭据；组内顺序和策略由 Group Router 接管。
+- 分组配置保存失败时，GateNest 会尝试回滚顶层 `api-keys`。
 
 ## 1. 配置 CLIProxyAPI
 
-若 Mate 在手机上运行，`127.0.0.1` 和 `localhost` 指向手机本身。请使用局域网地址、VPN 地址或受控 HTTPS 域名。
+若 GateNest 在手机上运行，`127.0.0.1` 和 `localhost` 指向手机本身。请使用局域网地址、VPN 地址或受控 HTTPS 域名。
 
 基础配置：
 
@@ -98,7 +101,7 @@ docker build \
 
 CLIProxyAPI 官方 Compose 已把本地 `./plugins` 挂载为 `/CLIProxyAPI/plugins`，因此可以直接复制到宿主机 `plugins` 目录。
 
-## 3. 在 Mate 中创建 CLIProxy 分组
+## 3. 在 GateNest 中创建 CLIProxy 分组
 
 1. 在登录页选择 `CLIProxyAPI` 工作区。
 2. 输入 CLIProxyAPI 地址和 Management Key 并连接；不需要登录 Sub2API。
@@ -109,13 +112,13 @@ CLIProxyAPI 官方 Compose 已把本地 `./plugins` 挂载为 `/CLIProxyAPI/plug
    - 专用 Client Key
    - Round Robin 或 Fill First
    - 一个或多个 CLIProxy OAuth 凭据
-6. 保存后，Mate 会同步插件配置和 CLIProxyAPI 顶层 `api-keys`。
+6. 保存后，GateNest 会同步插件配置和 CLIProxyAPI 顶层 `api-keys`。
 
 Client Key 只属于 CLIProxy 分组，不会写入 Sub2API 分组或 Sub2API API Key 数据。
 
 ## 4. 配额与自动刷新
 
-Mate 通过 CLIProxyAPI 的 `/v0/management/api-call` 和稳定 `auth_index` 查询：
+GateNest 通过 CLIProxyAPI 的 `/v0/management/api-call` 和稳定 `auth_index` 查询：
 
 - Codex：5 小时、7 天窗口和重置时间。
 - Gemini CLI：模型桶剩余比例和重置时间。
@@ -126,7 +129,7 @@ Mate 通过 CLIProxyAPI 的 `/v0/management/api-call` 和稳定 `auth_index` 查
 ## 故障排查
 
 - 插件未发现：检查 `.so` 是否位于 `plugins.dir`，并重启 CLIProxyAPI。
-- 插件已发现但未生效：确认 `plugins.enabled: true`，然后在 Mate 中点击“启用 Group Router 插件”。
+- 插件已发现但未生效：确认 `plugins.enabled: true`，然后在 GateNest 中点击“启用 Group Router 插件”。
 - `group_not_found`：请求使用的 Client Key 没有绑定 CLIProxy 分组。
 - `group_disabled`：目标 CLIProxy 分组已停用。
 - `group_no_available_auth`：该组内没有当前模型可用的凭据；不会跨组回退。

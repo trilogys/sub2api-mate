@@ -172,7 +172,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.7.1'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.0'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
@@ -267,6 +267,15 @@ export function AppSidebar() {
       },
     ]);
   };
+
+  const confirmSwitchToCLIProxy = () => localizedAlert(
+    '切换到 CLIProxyAPI？',
+    '将离开当前 Sub2API 工作区并只显示 CLIProxyAPI 页面。两边的连接信息和数据都会保留。',
+    [
+      { text: '取消', style: 'cancel' },
+      { text: '确认切换', onPress: () => void switchToCLIProxy() },
+    ],
+  );
 
   const switchToCLIProxy = async () => {
     await hydrateCLIProxyConfig();
@@ -478,7 +487,7 @@ export function AppSidebar() {
             return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showAppUpdate ? '#D88A18' : showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{showAppUpdate ? <Text style={{ position: 'absolute', right: 2, top: 2, borderRadius: 999, backgroundColor: dark ? '#4A3513' : '#FFF0C2', paddingHorizontal: 3, paddingVertical: 1, fontSize: 6, fontWeight: '900', color: dark ? '#FFD66B' : '#946321' }}>NEW</Text> : prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
           })}</ScrollView>
           <View style={{ borderTopWidth: 1, borderTopColor: dark ? '#273449' : '#E1E8F2', paddingHorizontal: 5, paddingTop: 7 }}>
-            <Pressable accessibilityLabel="切换到 CLIProxyAPI" onPress={() => void switchToCLIProxy()} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><Repeat2 size={19} color="#2F6DF6" /></Pressable>
+            <Pressable accessibilityLabel="切换到 CLIProxyAPI" onPress={confirmSwitchToCLIProxy} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><Repeat2 size={19} color="#2F6DF6" /></Pressable>
             <Pressable accessibilityLabel="退出账号" onPress={requestLogout} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><LogOut size={19} color="#D9475C" /></Pressable>
             <Pressable accessibilityLabel="展开侧边菜单" onPress={() => setExpanded(true)} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronRight size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /></Pressable>
           </View>
@@ -491,7 +500,7 @@ export function AppSidebar() {
             <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API Mate</Text>
+                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>GateNest · Sub2API</Text>
                   <Pressable accessibilityRole="link" accessibilityLabel="在浏览器打开当前服务器" onPress={() => void openWebsite()} style={{ marginRight: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, backgroundColor: dark ? '#172C55' : '#EAF2FF', paddingHorizontal: 8, paddingVertical: 7 }}><Globe2 size={13} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ fontSize: 9, fontWeight: '800', color: dark ? '#8BB4FF' : '#2F6DF6' }}>WEBSITE</Text></Pressable>
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
                 </View>
@@ -546,7 +555,7 @@ export function AppSidebar() {
                   {selectedId ? <Pressable onPress={() => update({ ...prefsRef.current, defaultMenuId: prefs.defaultMenuId === selectedId ? null : selectedId })} style={{ alignItems: 'center', borderRadius: 13, backgroundColor: prefs.defaultMenuId === selectedId ? '#FFF0F3' : dark ? '#172C55' : '#EAF2FF', paddingVertical: 9 }}><Text style={{ fontSize: 11, fontWeight: '800', color: prefs.defaultMenuId === selectedId ? '#D9475C' : dark ? '#8BB4FF' : '#2F6DF6' }}>{prefs.defaultMenuId === selectedId ? '取消默认启动页面' : '设为默认启动页面'}</Text></Pressable> : null}
                   <Text style={{ marginTop: 7, textAlign: 'center', fontSize: 10, lineHeight: 15, color: dark ? '#9EABC0' : '#7B8798' }}>长按菜单并拖到目标位置，松手后自动保存。</Text>
                 </View> : null}
-                <Pressable onPress={() => void switchToCLIProxy()} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><Repeat2 size={17} color="#2F6DF6" /><Text style={{ color: '#2F6DF6', fontSize: 12, fontWeight: '800' }}>切换到 CLIProxyAPI</Text></Pressable>
+                <Pressable onPress={confirmSwitchToCLIProxy} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><Repeat2 size={17} color="#2F6DF6" /><Text style={{ color: '#2F6DF6', fontSize: 12, fontWeight: '800' }}>切换到 CLIProxyAPI</Text></Pressable>
                 <Pressable onPress={requestLogout} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13 }}><LogOut size={17} color="#D9475C" /><Text style={{ color: '#D9475C', fontSize: 12, fontWeight: '800' }}>退出账号</Text></Pressable>
                 <Pressable accessibilityLabel="收起侧边菜单" onPress={() => setExpanded(false)} style={{ height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronLeft size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ color: dark ? '#8BB4FF' : '#2F6DF6', fontSize: 12, fontWeight: '800' }}>收起菜单</Text></Pressable>
               </View>

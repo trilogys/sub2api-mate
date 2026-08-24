@@ -524,7 +524,7 @@ export const staticChineseUICopy = new Set<string>([
   "内容审核、拦截与自动封禁",
   "内容审核已停用",
   "你好，我可以查找 App 页面、Sub2API API 与参数，也能协助排错、构建和生成受控的 GitHub 修复方案。",
-  "你好，我是 Sub2API 助手。你可以直接问管理、排错和接口问题，也可以用下面的按钮启动 Android APK 构建。",
+  "你好，我是 GateNest 助手。你可以直接问 Sub2API、CLIProxyAPI 的管理、排错和接口问题，也可以用下面的按钮启动 Android APK 构建。",
   "排队中",
   "配置 GitHub Token",
   "配置版本",

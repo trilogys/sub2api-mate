@@ -51,7 +51,7 @@ export default function CLIProxyOAuthScreen() {
     <>
       <LocalizedStackScreen options={{ title: 'OAuth 登录', headerShown: true }} />
       <ScreenShell title="OAuth 登录" subtitle="向 CLIProxyAPI 添加订阅账号凭据" safeAreaEdges={['bottom']} bottomInsetClassName="pb-10">
-        <AdminSection title="选择登录提供商" detail="授权会话和 Token 均由 CLIProxyAPI 管理，Mate 不保存 OAuth Token。">
+        <AdminSection title="选择登录提供商" detail="授权会话和 Token 均由 CLIProxyAPI 管理，GateNest 不保存 OAuth Token。">
           <View className="flex-row flex-wrap gap-2">{providers.map((item) => <AdminChip key={item.value} label={item.label} selected={provider === item.value} onPress={() => { setProvider(item.value); setSession(null); setCallbackUrl(''); startMutation.reset(); }} />)}</View>
           <AdminButton label="生成授权会话" pending={startMutation.isPending} disabled={!configured} onPress={() => startMutation.mutate()} />
           <AdminMessage error={startMutation.error || statusQuery.error || cancelMutation.error || callbackMutation.error} />

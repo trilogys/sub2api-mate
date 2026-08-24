@@ -1,4 +1,4 @@
-name: Sync Sub2API Interface Manifest
+name: GateNest Sync Sub2API Interface Manifest
 
 on:
   schedule:
