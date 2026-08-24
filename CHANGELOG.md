@@ -7,6 +7,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.8.1] - 2026-08-24
+
+### Fixed
+
+- CLIProxy quota auto-refresh now persists an absolute next-refresh timestamp, so switching GateNest menus or remounting the page no longer resets the countdown.
+- CLIProxy plugin enable/disable loading indicators are now scoped to the plugin being changed instead of spinning every plugin button.
+- Simplified plugin and Vertex credential action labels to `编辑`, `保存配置`, and `导入账号`.
+- CLIProxy account-pool quota bars now use fixed horizontal heights, clamp invalid percentages, collapse long model-window lists by default, and provide additional bottom scroll space.
+- Simplified CLIProxy key actions to `复制密钥` and `测试模型`.
+- CLIProxy plugin editing now renders native controls from declared `config_fields`: switches, enum choices, numeric and string inputs, plus validated array/object editors; JSON is only used as a fallback when a plugin declares no fields.
+
 ## [1.8.0] - 2026-08-24
 
 ### Changed

@@ -25,14 +25,19 @@ function dateTime(value?: string) {
   return Number.isFinite(stamp) ? new Date(stamp).toLocaleString() : value;
 }
 
+function secondsUntil(value: string, fallback: number) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return fallback;
+  return Math.max(0, Math.ceil((timestamp - Date.now()) / 1_000));
+}
+
 export default function CLIProxyQuotasScreen() {
   const workspace = useSnapshot(workspaceModeState);
   const stored = useSnapshot(cliProxyConfigState);
   const connection = useMemo<CLIProxyConnection>(() => ({ baseUrl: stored.baseUrl, managementKey: stored.managementKey }), [stored.baseUrl, stored.managementKey]);
   const configured = workspace.mode === 'cliproxy' && Boolean(connection.baseUrl && connection.managementKey);
-  const [countdown, setCountdown] = useState(stored.autoRefreshIntervalSeconds);
+  const [countdown, setCountdown] = useState(() => secondsUntil(stored.nextRefreshAt, stored.autoRefreshIntervalSeconds));
   const [refreshRunning, setRefreshRunning] = useState(false);
-  const countdownRef = useRef(stored.autoRefreshIntervalSeconds);
   const refreshRunningRef = useRef(false);
   const filesQuery = useQuery({ queryKey: ['cliproxy', 'auth-files', stored.baseUrl, stored.revision], queryFn: () => listCLIProxyAuthFiles(connection), enabled: configured });
   const quotaQuery = useQuery({
@@ -43,9 +48,8 @@ export default function CLIProxyQuotasScreen() {
   const supported = (filesQuery.data ?? []).filter((file) => ['codex', 'gemini', 'gemini-cli', 'antigravity'].includes((file.provider || file.type || '').toLowerCase()) && !file.disabled);
 
   useEffect(() => {
-    countdownRef.current = stored.autoRefreshIntervalSeconds;
-    setCountdown(stored.autoRefreshIntervalSeconds);
-  }, [stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds]);
+    setCountdown(secondsUntil(stored.nextRefreshAt, stored.autoRefreshIntervalSeconds));
+  }, [stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds, stored.nextRefreshAt]);
 
   const runRefresh = async () => {
     if (!configured || refreshRunningRef.current) return;
@@ -57,17 +61,18 @@ export default function CLIProxyQuotasScreen() {
       if (error) throw error;
       const failures = quotaResult.data?.filter((report) => report.status === 'error').length ?? 0;
       await updateCLIProxyRefresh({
+        nextRefreshAt: new Date(Date.now() + stored.autoRefreshIntervalSeconds * 1_000).toISOString(),
         lastRefreshAt: new Date().toISOString(),
         lastRefreshMessage: failures ? `刷新完成，${failures} 个凭据查询失败。` : '账号状态与实时配额已刷新。',
       });
     } catch (error) {
       await updateCLIProxyRefresh({
+        nextRefreshAt: new Date(Date.now() + stored.autoRefreshIntervalSeconds * 1_000).toISOString(),
         lastRefreshAt: new Date().toISOString(),
         lastRefreshMessage: error instanceof Error ? error.message : 'CLIProxyAPI 刷新失败',
       });
     } finally {
-      countdownRef.current = stored.autoRefreshIntervalSeconds;
-      setCountdown(stored.autoRefreshIntervalSeconds);
+      setCountdown(secondsUntil(cliProxyConfigState.nextRefreshAt, stored.autoRefreshIntervalSeconds));
       refreshRunningRef.current = false;
       setRefreshRunning(false);
     }
@@ -77,15 +82,9 @@ export default function CLIProxyQuotasScreen() {
     if (!configured || !stored.autoRefreshEnabled) return;
     const timer = setInterval(() => {
       if (AppState.currentState !== 'active' || refreshRunningRef.current) return;
-      const next = countdownRef.current - 1;
-      if (next > 0) {
-        countdownRef.current = next;
-        setCountdown(next);
-        return;
-      }
-      countdownRef.current = stored.autoRefreshIntervalSeconds;
-      setCountdown(stored.autoRefreshIntervalSeconds);
-      void runRefresh();
+      const next = secondsUntil(cliProxyConfigState.nextRefreshAt, stored.autoRefreshIntervalSeconds);
+      setCountdown(next);
+      if (next <= 0) void runRefresh();
     }, 1_000);
     return () => clearInterval(timer);
   }, [configured, stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds, stored.revision]);
@@ -117,7 +116,8 @@ export default function CLIProxyQuotasScreen() {
                 {report.error ? <Text className="text-[10px] text-[#D9475C]">{report.error}</Text> : null}
                 {report.windows.map((window) => {
                   const windowColor = cliProxyQuotaWindowColor(window);
-                  return <View key={window.id} className="gap-1"><View className="flex-row"><Text className="flex-1 text-[10px] text-[#475467] dark:text-[#C2CCDB]">{window.label}</Text><Text style={{ color: windowColor, fontSize: 10, fontWeight: '800' }}>{window.remainingPercent === null ? '—' : `${window.remainingPercent.toFixed(0)}%`}</Text></View><View className="h-2 overflow-hidden rounded-full bg-[#E2E9F3] dark:bg-[#273449]"><View style={{ width: `${window.remainingPercent ?? 0}%`, height: '100%', borderRadius: 999, backgroundColor: windowColor }} /></View>{window.resetAt ? <Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">重置：{dateTime(window.resetAt)}</Text> : null}</View>;
+                  const barPercent = window.remainingPercent === null || !Number.isFinite(window.remainingPercent) ? 0 : Math.max(0, Math.min(100, window.remainingPercent));
+                  return <View key={window.id} className="gap-1"><View className="flex-row"><Text className="flex-1 text-[10px] text-[#475467] dark:text-[#C2CCDB]">{window.label}</Text><Text style={{ color: windowColor, fontSize: 10, fontWeight: '800' }}>{window.remainingPercent === null ? '—' : `${window.remainingPercent.toFixed(0)}%`}</Text></View><View className="bg-[#E2E9F3] dark:bg-[#273449]" style={{ width: '100%', height: 8, minHeight: 8, maxHeight: 8, overflow: 'hidden', borderRadius: 999 }}><View style={{ width: `${barPercent}%`, height: 8, minHeight: 8, maxHeight: 8, alignSelf: 'flex-start', borderRadius: 999, backgroundColor: windowColor }} /></View>{window.resetAt ? <Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">重置：{dateTime(window.resetAt)}</Text> : null}</View>;
                 })}
                 <Text className="text-[9px] text-[#98A2B3]">查询于 {dateTime(report.fetchedAt)}</Text>
               </View>

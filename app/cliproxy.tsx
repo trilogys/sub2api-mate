@@ -65,6 +65,12 @@ function formatRefreshInterval(seconds: number) {
   return `${seconds}s`;
 }
 
+function secondsUntilRefresh(value: string, fallback: number) {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return fallback;
+  return Math.max(0, Math.ceil((timestamp - Date.now()) / 1_000));
+}
+
 function formatDateTime(value?: string) {
   if (!value) return '—';
   const timestamp = Date.parse(value);
@@ -81,8 +87,8 @@ export default function CLIProxyScreen() {
   const [provider, setProvider] = useState<CLIProxyOAuthProvider>('codex');
   const [oauthSession, setOAuthSession] = useState<CLIProxyOAuthSession | null>(null);
   const [oauthCallbackUrl, setOAuthCallbackUrl] = useState('');
-  const [refreshCountdown, setRefreshCountdown] = useState(stored.autoRefreshIntervalSeconds);
-  const refreshCountdownRef = useRef(stored.autoRefreshIntervalSeconds);
+  const [expandedQuotaAuths, setExpandedQuotaAuths] = useState<string[]>([]);
+  const [refreshCountdown, setRefreshCountdown] = useState(() => secondsUntilRefresh(stored.nextRefreshAt, stored.autoRefreshIntervalSeconds));
   const refreshRunningRef = useRef(false);
   const [refreshRunning, setRefreshRunning] = useState(false);
 
@@ -128,9 +134,8 @@ export default function CLIProxyScreen() {
   }, [apiKeysQuery.data, selectedAPIKey]);
 
   useEffect(() => {
-    refreshCountdownRef.current = stored.autoRefreshIntervalSeconds;
-    setRefreshCountdown(stored.autoRefreshIntervalSeconds);
-  }, [stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds]);
+    setRefreshCountdown(secondsUntilRefresh(stored.nextRefreshAt, stored.autoRefreshIntervalSeconds));
+  }, [stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds, stored.nextRefreshAt]);
 
   const saveMutation = useMutation({
     mutationFn: async (test: boolean) => {
@@ -214,6 +219,7 @@ export default function CLIProxyScreen() {
       const quotaFailures = quotaResult.data?.filter((report) => report.status === 'error').length ?? 0;
       const message = quotaFailures ? '刷新完成，但部分配额查询失败。' : '账号状态与实时配额已刷新。';
       await updateCLIProxyRefresh({
+        nextRefreshAt: new Date(Date.now() + stored.autoRefreshIntervalSeconds * 1_000).toISOString(),
         lastRefreshAt: new Date().toISOString(),
         lastRefreshMessage: message,
       });
@@ -221,13 +227,13 @@ export default function CLIProxyScreen() {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'CLIProxyAPI 刷新失败';
       await updateCLIProxyRefresh({
+        nextRefreshAt: new Date(Date.now() + stored.autoRefreshIntervalSeconds * 1_000).toISOString(),
         lastRefreshAt: new Date().toISOString(),
         lastRefreshMessage: message,
       });
       if (showMessage) localizedAlert('刷新失败', message);
     } finally {
-      refreshCountdownRef.current = stored.autoRefreshIntervalSeconds;
-      setRefreshCountdown(stored.autoRefreshIntervalSeconds);
+      setRefreshCountdown(secondsUntilRefresh(cliProxyConfigState.nextRefreshAt, stored.autoRefreshIntervalSeconds));
       refreshRunningRef.current = false;
       setRefreshRunning(false);
     }
@@ -237,15 +243,9 @@ export default function CLIProxyScreen() {
     if (!configured || !stored.autoRefreshEnabled) return;
     const timer = setInterval(() => {
       if (AppState.currentState !== 'active' || refreshRunningRef.current) return;
-      const next = refreshCountdownRef.current - 1;
-      if (next > 0) {
-        refreshCountdownRef.current = next;
-        setRefreshCountdown(next);
-        return;
-      }
-      refreshCountdownRef.current = stored.autoRefreshIntervalSeconds;
-      setRefreshCountdown(stored.autoRefreshIntervalSeconds);
-      void runFullRefresh(false);
+      const next = secondsUntilRefresh(cliProxyConfigState.nextRefreshAt, stored.autoRefreshIntervalSeconds);
+      setRefreshCountdown(next);
+      if (next <= 0) void runFullRefresh(false);
     }, 1_000);
     return () => clearInterval(timer);
   }, [configured, stored.autoRefreshEnabled, stored.autoRefreshIntervalSeconds, stored.revision]);
@@ -262,7 +262,7 @@ export default function CLIProxyScreen() {
         title="CLIProxyAPI 管理"
         subtitle="独立管理分组、Client Key、账号池与实时配额"
         safeAreaEdges={['bottom']}
-        bottomInsetClassName="pb-10"
+        bottomInsetClassName="pb-24"
         refreshing={configured && (refreshRunning || authFilesQuery.isRefetching || apiKeysQuery.isRefetching || quotaQuery.isFetching)}
         onRefresh={configured ? () => runFullRefresh(false) : undefined}
       >
@@ -331,8 +331,8 @@ export default function CLIProxyScreen() {
 
           {selectedAPIKey ? (
             <View className="flex-row gap-2">
-              <View className="flex-1"><AdminButton label="复制选中密钥" tone="muted" onPress={() => void copyWithFeedback(selectedAPIKey, 'API Key')} /></View>
-              <View className="flex-1"><AdminButton label="测试模型列表" pending={modelMutation.isPending} tone="muted" onPress={() => modelMutation.mutate()} /></View>
+              <View className="flex-1"><AdminButton label="复制密钥" tone="muted" onPress={() => void copyWithFeedback(selectedAPIKey, 'API Key')} /></View>
+              <View className="flex-1"><AdminButton label="测试模型" pending={modelMutation.isPending} tone="muted" onPress={() => modelMutation.mutate()} /></View>
             </View>
           ) : null}
           <AdminMessage error={modelMutation.error} success={modelMutation.isSuccess ? '模型接口可用。' : undefined} />
@@ -407,6 +407,9 @@ export default function CLIProxyScreen() {
           {(authFilesQuery.data ?? []).map((file) => {
             const unavailable = Boolean(file.disabled || file.unavailable);
             const quota = file.auth_index ? quotaByAuthIndex.get(file.auth_index) : undefined;
+            const quotaKey = file.auth_index || file.id || file.name;
+            const quotaExpanded = expandedQuotaAuths.includes(quotaKey);
+            const visibleQuotaWindows = quota ? (quotaExpanded ? quota.windows : quota.windows.slice(0, 4)) : [];
             return (
               <View key={file.auth_index || file.id || file.name} className="gap-3 rounded-2xl border border-[#E8EDF5] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]">
                 <View className="flex-row items-start gap-3">
@@ -428,22 +431,24 @@ export default function CLIProxyScreen() {
                       <Text style={{ color: cliProxyQuotaColor(cliProxyQuotaMinimum(quota), quota.status), fontSize: 10, fontWeight: '800' }}>{cliProxyQuotaStatusLabel(quota.status)}</Text>
                     </View>
                     {quota.error ? <Text className="text-[10px] leading-4 text-[#D9475C]">{quota.error}</Text> : null}
-                    {quota.windows.slice(0, 12).map((window) => {
+                    {visibleQuotaWindows.map((window) => {
                       const remaining = window.remainingPercent;
                       const barColor = cliProxyQuotaWindowColor(window);
+                      const barPercent = remaining === null || !Number.isFinite(remaining) ? 0 : Math.max(0, Math.min(100, remaining));
                       return (
                         <View key={window.id} className="gap-1">
                           <View className="flex-row items-center gap-2">
                             <Text numberOfLines={1} className="flex-1 text-[10px] font-semibold text-[#475467] dark:text-[#C2CCDB]">{window.label}</Text>
                             <Text className="text-[10px] font-bold text-[#475467] dark:text-[#C2CCDB]">{remaining === null ? '—' : `${remaining.toFixed(0)}%`}</Text>
                           </View>
-                          <View className="h-1.5 overflow-hidden rounded-full bg-[#E2E9F3] dark:bg-[#273449]">
-                            <View style={{ width: `${remaining ?? 0}%`, height: '100%', borderRadius: 999, backgroundColor: barColor }} />
+                          <View className="bg-[#E2E9F3] dark:bg-[#273449]" style={{ width: '100%', height: 6, minHeight: 6, maxHeight: 6, overflow: 'hidden', borderRadius: 999 }}>
+                            <View style={{ width: `${barPercent}%`, height: 6, minHeight: 6, maxHeight: 6, alignSelf: 'flex-start', borderRadius: 999, backgroundColor: barColor }} />
                           </View>
                           {window.resetAt ? <Text className="text-[9px] text-[#7B8798] dark:text-[#9EABC0]">重置：{formatDateTime(window.resetAt)}</Text> : null}
                         </View>
                       );
                     })}
+                    {quota.windows.length > 4 ? <Pressable onPress={() => setExpandedQuotaAuths((current) => current.includes(quotaKey) ? current.filter((item) => item !== quotaKey) : [...current, quotaKey])} className="items-center rounded-xl bg-[#F1F5FA] py-2 dark:bg-[#182235]"><Text className="text-[10px] font-bold text-[#2F6DF6]">{quotaExpanded ? '收起配额' : `展开全部 ${quota.windows.length} 条配额`}</Text></Pressable> : null}
                     <Text className="text-[9px] text-[#98A2B3]">查询于 {formatDateTime(quota.fetchedAt)}</Text>
                   </View>
                 ) : supportsLiveQuota(file) && !file.disabled ? (

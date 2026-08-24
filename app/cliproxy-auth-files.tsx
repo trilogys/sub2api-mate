@@ -186,7 +186,7 @@ export default function CLIProxyAuthFilesScreen() {
           <AdminButton label="导入凭据 JSON" pending={uploadMutation.isPending} disabled={!configured} onPress={() => uploadMutation.mutate()} />
           <View className="flex-row gap-2">
             <View className="flex-1"><AdminField label="Vertex Location" value={vertexLocation} onChangeText={setVertexLocation} autoCapitalize="none" placeholder="us-central1" /></View>
-            <View className="flex-1 justify-end"><AdminButton label="导入 Vertex 服务账号" pending={vertexMutation.isPending} disabled={!configured} tone="muted" onPress={() => vertexMutation.mutate()} /></View>
+            <View className="flex-1 justify-end"><AdminButton label="导入账号" pending={vertexMutation.isPending} disabled={!configured} tone="muted" onPress={() => vertexMutation.mutate()} /></View>
           </View>
           <Text className="text-[10px] leading-5 text-[#946321] dark:text-[#FFD66B]">同名文件可能被上游覆盖；OAuth 凭据优先使用授权流程创建，手工 JSON 适合迁移和备份恢复。</Text>
           <AdminMessage error={filesQuery.error || uploadMutation.error || vertexMutation.error || downloadMutation.error || deleteMutation.error || modelsMutation.error} />
