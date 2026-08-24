@@ -9,6 +9,7 @@ import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { copyWithFeedback } from '@/src/lib/clipboard';
+import { cliProxyQuotaColor, cliProxyQuotaMinimum, cliProxyQuotaStatusLabel, cliProxyQuotaWindowColor } from '@/src/lib/cliproxy-quota';
 import {
   cancelCLIProxyOAuth,
   getCLIProxyOAuthStatus,
@@ -57,13 +58,6 @@ function authFileStatus(file: CLIProxyAuthFile) {
 function supportsLiveQuota(file: CLIProxyAuthFile) {
   const provider = (file.provider || file.type || '').toLowerCase();
   return provider === 'codex' || provider === 'gemini-cli' || provider === 'gemini' || provider === 'antigravity';
-}
-
-function quotaTone(status: CLIProxyQuotaReport['status']) {
-  if (status === 'full' || status === 'high') return '#1C9B62';
-  if (status === 'medium' || status === 'low') return '#D98A16';
-  if (status === 'exhausted' || status === 'error') return '#D9475C';
-  return '#7B8798';
 }
 
 function formatRefreshInterval(seconds: number) {
@@ -431,12 +425,12 @@ export default function CLIProxyScreen() {
                   <View className="gap-2 rounded-2xl bg-white p-3 dark:bg-[#111827]">
                     <View className="flex-row items-center gap-2">
                       <Text className="flex-1 text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">实时配额{quota.planType ? ` · ${quota.planType}` : ''}</Text>
-                      <Text style={{ color: quotaTone(quota.status), fontSize: 10, fontWeight: '800' }}>{quota.status}</Text>
+                      <Text style={{ color: cliProxyQuotaColor(cliProxyQuotaMinimum(quota), quota.status), fontSize: 10, fontWeight: '800' }}>{cliProxyQuotaStatusLabel(quota.status)}</Text>
                     </View>
                     {quota.error ? <Text className="text-[10px] leading-4 text-[#D9475C]">{quota.error}</Text> : null}
                     {quota.windows.slice(0, 12).map((window) => {
                       const remaining = window.remainingPercent;
-                      const barColor = remaining === null ? '#98A2B3' : remaining <= 10 ? '#D9475C' : remaining <= 30 ? '#D98A16' : '#1C9B62';
+                      const barColor = cliProxyQuotaWindowColor(window);
                       return (
                         <View key={window.id} className="gap-1">
                           <View className="flex-row items-center gap-2">

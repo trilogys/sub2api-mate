@@ -264,6 +264,28 @@ export function listCLIProxyPlugins(connection: CLIProxyConnection) {
   return managementFetch<CLIProxyPluginList>(connection, '/plugins');
 }
 
+export function getCLIProxyPluginConfig(connection: CLIProxyConnection, id: string) {
+  return managementFetch<Record<string, unknown>>(connection, `/plugins/${encodeURIComponent(id)}/config`);
+}
+
+export function saveCLIProxyPluginConfig(connection: CLIProxyConnection, id: string, config: Record<string, unknown>) {
+  return managementFetch<{ status?: string }>(connection, `/plugins/${encodeURIComponent(id)}/config`, {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  });
+}
+
+export function setCLIProxyPluginEnabled(connection: CLIProxyConnection, id: string, enabled: boolean) {
+  return managementFetch<{ status: string }>(connection, `/plugins/${encodeURIComponent(id)}/enabled`, {
+    method: 'PATCH',
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+export function deleteCLIProxyPlugin(connection: CLIProxyConnection, id: string) {
+  return managementFetch<{ status?: string; restart_required?: boolean }>(connection, `/plugins/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
 export function listCLIProxyPluginStore(connection: CLIProxyConnection) {
   return managementFetch<CLIProxyPluginStore>(connection, '/plugin-store');
 }
@@ -273,6 +295,27 @@ export function installCLIProxyStorePlugin(connection: CLIProxyConnection, id: s
   return managementFetch<{ status?: string; restart_required?: boolean; version?: string }>(connection, `/plugin-store/${encodeURIComponent(id)}/install${query}`, {
     method: 'POST',
     body: JSON.stringify(version ? { version } : {}),
+  });
+}
+
+export type CLIProxyProviderCollectionPath =
+  | 'gemini-api-key'
+  | 'codex-api-key'
+  | 'claude-api-key'
+  | 'openai-compatibility'
+  | 'interactions-api-key'
+  | 'xai-api-key'
+  | 'vertex-api-key';
+
+export async function getCLIProxyProviderCollection(connection: CLIProxyConnection, path: CLIProxyProviderCollectionPath) {
+  const payload = await managementFetch<Record<string, unknown>>(connection, `/${path}`);
+  return Array.isArray(payload[path]) ? payload[path] as Record<string, unknown>[] : [];
+}
+
+export function saveCLIProxyProviderCollection(connection: CLIProxyConnection, path: CLIProxyProviderCollectionPath, items: Record<string, unknown>[]) {
+  return managementFetch<{ status: string }>(connection, `/${path}`, {
+    method: 'PUT',
+    body: JSON.stringify(items),
   });
 }
 
@@ -502,13 +545,14 @@ function nested(value: unknown, ...path: string[]) {
 
 function quotaStatus(windows: CLIProxyQuotaWindow[], error?: string): CLIProxyQuotaReport['status'] {
   if (error) return 'error';
+  if (windows.some((window) => window.exhausted)) return 'exhausted';
   const remaining = windows.map((window) => window.remainingPercent).filter((value): value is number => value !== null);
   if (!remaining.length) return 'unknown';
   const lowest = Math.min(...remaining);
   if (lowest <= 0) return 'exhausted';
-  if (lowest <= 30) return 'low';
-  if (lowest <= 70) return 'medium';
-  if (lowest < 100) return 'high';
+  if (lowest <= 20) return 'low';
+  if (lowest <= 50) return 'medium';
+  if (lowest <= 80) return 'high';
   return 'full';
 }
 
@@ -635,12 +679,16 @@ function googleResetAt(value: unknown) {
 }
 
 function googleQuotaWindow(id: string, label: string, remainingFraction: unknown, resetTime: unknown, remainingAmount?: unknown) {
+  const fractionText = typeof remainingFraction === 'string' ? remainingFraction.trim() : '';
+  const explicitPercent = fractionText.endsWith('%') ? numberValue(fractionText.slice(0, -1)) : undefined;
   const fraction = numberValue(remainingFraction);
   const amount = numberValue(remainingAmount);
   const resetAt = googleResetAt(resetTime);
-  const remainingPercent = fraction === undefined
-    ? ((amount !== undefined && amount <= 0) || Boolean(resetAt) ? 0 : null)
-    : clampPercent(fraction * 100);
+  const remainingPercent = explicitPercent !== undefined
+    ? clampPercent(explicitPercent)
+    : fraction === undefined
+      ? (amount !== undefined && amount <= 0 ? 0 : null)
+      : clampPercent(fraction >= 0 && fraction <= 1 ? fraction * 100 : fraction);
   return {
     id,
     label,

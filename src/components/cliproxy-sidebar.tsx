@@ -1,4 +1,4 @@
-import { Activity, ChevronLeft, ChevronRight, ExternalLink, FileKey2, Info, Layers3, Repeat2, Server, Settings2 } from 'lucide-react-native';
+import { Activity, ChevronLeft, ChevronRight, ExternalLink, FileKey2, Gauge, Info, Layers3, LayoutDashboard, LogIn, Network, Plug, Repeat2, Rocket, Server, Settings2, Store } from 'lucide-react-native';
 import { router, usePathname } from 'expo-router';
 import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,13 +12,28 @@ import { setWorkspaceMode } from '@/src/store/workspace-mode';
 
 const { useSnapshot } = require('valtio/react');
 
-const items = [
-  { id: 'overview', title: 'CLIProxy 概览', route: '/cliproxy', icon: Server },
-  { id: 'groups', title: 'CLIProxy 分组', route: '/cliproxy-groups', icon: Layers3 },
-  { id: 'auth-files', title: 'CLIProxy 凭据', route: '/cliproxy-auth-files', icon: FileKey2 },
-  { id: 'observability', title: '日志与统计', route: '/cliproxy-observability', icon: Activity },
-  { id: 'system', title: 'CLIProxy 设置', route: '/cliproxy-system', icon: Settings2 },
-  { id: 'about', title: '关于应用', route: '/about', icon: Info },
+const sections = [
+  { title: '运行', items: [
+    { id: 'dashboard', title: '仪表盘', route: '/cliproxy', icon: LayoutDashboard },
+    { id: 'quick-start', title: '快速开始', route: '/cliproxy-quick-start', icon: Rocket },
+  ] },
+  { title: '网关', items: [
+    { id: 'providers', title: 'AI 提供商', route: '/cliproxy-providers', icon: Network },
+    { id: 'auth-files', title: '认证文件', route: '/cliproxy-auth-files', icon: FileKey2 },
+    { id: 'oauth', title: 'OAuth 登录', route: '/cliproxy-oauth', icon: LogIn },
+    { id: 'groups', title: 'CLIProxy 分组', route: '/cliproxy-groups', icon: Layers3 },
+  ] },
+  { title: '观测', items: [
+    { id: 'quotas', title: '配额管理', route: '/cliproxy-quotas', icon: Gauge },
+    { id: 'observability', title: '日志查看', route: '/cliproxy-observability', icon: Activity },
+  ] },
+  { title: '控制', items: [
+    { id: 'system', title: '配置面板', route: '/cliproxy-system', icon: Settings2 },
+    { id: 'plugins', title: '插件管理', route: '/cliproxy-plugins', icon: Plug },
+    { id: 'plugin-store', title: '插件商店', route: '/cliproxy-plugin-store', icon: Store },
+    { id: 'hub', title: '中心信息', route: '/cliproxy-hub', icon: Server },
+    { id: 'about', title: '关于应用', route: '/about', icon: Info },
+  ] },
 ] as const;
 
 export function CLIProxySidebar() {
@@ -51,31 +66,16 @@ export function CLIProxySidebar() {
     if (url) void Linking.openURL(`${url}/management.html`);
   };
 
-  const menu = (showText: boolean) => items.map((item) => {
-    const Icon = item.icon;
-    const active = path === item.route;
-    return (
-      <Pressable
-        key={item.id}
-        accessibilityLabel={item.title}
-        onPress={() => navigate(item.route)}
-        style={{
-          minHeight: 46,
-          marginBottom: 4,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: showText ? 'flex-start' : 'center',
-          gap: 10,
-          borderRadius: 13,
-          backgroundColor: active ? (dark ? '#17345A' : '#E8F0FF') : 'transparent',
-          paddingHorizontal: showText ? 12 : 0,
-        }}
-      >
-        <Icon size={19} color={active ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />
-        {showText ? <Text style={{ fontSize: 12, fontWeight: '800', color: active ? (dark ? '#8BB4FF' : '#2F6DF6') : dark ? '#D5DDEA' : '#475467' }}>{item.title}</Text> : null}
-      </Pressable>
-    );
-  });
+  const menu = (showText: boolean) => sections.map((section) => (
+    <View key={section.title} style={{ marginBottom: showText ? 8 : 2 }}>
+      {showText ? <Text style={{ paddingHorizontal: 12, paddingVertical: 6, fontSize: 9, fontWeight: '700', color: dark ? '#6F7D91' : '#98A2B3' }}>{section.title}</Text> : null}
+      {section.items.map((item) => {
+        const Icon = item.icon;
+        const active = path === item.route;
+        return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigate(item.route)} style={{ minHeight: 46, marginBottom: 4, flexDirection: 'row', alignItems: 'center', justifyContent: showText ? 'flex-start' : 'center', gap: 10, borderRadius: 13, backgroundColor: active ? (dark ? '#17345A' : '#E8F0FF') : 'transparent', paddingHorizontal: showText ? 12 : 0 }}><Icon size={19} color={active ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{showText ? <Text style={{ fontSize: 12, fontWeight: '800', color: active ? (dark ? '#8BB4FF' : '#2F6DF6') : dark ? '#D5DDEA' : '#475467' }}>{item.title}</Text> : null}</Pressable>;
+      })}
+    </View>
+  ));
 
   return (
     <>

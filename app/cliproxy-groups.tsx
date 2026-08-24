@@ -8,6 +8,7 @@ import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { copyWithFeedback } from '@/src/lib/clipboard';
+import { cliProxyQuotaColor, cliProxyQuotaMinimum, cliProxyQuotaStatusLabel } from '@/src/lib/cliproxy-quota';
 import {
   CLIPROXY_GROUP_ROUTER_PLUGIN_ID,
   getCLIProxyAPIKeys,
@@ -302,7 +303,10 @@ export default function CLIProxyGroupsScreen() {
             });
             const exhausted = reports.filter((report) => report.status === 'exhausted').length;
             const errors = reports.filter((report) => report.status === 'error').length;
-            const remainingValues = reports.flatMap((report) => report.windows.flatMap((window) => window.remainingPercent === null ? [] : [window.remainingPercent]));
+            const remainingValues = reports.flatMap((report) => {
+              const value = cliProxyQuotaMinimum(report);
+              return value === undefined ? [] : [value];
+            });
             const minimumRemaining = remainingValues.length ? Math.min(...remainingValues) : undefined;
             return (
               <View key={group.id} className="gap-3 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]">
@@ -319,9 +323,8 @@ export default function CLIProxyGroupsScreen() {
                 {reports.length ? (
                   <View className="gap-1 rounded-xl bg-white p-2.5 dark:bg-[#111827]">
                     {reports.map((report) => {
-                      const values = report.windows.flatMap((window) => window.remainingPercent === null ? [] : [window.remainingPercent]);
-                      const remaining = values.length ? Math.min(...values) : undefined;
-                      return <Text key={report.authIndex} className="text-[9px] text-[#6B778C] dark:text-[#9EABC0]">{report.name} · {report.status} · {remaining === undefined ? '—' : `${remaining.toFixed(0)}%`}</Text>;
+                      const remaining = cliProxyQuotaMinimum(report);
+                      return <Text key={report.authIndex} style={{ color: cliProxyQuotaColor(remaining, report.status), fontSize: 9 }}>{report.name} · {cliProxyQuotaStatusLabel(report.status)} · {remaining === undefined ? '—' : `${remaining.toFixed(0)}%`}</Text>;
                     })}
                   </View>
                 ) : null}

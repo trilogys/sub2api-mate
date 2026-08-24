@@ -5,7 +5,7 @@
     "routes": 388,
     "services": 413,
     "types": 119,
-    "screens": 60,
+    "screens": 67,
     "upstream_services": 297,
     "upstream_types": 266,
     "upstream_backend_types": 148,
@@ -396,6 +396,32 @@
     },
     {
       "kind": "screen",
+      "title": "中心信息",
+      "app_route": "/cliproxy-hub",
+      "fields": [],
+      "sections": [
+        "当前实例",
+        "版本信息"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "OAuth 登录",
+      "app_route": "/cliproxy-oauth",
+      "fields": [
+        "OAuth 回调 URL"
+      ],
+      "sections": [
+        "选择登录提供商",
+        "当前授权会话"
+      ],
+      "placeholders": [
+        "粘贴浏览器最终回调 URL"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "CLIProxy 日志与统计",
       "app_route": "/cliproxy-observability",
       "fields": [
@@ -410,6 +436,60 @@
       "placeholders": [
         "请求 ID、模型、错误文本"
       ]
+    },
+    {
+      "kind": "screen",
+      "title": "插件商店",
+      "app_route": "/cliproxy-plugin-store",
+      "fields": [],
+      "sections": [
+        "商店源",
+        "可用插件"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "插件管理",
+      "app_route": "/cliproxy-plugins",
+      "fields": [],
+      "sections": [
+        "插件运行状态"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "AI 提供商",
+      "app_route": "/cliproxy-providers",
+      "fields": [],
+      "sections": [
+        "选择 Provider"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "快速开始",
+      "app_route": "/cliproxy-quick-start",
+      "fields": [],
+      "sections": [
+        "选择 Client Key",
+        "通用 OpenAI 兼容客户端",
+        "接口测试"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "配额管理",
+      "app_route": "/cliproxy-quotas",
+      "fields": [],
+      "sections": [
+        "刷新策略",
+        "实时配额"
+      ],
+      "placeholders": []
     },
     {
       "kind": "screen",

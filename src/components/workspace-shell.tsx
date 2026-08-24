@@ -11,10 +11,17 @@ const { useSnapshot } = require('valtio/react');
 
 const cliProxyRoutes = new Set([
   '/cliproxy',
+  '/cliproxy-quick-start',
+  '/cliproxy-providers',
   '/cliproxy-groups',
   '/cliproxy-auth-files',
+  '/cliproxy-oauth',
+  '/cliproxy-quotas',
   '/cliproxy-observability',
   '/cliproxy-system',
+  '/cliproxy-plugins',
+  '/cliproxy-plugin-store',
+  '/cliproxy-hub',
   '/about',
 ]);
 

@@ -7,6 +7,16 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.7.1] - 2026-08-24
+
+### Added
+
+- CLIProxy workspace navigation now mirrors the official management-center sections with dedicated Quick Start, AI Providers, OAuth Login, Quota Management, Plugin Management, Plugin Store, and Hub Information pages.
+
+### Fixed
+
+- CLIProxy live quota values now normalize both fractional and percentage upstream formats and use visible red/orange/yellow/green thresholds instead of treating most non-exhausted quotas as green.
+
 ## [1.7.0] - 2026-08-24
 
 ### Added
