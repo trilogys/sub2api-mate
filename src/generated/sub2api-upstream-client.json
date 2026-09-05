@@ -1,10 +1,10 @@
 {
   "source": "Wei-Shaw/sub2api frontend/src/api/admin and backend/internal/handler/admin",
   "counts": {
-    "services": 297,
-    "types": 266,
-    "backend_types": 148,
-    "handlers": 291
+    "services": 310,
+    "types": 289,
+    "backend_types": 155,
+    "handlers": 295
   },
   "entries": [
     {
@@ -370,6 +370,14 @@
     {
       "kind": "upstream_service",
       "source": "accounts",
+      "name": "getUpstreamBillingRatesWithEtag",
+      "signature": "page: number = 1, pageSize: number = 20, filters?: { platform?: string type?: string status?: string group?: string search?: string privacy_mode?: string sort_by?: string sort_order?: 'asc' | 'desc' }, options?: { signal?: AbortSignal etag?: string | null }",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/accounts/upstream-billing-rates"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "accounts",
       "name": "getBatchUsage",
       "signature": "accountIds: number[], force?: boolean",
       "method": "POST",
@@ -534,6 +542,14 @@
       "signature": "id: string",
       "method": "GET",
       "endpoint": "/api/v1/admin/backups/:id"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "backup",
+      "name": "getDownloadURL",
+      "signature": "id: string",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/backups/:id/download-url"
     },
     {
       "kind": "upstream_service",
@@ -782,6 +798,22 @@
       "signature": "platform: string",
       "method": "GET",
       "endpoint": "/api/v1/admin/channels/pricing/sync-models"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "cnProviders",
+      "name": "queryBalance",
+      "signature": "id: number",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/cn-providers/accounts/:id/balance"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "cnProviders",
+      "name": "queryQuota",
+      "signature": "id: number",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/cn-providers/accounts/:id/quota"
     },
     {
       "kind": "upstream_service",
@@ -1625,6 +1657,78 @@
     },
     {
       "kind": "upstream_service",
+      "source": "plugins",
+      "name": "list",
+      "signature": "",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/plugins"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "remove",
+      "signature": "id: number",
+      "method": "DELETE",
+      "endpoint": "/api/v1/admin/plugins/:id"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "getConfig",
+      "signature": "id: number",
+      "method": "GET",
+      "endpoint": "/api/v1/admin/plugins/:id/config"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "saveConfig",
+      "signature": "id: number, config: Record<string, unknown>",
+      "method": "PUT",
+      "endpoint": "/api/v1/admin/plugins/:id/config"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "disable",
+      "signature": "id: number",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/plugins/:id/disable"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "enable",
+      "signature": "id: number, rolloutPercent: number, acceptUntested: boolean",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/plugins/:id/enable"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "test",
+      "signature": "id: number",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/plugins/:id/test"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "createUISession",
+      "signature": "id: number",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/plugins/:id/ui-session"
+    },
+    {
+      "kind": "upstream_service",
+      "source": "plugins",
+      "name": "upload",
+      "signature": "file: File",
+      "method": "POST",
+      "endpoint": "/api/v1/admin/plugins/upload"
+    },
+    {
+      "kind": "upstream_service",
       "source": "promo",
       "name": "list",
       "signature": "page: number = 1, pageSize: number = 20, filters?: { status?: string search?: string sort_by?: string sort_order?: 'asc' | 'desc' }, options?: { signal?: AbortSignal }",
@@ -2235,7 +2339,7 @@
       "kind": "upstream_service",
       "source": "usage",
       "name": "getStats",
-      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean upstream_model_mismatch?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
+      "signature": "params: { user_id?: number api_key_id?: number account_id?: number group_id?: number model?: string request_type?: UsageRequestType stream?: boolean native_compaction_v2?: boolean | null upstream_model_mismatch?: boolean period?: string start_date?: string end_date?: string timezone?: string nocache?: number }",
       "method": "GET",
       "endpoint": "/api/v1/admin/usage/stats"
     },
@@ -2450,6 +2554,16 @@
         "group_ids",
         "account_ids",
         "pricing"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
+      "name": "AccountUpstreamBillingRatesWithEtagResult",
+      "fields": [
+        "notModified",
+        "etag",
+        "data"
       ]
     },
     {
@@ -2930,6 +3044,25 @@
     },
     {
       "kind": "upstream_type",
+      "source": "backup",
+      "name": "BackupDownloadPart",
+      "fields": [
+        "index",
+        "size_bytes",
+        "url"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "backup",
+      "name": "BackupDownloadResponse",
+      "fields": [
+        "url?",
+        "parts?"
+      ]
+    },
+    {
+      "kind": "upstream_type",
       "source": "dataManagement",
       "name": "BackupJob",
       "fields": [
@@ -2950,6 +3083,17 @@
     {
       "kind": "upstream_type",
       "source": "backup",
+      "name": "BackupPart",
+      "fields": [
+        "index",
+        "s3_key",
+        "size_bytes",
+        "sha256?"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "backup",
       "name": "BackupRecord",
       "fields": [
         "id",
@@ -2957,6 +3101,7 @@
         "backup_type",
         "file_name",
         "s3_key",
+        "parts?",
         "size_bytes",
         "triggered_by",
         "error_message?",
@@ -3192,11 +3337,15 @@
         "input_price",
         "output_price",
         "cache_write_price",
+        "cache_write_1h_price?",
         "cache_read_price",
+        "fast_multiplier?",
+        "flex_multiplier?",
         "image_input_price",
         "image_output_price",
         "per_request_price",
-        "intervals"
+        "intervals",
+        "time_pricing"
       ]
     },
     {
@@ -3228,7 +3377,10 @@
         "template_id",
         "extra_headers",
         "body_override_mode",
-        "body_override"
+        "body_override",
+        "check_mode",
+        "account_id",
+        "latest_quota?"
       ]
     },
     {
@@ -3251,6 +3403,26 @@
     },
     {
       "kind": "upstream_type",
+      "source": "channels",
+      "name": "ChannelTimePricing",
+      "fields": [
+        "timezone",
+        "weekdays_only?",
+        "periods"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "channels",
+      "name": "ChannelTimePricingPeriod",
+      "fields": [
+        "start_time",
+        "end_time",
+        "multiplier"
+      ]
+    },
+    {
+      "kind": "upstream_type",
       "source": "channelMonitor",
       "name": "CheckResult",
       "fields": [
@@ -3259,7 +3431,8 @@
         "latency_ms",
         "ping_latency_ms",
         "message",
-        "checked_at"
+        "checked_at",
+        "quota?"
       ]
     },
     {
@@ -3268,6 +3441,59 @@
       "name": "ClearFlaggedHashesResponse",
       "fields": [
         "deleted"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "cnProviders",
+      "name": "CNProviderBalanceEntry",
+      "fields": [
+        "currency",
+        "balance"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "cnProviders",
+      "name": "CNProviderBalanceResult",
+      "fields": [
+        "provider",
+        "success",
+        "balance",
+        "currency?",
+        "balances?",
+        "available",
+        "status_code?",
+        "fetched_at",
+        "persisted",
+        "error?"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "cnProviders",
+      "name": "CNProviderQuotaProbeResult",
+      "fields": [
+        "provider",
+        "source?",
+        "success",
+        "credential_valid",
+        "tiers?",
+        "plan_level?",
+        "status_code?",
+        "fetched_at",
+        "persisted",
+        "error?"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "cnProviders",
+      "name": "CNQuotaTier",
+      "fields": [
+        "window",
+        "used_percent",
+        "reset_at?"
       ]
     },
     {
@@ -3518,6 +3744,8 @@
         "api_mode?",
         "endpoint",
         "api_key",
+        "check_mode?",
+        "account_id?",
         "primary_model",
         "extra_models?",
         "group_name?",
@@ -4200,6 +4428,7 @@
         "group_id?",
         "request_type?",
         "stream?",
+        "native_compaction_v2?",
         "billing_type?",
         "upstream_model_mismatch?"
       ]
@@ -4225,7 +4454,8 @@
         "latency_ms",
         "ping_latency_ms",
         "message",
-        "checked_at"
+        "checked_at",
+        "quota?"
       ]
     },
     {
@@ -4408,6 +4638,7 @@
         "input_price?",
         "output_price?",
         "cache_write_price?",
+        "cache_write_1h_price?",
         "cache_read_price?",
         "image_input_price?",
         "image_output_price?"
@@ -4428,6 +4659,7 @@
         "group_id?",
         "request_type?",
         "stream?",
+        "native_compaction_v2?",
         "billing_type?",
         "upstream_model_mismatch?"
       ]
@@ -4440,6 +4672,45 @@
         "models",
         "start_date",
         "end_date"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "channelMonitor",
+      "name": "MonitorBalance",
+      "fields": [
+        "currency",
+        "balance"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "channelMonitor",
+      "name": "MonitorQuotaSnapshot",
+      "fields": [
+        "source",
+        "success",
+        "tiers?",
+        "balance?",
+        "balances?",
+        "currency?",
+        "plan_level?",
+        "credential_invalid?",
+        "error?",
+        "fetched_at"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "channelMonitor",
+      "name": "MonitorQuotaTier",
+      "fields": [
+        "window",
+        "label?",
+        "used_percent",
+        "used?",
+        "limit?",
+        "reset_at?"
       ]
     },
     {
@@ -5346,6 +5617,122 @@
     },
     {
       "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginBinding",
+      "fields": [
+        "id",
+        "plugin_id",
+        "capability",
+        "platform",
+        "account_type",
+        "enabled",
+        "rollout_percent"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginCapability",
+      "fields": [
+        "id",
+        "platform",
+        "account_type"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginCompatibility",
+      "fields": [
+        "compatible",
+        "tested",
+        "status",
+        "message",
+        "current_sub2api_version",
+        "required_sub2api_version",
+        "recommended_sub2api_version",
+        "plugin_protocol",
+        "transport_api",
+        "ui_bridge"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginInstallation",
+      "fields": [
+        "id",
+        "plugin_key",
+        "name",
+        "version",
+        "description",
+        "author",
+        "manifest",
+        "binary_sha256",
+        "signature_status",
+        "state",
+        "last_error",
+        "installed_at",
+        "enabled_at?",
+        "updated_at",
+        "bindings",
+        "compatibility",
+        "runtime_healthy",
+        "runtime_message"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginManifest",
+      "fields": [
+        "schema_version",
+        "id",
+        "name",
+        "version",
+        "description?",
+        "author?",
+        "requires",
+        "capabilities",
+        "ui"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginRequirements",
+      "fields": [
+        "sub2api",
+        "recommended_sub2api_version?",
+        "tested_sub2api_versions?",
+        "plugin_protocol",
+        "transport_api",
+        "ui_bridge"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginTestResult",
+      "fields": [
+        "success",
+        "message",
+        "latency_ms"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "plugins",
+      "name": "PluginUISession",
+      "fields": [
+        "url",
+        "bridge_token",
+        "ui_bridge_version",
+        "expires_at"
+      ]
+    },
+    {
+      "kind": "upstream_type",
       "source": "settings",
       "name": "PreviewEmailTemplateRequest",
       "fields": [
@@ -5374,7 +5761,12 @@
         "input_price",
         "output_price",
         "cache_write_price",
+        "cache_write_1h_price?",
         "cache_read_price",
+        "input_multiplier",
+        "output_multiplier",
+        "cache_write_multiplier",
+        "cache_read_multiplier",
         "per_request_price",
         "sort_order"
       ]
@@ -5542,7 +5934,9 @@
       "source": "accounts",
       "name": "SyncUpstreamModelsResult",
       "fields": [
-        "models"
+        "models",
+        "metadata?",
+        "warnings?"
       ]
     },
     {
@@ -5553,7 +5947,8 @@
         "platform",
         "type",
         "base_url?",
-        "api_key"
+        "api_key",
+        "model_mapping?"
       ]
     },
     {
@@ -5759,6 +6154,7 @@
         "min_claude_code_version",
         "max_claude_code_version",
         "allow_ungrouped_key_scheduling",
+        "openai_ttft_mode",
         "enable_fingerprint_unification",
         "enable_metadata_passthrough",
         "enable_cch_signing",
@@ -5847,10 +6243,12 @@
         "channel_monitor_mode?",
         "channel_monitor_default_interval_seconds",
         "channel_monitor_hide_throughput?",
+        "channel_monitor_show_quota?",
         "available_channels_enabled",
         "model_plaza_enabled",
         "model_plaza_require_auth",
         "model_plaza_description",
+        "plugin_management_enabled",
         "affiliate_enabled",
         "openai_fast_policy_settings?",
         "allow_user_view_error_requests"
@@ -5962,6 +6360,7 @@
         "group_id?",
         "request_type?",
         "stream?",
+        "native_compaction_v2?",
         "billing_type?",
         "upstream_model_mismatch?"
       ]
@@ -6364,6 +6763,7 @@
         "min_claude_code_version?",
         "max_claude_code_version?",
         "allow_ungrouped_key_scheduling?",
+        "openai_ttft_mode?",
         "enable_fingerprint_unification?",
         "enable_metadata_passthrough?",
         "enable_cch_signing?",
@@ -6439,10 +6839,12 @@
         "channel_monitor_mode?",
         "channel_monitor_default_interval_seconds?",
         "channel_monitor_hide_throughput?",
+        "channel_monitor_show_quota?",
         "available_channels_enabled?",
         "model_plaza_enabled?",
         "model_plaza_require_auth?",
         "model_plaza_description?",
+        "plugin_management_enabled?",
         "affiliate_enabled?",
         "openai_fast_policy_settings?",
         "allow_user_view_error_requests?"
@@ -6455,6 +6857,31 @@
       "fields": [
         "name",
         "config"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
+      "name": "UpstreamModelMetadata",
+      "fields": [
+        "id",
+        "display_name?",
+        "description?",
+        "reasoning?",
+        "default_reasoning_level?",
+        "supported_reasoning_levels?",
+        "input_modalities?",
+        "context_window?",
+        "max_output_tokens?"
+      ]
+    },
+    {
+      "kind": "upstream_type",
+      "source": "accounts",
+      "name": "UpstreamModelSyncWarning",
+      "fields": [
+        "code",
+        "message"
       ]
     },
     {
@@ -6512,6 +6939,7 @@
         "account_id?",
         "request_type?",
         "stream?",
+        "native_compaction_v2?",
         "billing_type?"
       ]
     },
@@ -7020,7 +7448,8 @@
       "source": "channel_handler",
       "name": "channelModelPricingRequest",
       "fields": [
-        "intervals"
+        "intervals",
+        "time_pricing"
       ]
     },
     {
@@ -7035,11 +7464,15 @@
         "input_price",
         "output_price",
         "cache_write_price",
+        "cache_write_1h_price",
         "cache_read_price",
+        "fast_multiplier",
+        "flex_multiplier",
         "image_input_price",
         "image_output_price",
         "per_request_price",
-        "intervals"
+        "intervals",
+        "time_pricing"
       ]
     },
     {
@@ -7052,7 +7485,8 @@
         "latency_ms",
         "ping_latency_ms",
         "message",
-        "checked_at"
+        "checked_at",
+        "quota"
       ]
     },
     {
@@ -7064,7 +7498,8 @@
         "enabled",
         "template_id",
         "extra_headers",
-        "body_override"
+        "body_override",
+        "account_id"
       ]
     },
     {
@@ -7078,7 +7513,8 @@
         "latency_ms",
         "ping_latency_ms",
         "message",
-        "checked_at"
+        "checked_at",
+        "quota"
       ]
     },
     {
@@ -7110,7 +7546,10 @@
         "template_id",
         "extra_headers",
         "body_override_mode",
-        "body_override"
+        "body_override",
+        "check_mode",
+        "account_id",
+        "latest_quota"
       ]
     },
     {
@@ -7159,7 +7598,8 @@
         "template_id",
         "clear_template",
         "extra_headers",
-        "body_override"
+        "body_override",
+        "account_id"
       ]
     },
     {
@@ -7182,6 +7622,46 @@
         "account_stats_pricing_rules",
         "created_at",
         "updated_at"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "channel_handler",
+      "name": "channelTimePricingPeriodRequest",
+      "fields": [
+        "start_time",
+        "end_time",
+        "multiplier"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "channel_handler",
+      "name": "channelTimePricingPeriodResponse",
+      "fields": [
+        "start_time",
+        "end_time",
+        "multiplier"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "channel_handler",
+      "name": "channelTimePricingRequest",
+      "fields": [
+        "timezone",
+        "weekdays_only",
+        "periods"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "channel_handler",
+      "name": "channelTimePricingResponse",
+      "fields": [
+        "timezone",
+        "weekdays_only",
+        "periods"
       ]
     },
     {
@@ -7478,6 +7958,8 @@
         "daily_limit_usd",
         "weekly_limit_usd",
         "monthly_limit_usd",
+        "long_context_pricing_enabled",
+        "model_pricing",
         "allow_image_generation",
         "allow_batch_image_generation",
         "image_rate_independent",
@@ -7514,13 +7996,17 @@
         "supported_model_scopes",
         "allow_messages_dispatch",
         "allow_live",
+        "force_openai_fast",
+        "free_openai_fast",
         "require_oauth_only",
         "require_privacy_set",
         "default_mapped_model",
         "messages_dispatch_model_config",
         "models_list_config",
+        "codex_models_manifest_config",
         "rpm_limit",
         "max_reasoning_effort",
+        "max_reasoning_effort_over_limit",
         "reasoning_effort_mappings",
         "copy_accounts_from_group_ids"
       ]
@@ -7639,7 +8125,8 @@
         "balance",
         "concurrency",
         "rpm_limit",
-        "allowed_groups"
+        "allowed_groups",
+        "restrict_public_groups"
       ]
     },
     {
@@ -7676,6 +8163,7 @@
         "model_source",
         "request_type",
         "stream",
+        "native_compaction_v2",
         "billing_type",
         "upstream_model_mismatch"
       ]
@@ -7695,6 +8183,7 @@
         "model",
         "request_type",
         "stream",
+        "native_compaction_v2",
         "billing_type",
         "upstream_model_mismatch",
         "include_stats",
@@ -7744,6 +8233,7 @@
         "model",
         "request_type",
         "stream",
+        "native_compaction_v2",
         "billing_type",
         "upstream_model_mismatch"
       ]
@@ -8126,6 +8616,15 @@
     },
     {
       "kind": "upstream_backend_type",
+      "source": "plugin_handler",
+      "name": "pluginEnableRequest",
+      "fields": [
+        "accept_untested",
+        "rollout_percent"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
       "source": "channel_handler",
       "name": "pricingIntervalRequest",
       "fields": [
@@ -8135,6 +8634,7 @@
         "input_price",
         "output_price",
         "cache_write_price",
+        "cache_write_1h_price",
         "cache_read_price",
         "per_request_price",
         "sort_order"
@@ -8152,7 +8652,12 @@
         "input_price",
         "output_price",
         "cache_write_price",
+        "cache_write_1h_price",
         "cache_read_price",
+        "input_multiplier",
+        "output_multiplier",
+        "cache_write_multiplier",
+        "cache_read_multiplier",
         "per_request_price",
         "sort_order"
       ]
@@ -8386,6 +8891,8 @@
         "daily_limit_usd",
         "weekly_limit_usd",
         "monthly_limit_usd",
+        "long_context_pricing_enabled",
+        "model_pricing",
         "allow_image_generation",
         "allow_batch_image_generation",
         "image_rate_independent",
@@ -8422,15 +8929,27 @@
         "supported_model_scopes",
         "allow_messages_dispatch",
         "allow_live",
+        "force_openai_fast",
+        "free_openai_fast",
         "require_oauth_only",
         "require_privacy_set",
         "default_mapped_model",
         "messages_dispatch_model_config",
         "models_list_config",
+        "codex_models_manifest_config",
         "rpm_limit",
         "max_reasoning_effort",
+        "max_reasoning_effort_over_limit",
         "reasoning_effort_mappings",
         "copy_accounts_from_group_ids"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "setting_handler_runtime",
+      "name": "UpdateOpenAIImagesOAuthUnavailableCooldownSettingsRequest",
+      "fields": [
+        "cooldown_minutes"
       ]
     },
     {
@@ -8715,6 +9234,7 @@
         "max_claude_code_version",
         "allow_ungrouped_key_scheduling",
         "backend_mode_enabled",
+        "openai_ttft_mode",
         "enable_fingerprint_unification",
         "enable_metadata_passthrough",
         "enable_cch_signing",
@@ -8787,6 +9307,7 @@
         "channel_monitor_mode",
         "channel_monitor_default_interval_seconds",
         "channel_monitor_hide_throughput",
+        "channel_monitor_show_quota",
         "grok_default_text_model",
         "grok_cross_client_model_map_enabled",
         "grok_default_base_url_mode",
@@ -8794,6 +9315,7 @@
         "model_plaza_enabled",
         "model_plaza_require_auth",
         "model_plaza_description",
+        "plugin_management_enabled",
         "affiliate_enabled",
         "risk_control_enabled",
         "cyber_session_block_enabled",
@@ -8861,7 +9383,19 @@
         "concurrency",
         "rpm_limit",
         "allowed_groups",
+        "restrict_public_groups",
         "group_rates"
+      ]
+    },
+    {
+      "kind": "upstream_backend_type",
+      "source": "account_upstream_billing_rates",
+      "name": "upstreamBillingRatesResponse",
+      "fields": [
+        "items",
+        "total",
+        "page",
+        "page_size"
       ]
     },
     {
@@ -8879,6 +9413,7 @@
         "billing_mode",
         "request_type",
         "stream",
+        "native_compaction_v2",
         "billing_type",
         "upstream_model_mismatch"
       ]
@@ -10429,6 +10964,23 @@
     },
     {
       "kind": "upstream_handler",
+      "source": "account_upstream_billing_rates",
+      "name": "GetUpstreamBillingRates",
+      "path_parameters": [],
+      "query_parameters": [
+        "platform",
+        "type",
+        "status",
+        "search",
+        "privacy_mode",
+        "sort_by",
+        "sort_order",
+        "group"
+      ],
+      "request_types": []
+    },
+    {
+      "kind": "upstream_handler",
       "source": "account_handler",
       "name": "GetUsage",
       "path_parameters": [
@@ -10448,16 +11000,6 @@
         "id"
       ],
       "query_parameters": [],
-      "request_types": []
-    },
-    {
-      "kind": "upstream_handler",
-      "source": "group_handler",
-      "name": "GetUsageSummary",
-      "path_parameters": [],
-      "query_parameters": [
-        "timezone"
-      ],
       "request_types": []
     },
     {
@@ -10517,6 +11059,7 @@
         "account_id",
         "request_type",
         "stream",
+        "native_compaction_v2",
         "billing_type",
         "sort_by",
         "limit"
@@ -11157,6 +11700,26 @@
     },
     {
       "kind": "upstream_handler",
+      "source": "cn_provider_handler",
+      "name": "QueryBalance",
+      "path_parameters": [
+        "id"
+      ],
+      "query_parameters": [],
+      "request_types": []
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "cn_provider_handler",
+      "name": "QueryQuota",
+      "path_parameters": [
+        "id"
+      ],
+      "query_parameters": [],
+      "request_types": []
+    },
+    {
+      "kind": "upstream_handler",
       "source": "grok_oauth_handler",
       "name": "QueryQuota",
       "path_parameters": [
@@ -11444,6 +12007,17 @@
       "request_types": [
         "SendTestEmailRequest"
       ]
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "plugin_handler",
+      "name": "ServeUIAsset",
+      "path_parameters": [
+        "token",
+        "path"
+      ],
+      "query_parameters": [],
+      "request_types": []
     },
     {
       "kind": "upstream_handler",
@@ -11925,6 +12499,16 @@
       "query_parameters": [],
       "request_types": [
         "AdminUpdateAPIKeyGroupRequest"
+      ]
+    },
+    {
+      "kind": "upstream_handler",
+      "source": "setting_handler_runtime",
+      "name": "UpdateOpenAIImagesOAuthUnavailableCooldownSettings",
+      "path_parameters": [],
+      "query_parameters": [],
+      "request_types": [
+        "UpdateOpenAIImagesOAuthUnavailableCooldownSettingsRequest"
       ]
     },
     {
