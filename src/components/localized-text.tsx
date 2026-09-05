@@ -8,6 +8,11 @@ import { staticChineseUICopy, staticChineseUITemplateFragments } from '@/src/gen
 const { useSnapshot } = require('valtio/react');
 
 const exactEnglish: Record<string, string> = {
+  '查看更新内容': 'View release notes',
+  '下载 IPA': 'Download IPA',
+  '重新下载 IPA': 'Download IPA again',
+  '选择签名 App': 'Choose signing app',
+  '版本与 IPA': 'Versions and IPA',
   '连接 Sub2API': 'Connect to Sub2API',
   '连接 CLIProxyAPI': 'Connect to CLIProxyAPI',
   '独立管理 CLI 分组、Client Key、OAuth 账号池和实时配额。': 'Manage CLI groups, client keys, OAuth account pools, and live quotas independently.',

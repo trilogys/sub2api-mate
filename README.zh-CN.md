@@ -208,7 +208,7 @@ npx eas-cli@latest build --platform android --profile preview
 
 `.github/workflows/ios-native-build.yml`（**GateNest iOS IPA**）在 macOS Runner 上构建可独立运行的 Release IPA，支持 iOS 16.0 及以上的 arm64 iPhone 和 iPad。iOS 使用相同的业务页面、服务和配置，包内包含 JavaScript 资源，无需 Metro 开发服务器。
 
-从 **Actions** 运行工作流，下载 `gatenest-ios16-unsigned-ipa-*` Artifact 并解压。IPA 为未签名包，需要在全能签或爱思助手中使用包含私钥的 P12、密码及匹配的 `.mobileprovision` 描述文件重签后安装；仅有 P12 不能保证设备有安装资格。构建本身不需要上传任何签名证书。
+从 **Actions** 运行工作流，下载 `gatenest-vX.Y.Z` Artifact 并解压。IPA 为未签名包，需要在全能签或爱思助手中使用包含私钥的 P12、密码及匹配的 `.mobileprovision` 描述文件重签后安装；仅有 P12 不能保证设备有安装资格。构建本身不需要上传任何签名证书。
 
 具体步骤见 [iOS 签名与安装指南](docs/IOS_INSTALL.zh-CN.md)。原生编译通过不代表已经完成真机测试；iOS 应用升级需要重新签名安装，Android 的 APK 安装入口仅用于 Android。
 

@@ -40,7 +40,7 @@ export default function CLIProxyHubScreen() {
           <AdminMessage error={configQuery.error || pluginsQuery.error} />
         </AdminSection>
         <AdminSection title="版本信息" detail="上游版本查询由当前 CLIProxyAPI 实例执行。">
-          <View className="flex-row items-center gap-3 rounded-2xl bg-[#F6F8FC] p-3 dark:bg-[#152033]"><Info size={20} color="#2F6DF6" /><View className="flex-1"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest {Constants.expoConfig?.version || '1.8.1'}</Text><Text className="mt-1 text-[10px] text-[#7B8798] dark:text-[#9EABC0]">CLIProxy 独立工作区</Text></View></View>
+          <View className="flex-row items-center gap-3 rounded-2xl bg-[#F6F8FC] p-3 dark:bg-[#152033]"><Info size={20} color="#2F6DF6" /><View className="flex-1"><Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest {Constants.expoConfig?.version || '1.8.2'}</Text><Text className="mt-1 text-[10px] text-[#7B8798] dark:text-[#9EABC0]">CLIProxy 独立工作区</Text></View></View>
           <AdminButton label="检查 CLIProxyAPI 最新版本" pending={versionMutation.isPending} tone="muted" onPress={() => versionMutation.mutate()} />
           <AdminMessage error={versionMutation.error} success={versionMutation.data ? `CLIProxyAPI 最新版本：${versionMutation.data}` : undefined} />
         </AdminSection>

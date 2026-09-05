@@ -36,6 +36,8 @@ import { Uniwind } from 'uniwind';
 
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
+import { getSub2APIReleaseUrl } from '@/src/lib/sub2api-release';
+import { useModalActions } from '@/src/hooks/use-modal-actions';
 import { checkSystemUpdates } from '@/src/services/admin';
 import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
@@ -76,7 +78,7 @@ export function AppSidebar() {
   const path = usePathname();
   const config = useSnapshot(adminConfigState);
   useSnapshot(cliProxyConfigState);
-  const [expanded, setExpanded] = useState(false);
+  const { visible: expanded, setVisible: setExpanded, runAfterClose, onDismiss } = useModalActions();
   const [customizing, setCustomizing] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
   const [draggingId, setDraggingId] = useState<string>();
@@ -172,7 +174,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.1'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.2'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
@@ -201,16 +203,22 @@ export function AppSidebar() {
     update({ ...prefsRef.current, language: nextLanguage });
   };
 
-  const openServerVersionDetails = () => {
+  const openServerVersionDetails = () => runAfterClose(() => {
     const latest = latestServerVersion || currentServerVersion;
+    const releaseUrl = getSub2APIReleaseUrl(serverVersionQuery.data);
+    const releaseButtons = releaseUrl ? [{
+      text: '查看更新内容',
+      onPress: () => void Linking.openURL(releaseUrl).catch(() => localizedAlert('无法打开链接', releaseUrl)),
+    }] : [];
     const message = `当前版本：${currentServerVersion}\n最新版本：${latest}\n更新状态：${hasServerUpdate ? '发现新版本' : '当前已是最新版本'}`;
     if (!hasServerUpdate) {
-      localizedAlert('服务端版本', message);
+      localizedAlert('服务端版本', message, [{ text: '确定' }, ...releaseButtons]);
       return;
     }
     if (prefs.serverUpdatePromptsDisabled) {
       localizedAlert('服务端版本', `${message}\n\n所有版本的升级提示已关闭。`, [
         { text: '取消', style: 'cancel' },
+        ...releaseButtons,
         { text: '重新开启提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: false, dismissedServerUpdateVersions: [] }) },
       ]);
       return;
@@ -218,16 +226,18 @@ export function AppSidebar() {
     if (latestServerVersion && prefs.dismissedServerUpdateVersions.includes(latestServerVersion)) {
       localizedAlert('服务端版本', `${message}\n\n此版本的升级提示已忽略。`, [
         { text: '取消', style: 'cancel' },
+        ...releaseButtons,
         { text: '恢复此版本提示', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: prefsRef.current.dismissedServerUpdateVersions.filter((version) => version !== latestServerVersion) }) },
       ]);
       return;
     }
     localizedAlert('服务端版本', message, [
       { text: '取消', style: 'cancel' },
+      ...releaseButtons,
       { text: '忽略此版本', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: [...prefsRef.current.dismissedServerUpdateVersions, latest] }) },
       { text: '关闭全部提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: true }) },
     ]);
-  };
+  });
 
   const refreshServerVersion = async () => {
     if (serverVersionRefreshing) return;
@@ -236,7 +246,7 @@ export function AppSidebar() {
       const data = await checkSystemUpdates(true);
       queryClient.setQueryData(['system-version', config.activeAccountId], data);
     } catch (error) {
-      localizedAlert('刷新失败', error instanceof Error ? error.message : '暂时无法刷新服务端版本');
+      runAfterClose(() => localizedAlert('刷新失败', error instanceof Error ? error.message : '暂时无法刷新服务端版本'));
     } finally {
       setServerVersionRefreshing(false);
     }
@@ -252,7 +262,7 @@ export function AppSidebar() {
     }
   };
 
-  const requestLogout = () => {
+  const requestLogout = () => runAfterClose(() => {
     localizedAlert('退出当前账号？', '退出后将返回登录页；已记住的账号仍可在登录页快速选择，未记住的信息会被清除。', [
       { text: '取消', style: 'cancel' },
       {
@@ -266,16 +276,16 @@ export function AppSidebar() {
         },
       },
     ]);
-  };
+  });
 
-  const confirmSwitchToCLIProxy = () => localizedAlert(
+  const confirmSwitchToCLIProxy = () => runAfterClose(() => localizedAlert(
     '切换到 CLIProxyAPI？',
     '将离开当前 Sub2API 工作区并只显示 CLIProxyAPI 页面。两边的连接信息和数据都会保留。',
     [
       { text: '取消', style: 'cancel' },
-      { text: '确认切换', onPress: () => void switchToCLIProxy() },
+      { text: '确认切换', onPress: () => void switchToCLIProxy().catch((error) => localizedAlert('切换失败', error instanceof Error ? error.message : '无法保存工作区设置')) },
     ],
-  );
+  ));
 
   const switchToCLIProxy = async () => {
     await hydrateCLIProxyConfig();
@@ -494,7 +504,7 @@ export function AppSidebar() {
         </SafeAreaView>
       </View>
 
-      <Modal visible={expanded} transparent animationType="fade" onRequestClose={() => setExpanded(false)}>
+      <Modal visible={expanded} transparent animationType="fade" onDismiss={onDismiss} onRequestClose={() => setExpanded(false)}>
         <Pressable onPress={() => setExpanded(false)} style={{ flex: 1, backgroundColor: 'rgba(5,10,20,.52)' }}>
           <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '76%', maxWidth: 310, height: '100%', backgroundColor: dark ? '#0F1726' : '#F7F9FD' }}>
             <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>

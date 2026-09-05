@@ -1,6 +1,6 @@
 import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, View, type AlertButton } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Modal, Platform, Pressable, View, type AlertButton } from 'react-native';
 
 import { Text } from '@/src/components/localized-text';
 import { registerThemedAlertPresenter, type ThemedAlertRequest } from '@/src/store/themed-alert';
@@ -29,6 +29,9 @@ function buttonClasses(button: AlertButton) {
 
 export function ThemedAlertHost() {
   const [queue, setQueue] = useState<ThemedAlertRequest[]>([]);
+  const [closing, setClosing] = useState(false);
+  const closingRef = useRef(false);
+  const afterDismissRef = useRef<(() => void) | undefined>(undefined);
   const current = queue[0];
   const lastVisibleRequestRef = useRef<ThemedAlertRequest | undefined>(undefined);
   if (current) lastVisibleRequestRef.current = current;
@@ -38,10 +41,25 @@ export function ThemedAlertHost() {
     setQueue((items) => [...items, request]);
   }), []);
 
-  const close = (notifyDismiss = false) => {
-    const request = current;
+  const finishClose = useCallback(() => {
+    if (!closingRef.current) return;
+    closingRef.current = false;
+    const action = afterDismissRef.current;
+    afterDismissRef.current = undefined;
     setQueue((items) => items.slice(1));
-    if (notifyDismiss) request?.options?.onDismiss?.();
+    setClosing(false);
+    action?.();
+  }, []);
+
+  useEffect(() => {
+    if (closing && Platform.OS !== 'ios') finishClose();
+  }, [closing, finishClose]);
+
+  const close = (notifyDismiss = false, action?: () => void) => {
+    if (!current || closingRef.current) return;
+    closingRef.current = true;
+    afterDismissRef.current = notifyDismiss ? current.options?.onDismiss : action;
+    setClosing(true);
   };
 
   const dismissible = displayedRequest?.options?.cancelable !== false;
@@ -53,11 +71,12 @@ export function ThemedAlertHost() {
 
   return (
     <Modal
-      visible={Boolean(current)}
+      visible={Boolean(current) && !closing}
       transparent
       statusBarTranslucent
       navigationBarTranslucent
       animationType="fade"
+      onDismiss={finishClose}
       onRequestClose={() => { if (dismissible) close(true); }}
     >
       <Pressable
@@ -93,10 +112,7 @@ export function ThemedAlertHost() {
               return (
                 <Pressable
                   key={`${button.text ?? 'button'}-${index}`}
-                  onPress={() => {
-                    close(false);
-                    if (button.onPress) requestAnimationFrame(() => button.onPress?.());
-                  }}
+                  onPress={() => close(false, button.onPress)}
                   className={`${stacked ? 'w-full' : 'min-w-0 flex-1'} min-h-11 items-center justify-center rounded-2xl px-4 py-3 ${styles.box}`}
                 >
                   <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} className={`text-sm font-bold ${styles.text}`}>{button.text || '确定'}</Text>

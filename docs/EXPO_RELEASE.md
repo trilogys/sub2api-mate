@@ -47,7 +47,7 @@ When triggered from the app, GitHub Jobs API data is used to show each step's wa
 
 Run **GateNest iOS IPA** (`.github/workflows/ios-native-build.yml`) from Actions. Changes to its build scripts or `app.json` on `dev` also trigger a build. The workflow generates the iOS project, installs CocoaPods, archives a Release device application without signing credentials, verifies the bundle, and packages `Payload/*.app` as an IPA.
 
-The artifact contains `gatenest-vX.Y.Z-ios16-unsigned.ipa`, a SHA-256 checksum, a verification report, and the [signing guide](IOS_INSTALL.zh-CN.md). Artifacts are retained for 30 days. The report checks the application identity, iOS 16.0 minimum, arm64 device executable, iPhone/iPad support, and embedded JavaScript. A successful build still requires re-signing and physical-device verification.
+The artifact contains `gatenest-vX.Y.Z.ipa`, a SHA-256 checksum, a verification report, and the [signing guide](IOS_INSTALL.zh-CN.md). Artifacts are retained for 30 days. The report checks the application identity, iOS 16.0 minimum, arm64 device executable, iPhone/iPad support, and embedded JavaScript. A successful build still requires re-signing and physical-device verification.
 
 For local compilation, use a Mac with Xcode 16.1 or later and CocoaPods:
 
@@ -96,7 +96,7 @@ The workflow waits for EAS and uploads a preview Android APK when a direct build
 
 - Release title: `GateNest vX.Y.Z`
 - Android APKs: `gatenest-vX.Y.Z-arm64-v8a.apk`, `gatenest-vX.Y.Z-armeabi-v7a.apk`, and `gatenest-vX.Y.Z-x86_64.apk`
-- iOS IPA: `gatenest-vX.Y.Z-ios16-unsigned.ipa`
+- iOS IPA: `gatenest-vX.Y.Z.ipa`
 - GitHub Actions artifacts: `gatenest-<variant>-<architecture>-apk-<run-number>`
 - CLIProxy Group Router keeps its independent plugin name and asset naming.
 

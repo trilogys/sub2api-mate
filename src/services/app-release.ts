@@ -90,3 +90,8 @@ export function findAndroidApk(release: AppRelease | null | undefined, architect
 
   return apks.find((asset) => !/(arm64-v8a|armeabi-v7a|x86_64)/i.test(asset.name)) ?? apks[0];
 }
+
+export function findIOSIpa(release: AppRelease | null | undefined) {
+  const ipas = release?.assets.filter((asset) => asset.name.toLowerCase().endsWith('.ipa')) ?? [];
+  return ipas.find((asset) => /^gatenest-v[^/]+\.ipa$/i.test(asset.name)) ?? ipas[0] ?? null;
+}

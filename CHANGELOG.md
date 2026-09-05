@@ -7,6 +7,22 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.8.2] - 2026-09-06
+
+### Fixed
+
+- iOS workspace switching waits for the sidebar and confirmation dialogs to finish dismissing before presenting another dialog or navigating.
+- Confirmation actions run once after dismissal, including when alerts are queued.
+
+### Added
+
+- Open Sub2API release notes for the reported version from the sidebar's server-version dialog and System Maintenance.
+- Download iOS IPA updates from GitHub Releases with progress, retry failed downloads, and open the system share sheet to choose an installed signing app or save the file.
+
+### Changed
+
+- iOS packages and their Actions artifacts use `gatenest-vX.Y.Z` without platform or signing suffixes. IPA files still require signing before installation.
+
 ## [1.8.1] - 2026-08-24
 
 ### Fixed

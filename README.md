@@ -208,7 +208,7 @@ See [docs/EXPO_RELEASE.md](docs/EXPO_RELEASE.md) for the detailed release guide.
 
 `.github/workflows/ios-native-build.yml` (**GateNest iOS IPA**) uses a macOS runner to build a standalone Release IPA for arm64 iPhones and iPads running iOS 16.0 or later. The application uses the same screens, services, and stored settings as the Android target. The JavaScript bundle is embedded, so Metro is not required.
 
-Run the workflow from **Actions** and download its `gatenest-ios16-unsigned-ipa-*` artifact. The IPA is unsigned: use ESign or i4Tools with your P12 certificate (including its private key), password, and matching `.mobileprovision` profile to sign it before installation. P12 alone does not establish device eligibility. No signing credentials are needed by this build workflow.
+Run the workflow from **Actions** and download its `gatenest-vX.Y.Z` artifact. The IPA is unsigned: use ESign or i4Tools with your P12 certificate (including its private key), password, and matching `.mobileprovision` profile to sign it before installation. P12 alone does not establish device eligibility. No signing credentials are needed by this build workflow.
 
 See the [iOS signing and installation guide](docs/IOS_INSTALL.zh-CN.md). Native compilation does not replace physical-device testing. iOS application upgrades require re-signing and installation; Android's APK installer is platform-specific.
 

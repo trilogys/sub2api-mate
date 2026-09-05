@@ -45,6 +45,15 @@ jobs:
       - name: Check TypeScript
         run: npx tsc --noEmit
 
+      - name: Run regression tests
+        run: npm run test:regressions
+
+      - name: Read app version
+        id: app
+        run: |
+          version=$(node -p "require('./app.json').expo.version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
       - name: Generate iOS project
         run: npx expo prebuild --platform ios --no-install
 
@@ -58,7 +67,7 @@ jobs:
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: gatenest-ios16-unsigned-ipa-${{ github.run_number }}
+          name: gatenest-v${{ steps.app.outputs.version }}
           path: |
             build/ios/*.ipa
             build/ios/*.sha256

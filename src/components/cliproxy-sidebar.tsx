@@ -2,10 +2,10 @@ import { Activity, ChevronLeft, ChevronRight, ExternalLink, FileKey2, Gauge, Inf
 import { router, usePathname } from 'expo-router';
 import { Linking, Modal, Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useState } from 'react';
 import { useUniwind } from 'uniwind';
 
 import { Text, localizedAlert } from '@/src/components/localized-text';
+import { useModalActions } from '@/src/hooks/use-modal-actions';
 import { adminConfigState, hasAuthenticatedAdminSession } from '@/src/store/admin-config';
 import { cliProxyConfigState } from '@/src/store/cliproxy-config';
 import { setWorkspaceMode } from '@/src/store/workspace-mode';
@@ -42,7 +42,7 @@ export function CLIProxySidebar() {
   const config = useSnapshot(cliProxyConfigState);
   useSnapshot(adminConfigState);
   const { theme } = useUniwind();
-  const [expanded, setExpanded] = useState(false);
+  const { visible: expanded, setVisible: setExpanded, runAfterClose, onDismiss } = useModalActions();
   const dark = theme === 'dark';
 
   if (path === '/login' || !config.baseUrl) return null;
@@ -62,14 +62,14 @@ export function CLIProxySidebar() {
     router.replace(adminConfigState.user?.role === 'user' ? '/api-keys' : '/monitor');
   };
 
-  const confirmSwitchToSub2API = () => localizedAlert(
+  const confirmSwitchToSub2API = () => runAfterClose(() => localizedAlert(
     '切换到 Sub2API？',
     '将离开当前 CLIProxyAPI 工作区并只显示 Sub2API 页面。两边的连接信息和数据都会保留。',
     [
       { text: '取消', style: 'cancel' },
-      { text: '确认切换', onPress: () => void switchToSub2API() },
+      { text: '确认切换', onPress: () => void switchToSub2API().catch((error) => localizedAlert('切换失败', error instanceof Error ? error.message : '无法保存工作区设置')) },
     ],
-  );
+  ));
 
   const openWebsite = () => {
     const url = config.baseUrl.trim().replace(/\/+$/, '');
@@ -102,7 +102,7 @@ export function CLIProxySidebar() {
         </SafeAreaView>
       </View>
 
-      <Modal visible={expanded} transparent animationType="fade" onRequestClose={() => setExpanded(false)}>
+      <Modal visible={expanded} transparent animationType="fade" onDismiss={onDismiss} onRequestClose={() => setExpanded(false)}>
         <Pressable onPress={() => setExpanded(false)} style={{ flex: 1, backgroundColor: 'rgba(5,10,20,.52)' }}>
           <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '76%', maxWidth: 310, height: '100%', backgroundColor: dark ? '#0F1726' : '#F7F9FD' }}>
             <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>

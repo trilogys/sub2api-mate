@@ -1,12 +1,13 @@
 {
   "name": "gatenest",
-  "version": "1.8.1",
+  "version": "1.8.2",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "ios:build:unsigned": "bash .github/scripts/build-ios-ipa.sh",
+    "test:regressions": "node --test tests/*.test.cjs",
     "web": "expo start --web",
     "proxy": "node server/index.js",
     "dev:web-proxy": "concurrently -n proxy,web -c green,blue \"npm run proxy\" \"npm run web\"",
@@ -65,6 +66,7 @@
   "devDependencies": {
     "@types/react": "~19.1.0",
     "concurrently": "^9.2.1",
+    "react-test-renderer": "19.1.0",
     "typescript": "~5.9.2"
   },
   "private": true
