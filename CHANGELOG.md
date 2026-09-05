@@ -12,6 +12,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Fixed
 
 - Both iOS sidebar drawers now use window safe-area insets across modal presentations, preventing their headers from overlapping the status bar and keeping bottom actions above the home indicator.
+- IPA downloads use a foreground session and fall back to direct data streaming when iOS cannot create its download temporary file. Download errors are concise and Safari download is also available.
 
 ### Changed
 

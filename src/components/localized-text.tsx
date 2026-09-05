@@ -10,6 +10,7 @@ const { useSnapshot } = require('valtio/react');
 const exactEnglish: Record<string, string> = {
   '查看更新内容': 'View release notes',
   '下载 IPA': 'Download IPA',
+  'Safari 下载': 'Download in Safari',
   '重新下载 IPA': 'Download IPA again',
   '选择签名 App': 'Choose signing app',
   '版本与 IPA': 'Versions and IPA',
