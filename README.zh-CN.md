@@ -157,6 +157,8 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 
 ## Android APK 构建
 
+正式版本将 Android APK 与 iOS IPA 放在同一个 Release 中。**GateNest Android and iOS Release** 从同一提交构建两端，等三个 Android 架构和 iOS 包全部成功并通过检查后，才一起公开发布。推送匹配的 `vX.Y.Z` Tag 即可触发；单独的平台工作流只用于生成测试产物。详见 [发布指南](docs/EXPO_RELEASE.md)。
+
 构建中心默认选择 **GitHub 原生构建**，EAS Build 作为可切换的另一种方式。
 
 ### GitHub 原生构建（默认）

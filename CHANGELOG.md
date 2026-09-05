@@ -7,6 +7,16 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.8.3] - 2026-09-06
+
+### Fixed
+
+- Both iOS sidebar drawers now use window safe-area insets across modal presentations, preventing their headers from overlapping the status bar and keeping bottom actions above the home indicator.
+
+### Changed
+
+- Android and iOS are built from the same commit and published in one Release only after all three APK architectures and the IPA pass the version and artifact checks.
+
 ## [1.8.2] - 2026-09-06
 
 ### Fixed

@@ -6,6 +6,7 @@ import { useUniwind } from 'uniwind';
 
 import { Text, localizedAlert } from '@/src/components/localized-text';
 import { useModalActions } from '@/src/hooks/use-modal-actions';
+import { ModalSafeAreaView } from '@/src/components/modal-safe-area-view';
 import { adminConfigState, hasAuthenticatedAdminSession } from '@/src/store/admin-config';
 import { cliProxyConfigState } from '@/src/store/cliproxy-config';
 import { setWorkspaceMode } from '@/src/store/workspace-mode';
@@ -105,7 +106,7 @@ export function CLIProxySidebar() {
       <Modal visible={expanded} transparent animationType="fade" onDismiss={onDismiss} onRequestClose={() => setExpanded(false)}>
         <Pressable onPress={() => setExpanded(false)} style={{ flex: 1, backgroundColor: 'rgba(5,10,20,.52)' }}>
           <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '76%', maxWidth: 310, height: '100%', backgroundColor: dark ? '#0F1726' : '#F7F9FD' }}>
-            <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+            <ModalSafeAreaView>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>GateNest · CLIProxyAPI</Text>
@@ -118,7 +119,7 @@ export function CLIProxySidebar() {
                 <Pressable onPress={confirmSwitchToSub2API} style={{ height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><Repeat2 size={17} color="#2F6DF6" /><Text style={{ color: '#2F6DF6', fontSize: 12, fontWeight: '800' }}>切换到 Sub2API</Text></Pressable>
                 <Pressable onPress={() => setExpanded(false)} style={{ height: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13 }}><ChevronLeft size={20} color={dark ? '#9EABC0' : '#607086'} /><Text style={{ color: dark ? '#D5DDEA' : '#475467', fontSize: 12, fontWeight: '800' }}>收起菜单</Text></Pressable>
               </View>
-            </SafeAreaView>
+            </ModalSafeAreaView>
           </Pressable>
         </Pressable>
       </Modal>

@@ -15,7 +15,7 @@ import { IOSAppUpdate } from '@/src/components/ios-app-update';
 import { APP_REPOSITORY_URL, APP_UPDATE_CHECK_INTERVAL_MS, findAndroidApk, findIOSIpa, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
-const currentVersion = Constants.expoConfig?.version ?? '1.8.2';
+const currentVersion = Constants.expoConfig?.version ?? '1.8.3';
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';

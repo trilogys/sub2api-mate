@@ -1,6 +1,12 @@
 name: GateNest Android APK
 
 on:
+  workflow_call:
+    inputs:
+      variant:
+        required: false
+        default: release
+        type: string
   workflow_dispatch:
     inputs:
       variant:
@@ -83,7 +89,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gatenest-${{ inputs.variant }}-${{ matrix.architecture }}-apk-${{ github.run_number }}
-          path: android/app/build/outputs/apk/**/*.apk
+          path: |
+            android/app/build/outputs/apk/**/*.apk
+            android/app/build/outputs/apk/**/output-metadata.json
           if-no-files-found: error
           retention-days: 14
 
@@ -91,7 +99,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: gatenest-android-gradle-reports-${{ github.run_number }}
+          name: gatenest-android-gradle-reports-${{ matrix.architecture }}-${{ github.run_number }}
           path: |
             android/build/reports/**
             android/app/build/reports/**

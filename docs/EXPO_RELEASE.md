@@ -17,6 +17,12 @@ The public application name is `GateNest`. The existing Expo slug and native pac
 
 ## Choose a build method
 
+Official versions publish Android and iOS together. Use **GateNest Android and iOS Release** (`.github/workflows/mobile-release.yml`) for a release; the individual platform workflows produce diagnostic artifacts only.
+
+Update `app.json`, `package.json`, `package-lock.json`, and the changelog to the same new version, increment the native build numbers, and push its `vX.Y.Z` tag. The combined workflow builds all three Android architectures and iOS from that tag. For a manual run, `publish: false` builds and verifies both platforms without publishing; `publish: true` publishes the selected commit's version.
+
+The release job waits for both platform jobs. It checks Android's generated package/version metadata, the iOS verification report and source commit, and all four package files. It uploads the complete set into a draft first and only publishes the Release after every upload is confirmed. A failed platform leaves the previous published version in place. Published versions are not overwritten by reruns; use a new version for changed binaries.
+
 The in-app Build Center defaults to the GitHub native workflow. Use EAS when managed Expo credentials, EAS Update, or Expo-hosted build history is preferred.
 
 | Method | Queue | Required secret | Output | Best use |
@@ -45,7 +51,7 @@ When triggered from the app, GitHub Jobs API data is used to show each step's wa
 
 ## GitHub native iOS IPA
 
-Run **GateNest iOS IPA** (`.github/workflows/ios-native-build.yml`) from Actions. Changes to its build scripts or `app.json` on `dev` also trigger a build. The workflow generates the iOS project, installs CocoaPods, archives a Release device application without signing credentials, verifies the bundle, and packages `Payload/*.app` as an IPA.
+Run **GateNest iOS IPA** (`.github/workflows/ios-native-build.yml`) from Actions for an iOS-only diagnostic artifact. Official releases call it through the combined mobile workflow. It generates the iOS project, installs CocoaPods, archives a Release device application without signing credentials, verifies the bundle, and packages `Payload/*.app` as an IPA.
 
 The artifact contains `gatenest-vX.Y.Z.ipa`, a SHA-256 checksum, a verification report, and the [signing guide](IOS_INSTALL.zh-CN.md). Artifacts are retained for 30 days. The report checks the application identity, iOS 16.0 minimum, arm64 device executable, iPhone/iPad support, and embedded JavaScript. A successful build still requires re-signing and physical-device verification.
 

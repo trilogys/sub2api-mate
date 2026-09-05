@@ -2,7 +2,7 @@
 
 ## 安装包
 
-- 文件：`gatenest-v1.8.2.ipa`（文件名版本随构建更新）。
+- 文件：`gatenest-v1.8.3.ipa`（文件名版本随构建更新）。
 - 设备：iOS / iPadOS 16.0 及以上的 arm64 iPhone、iPad。
 - 应用名称：GateNest。
 - 默认 Bundle ID：`com.ppx.sub2apimate`。
@@ -14,7 +14,7 @@ iOS 与 Android 使用同一套业务代码，保留 Sub2API、CLIProxyAPI、账
 ## 获取 IPA
 
 1. 打开 [GateNest iOS IPA 工作流](https://github.com/trilogys/GateNest/actions/workflows/ios-native-build.yml)。
-2. 选择包含该工作流的分支并运行；构建脚本或 iOS 配置推送到 `dev` 时也会自动运行。
+2. 单独测试可选择包含该工作流的分支并运行；正式版本由 **GateNest Android and iOS Release** 同时构建并发布 Android 和 iOS。
 3. 构建成功后下载 `gatenest-vX.Y.Z` Artifact 并解压。
 4. 取出 `.ipa` 文件。Artifact 外层 ZIP 不是 IPA，不要把 ZIP 改后缀后安装。
 

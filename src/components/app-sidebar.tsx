@@ -38,6 +38,7 @@ import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
 import { getSub2APIReleaseUrl } from '@/src/lib/sub2api-release';
 import { useModalActions } from '@/src/hooks/use-modal-actions';
+import { ModalSafeAreaView } from '@/src/components/modal-safe-area-view';
 import { checkSystemUpdates } from '@/src/services/admin';
 import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
@@ -174,7 +175,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.2'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.3'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
@@ -507,7 +508,7 @@ export function AppSidebar() {
       <Modal visible={expanded} transparent animationType="fade" onDismiss={onDismiss} onRequestClose={() => setExpanded(false)}>
         <Pressable onPress={() => setExpanded(false)} style={{ flex: 1, backgroundColor: 'rgba(5,10,20,.52)' }}>
           <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '76%', maxWidth: 310, height: '100%', backgroundColor: dark ? '#0F1726' : '#F7F9FD' }}>
-            <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+            <ModalSafeAreaView>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>GateNest · Sub2API</Text>
@@ -569,7 +570,7 @@ export function AppSidebar() {
                 <Pressable onPress={requestLogout} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13 }}><LogOut size={17} color="#D9475C" /><Text style={{ color: '#D9475C', fontSize: 12, fontWeight: '800' }}>退出账号</Text></Pressable>
                 <Pressable accessibilityLabel="收起侧边菜单" onPress={() => setExpanded(false)} style={{ height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronLeft size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ color: dark ? '#8BB4FF' : '#2F6DF6', fontSize: 12, fontWeight: '800' }}>收起菜单</Text></Pressable>
               </View>
-            </SafeAreaView>
+            </ModalSafeAreaView>
           </Pressable>
         </Pressable>
       </Modal>

@@ -157,6 +157,8 @@ AI-generated fixes are proposals, not verified releases. Review the diff and run
 
 ## Android APK builds
 
+Official releases include Android APKs and the iOS IPA under the same version. **GateNest Android and iOS Release** builds both platforms from one commit and publishes only when all packages and checks succeed. Push a matching `vX.Y.Z` tag to run it; individual platform workflows remain available for diagnostic artifacts. See the [release guide](docs/EXPO_RELEASE.md).
+
 The Build Center defaults to **GitHub Native Build**. EAS Build remains available as an alternative.
 
 ### GitHub native build (default)

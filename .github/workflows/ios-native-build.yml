@@ -1,15 +1,8 @@
 name: GateNest iOS IPA
 
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches:
-      - dev
-    paths:
-      - app.json
-      - .github/workflows/ios-native-build.yml
-      - .github/scripts/build-ios-ipa.sh
-      - .github/scripts/verify-ios-app.mjs
 
 permissions:
   contents: read
