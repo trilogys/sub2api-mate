@@ -9,14 +9,16 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Uniwind, useUniwind } from 'uniwind';
 
 import { AIAssistant } from '@/src/components/ai-assistant';
-import { AppSidebar } from '@/src/components/app-sidebar';
 import { AccountRefreshCoordinator } from '@/src/components/account-refresh-coordinator';
 import { ThemedAlertHost } from '@/src/components/themed-alert-host';
+import { WorkspaceRouteGuard, WorkspaceSidebar } from '@/src/components/workspace-shell';
 import { translateText } from '@/src/components/localized-text';
 import { queryClient } from '@/src/lib/query-client';
 import { markPerformance } from '@/src/lib/performance';
 import { adminConfigState, hydrateAdminConfig } from '@/src/store/admin-config';
+import { cliProxyConfigState, hydrateCLIProxyConfig } from '@/src/store/cliproxy-config';
 import { applyAppLanguage, languageState, loadUIPreferences } from '@/src/store/ui-preferences';
+import { hydrateWorkspaceMode, workspaceModeState } from '@/src/store/workspace-mode';
 
 const { useSnapshot } = require('valtio/react');
 
@@ -40,17 +42,19 @@ const primaryStackScreens = [
 
 export default function RootLayout() {
   const config = useSnapshot(adminConfigState);
+  const cliProxy = useSnapshot(cliProxyConfigState);
+  const workspace = useSnapshot(workspaceModeState);
   const language = useSnapshot(languageState).value as 'zh' | 'en';
   const { theme } = useUniwind();
   const [uiReady, setUIReady] = useState(false);
 
   useEffect(() => {
-    Promise.all([hydrateAdminConfig(), loadUIPreferences()])
-      .then(([, preferences]) => { Uniwind.setTheme(preferences.colorMode); applyAppLanguage(preferences.language); setUIReady(true); markPerformance('config_hydrated'); })
+    Promise.all([hydrateAdminConfig(), hydrateCLIProxyConfig(), hydrateWorkspaceMode(), loadUIPreferences()])
+      .then(([, , , preferences]) => { Uniwind.setTheme(preferences.colorMode); applyAppLanguage(preferences.language); setUIReady(true); markPerformance('config_hydrated'); })
       .catch(() => setUIReady(true));
   }, []);
 
-  const isReady = config.hydrated && uiReady;
+  const isReady = config.hydrated && cliProxy.hydrated && workspace.hydrated && uiReady;
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
@@ -62,7 +66,7 @@ export default function RootLayout() {
         ) : (
           <>
             <View style={{ flex: 1, flexDirection: 'row' }}>
-              <AppSidebar />
+              <WorkspaceSidebar />
               <View style={{ flex: 1 }}>
                 <Stack
                   initialRouteName="(tabs)"
@@ -148,8 +152,9 @@ export default function RootLayout() {
                 </Stack>
               </View>
             </View>
-            <AIAssistant />
-            <AccountRefreshCoordinator />
+            <WorkspaceRouteGuard />
+            {workspace.mode === 'sub2api' ? <AIAssistant /> : null}
+            {workspace.mode === 'sub2api' ? <AccountRefreshCoordinator /> : null}
             <ThemedAlertHost />
           </>
         )}

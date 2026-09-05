@@ -1,9 +1,9 @@
 {
   "expo": {
-    "name": "Sub2API Mate",
+    "name": "GateNest",
     "slug": "sub2api-mobile",
     "owner": "trilogys",
-    "version": "1.4.0",
+    "version": "1.8.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -16,15 +16,19 @@
       "supportsTablet": true,
       "icon": "./assets/icon.png",
       "bundleIdentifier": "com.ppx.sub2apimate",
-      "buildNumber": "9",
+      "buildNumber": "16",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocalNetworkUsageDescription": "GateNest connects to the Sub2API and CLIProxyAPI servers you configure on your local network."
       }
     },
     "android": {
       "icon": "./assets/icon.png",
       "package": "com.ppx.sub2apimate",
-      "versionCode": 9,
+      "versionCode": 16,
       "permissions": [
         "android.permission.REQUEST_INSTALL_PACKAGES"
       ],
@@ -44,6 +48,9 @@
       [
         "expo-build-properties",
         {
+          "ios": {
+            "deploymentTarget": "16.0"
+          },
           "android": {
             "usesCleartextTraffic": true,
             "enableMinifyInReleaseBuilds": true,

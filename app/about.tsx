@@ -11,10 +11,11 @@ import { Text, localizedAlert } from '@/src/components/localized-text';
 import { LocalizedStackScreen } from '@/src/components/localized-navigation';
 import { ScreenShell } from '@/src/components/screen-shell';
 import { downloadAndInstallAndroidApk, type AndroidAppUpdateProgress } from '@/src/services/android-app-update';
-import { APP_REPOSITORY_URL, APP_UPDATE_CHECK_INTERVAL_MS, findAndroidApk, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
+import { IOSAppUpdate } from '@/src/components/ios-app-update';
+import { APP_REPOSITORY_URL, APP_UPDATE_CHECK_INTERVAL_MS, findAndroidApk, findIOSIpa, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
 
-const currentVersion = Constants.expoConfig?.version ?? '1.4.0';
+const currentVersion = Constants.expoConfig?.version ?? '1.8.3';
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 MB';
@@ -50,6 +51,7 @@ export default function AboutScreen() {
   const release = releaseQuery.data;
   const hasUpdate = Boolean(release?.tag_name && isNewerAppVersion(release.tag_name, currentVersion));
   const apk = findAndroidApk(release, Device.supportedCpuArchitectures);
+  const ipa = findIOSIpa(release);
   const apkProgressPercent = apkProgress?.totalBytes
     ? Math.min(100, Math.round((apkProgress.downloadedBytes / apkProgress.totalBytes) * 100))
     : 0;
@@ -122,7 +124,7 @@ export default function AboutScreen() {
       <ScreenShell title="关于应用" subtitle="版本、在线更新与开源信息" bottomInsetClassName="pb-8" refreshing={releaseQuery.isRefetching} onRefresh={() => releaseQuery.refetch().then(() => undefined)}>
         <View className="items-center rounded-[24px] border border-[#E2E9F3] bg-white px-5 py-6 dark:border-[#273449] dark:bg-[#111827]">
           <Image source={require('../assets/icon.png')} style={{ width: 80, height: 80, borderRadius: 22 }} resizeMode="cover" />
-          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">Sub2API Mate</Text>
+          <Text className="mt-3 text-xl font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest</Text>
           <Text className="mt-1 text-xs text-[#6B778C] dark:text-[#9EABC0]">版本 {currentVersion} · Expo SDK 54 · {Platform.OS === 'android' ? 'Android' : Platform.OS === 'ios' ? 'iOS' : 'Web'}</Text>
         </View>
 
@@ -154,7 +156,7 @@ export default function AboutScreen() {
             )
           ) : null}
           <AdminButton label={releaseQuery.isRefetching ? '正在检查…' : '重新检查版本'} pending={releaseQuery.isRefetching} tone="muted" onPress={() => void releaseQuery.refetch()} />
-          {hasUpdate ? (
+          {hasUpdate && Platform.OS !== 'ios' ? (
             Platform.OS === 'android' && apk ? (
               <>
                 <AdminButton
@@ -184,12 +186,14 @@ export default function AboutScreen() {
               <AdminButton label="打开 Release 页面" onPress={() => void open(release!.html_url)} />
             )
           ) : null}
+          {Platform.OS === 'ios' && ipa ? <IOSAppUpdate key={ipa.id} asset={ipa} /> : null}
+          {Platform.OS === 'ios' && release ? <AdminButton label="打开 Release 页面" tone="muted" onPress={() => void open(release.html_url)} /> : null}
           <AdminMessage error={releaseQuery.error} />
           <AdminMessage error={apkMutation.error} />
-          <Text className="text-[10px] leading-4 text-[#7B8798] dark:text-[#9EABC0]">Android 会在 App 内下载 APK 并显示进度，完成后由系统安装程序确认安装；签名不一致时需要先卸载旧版。App 无法静默覆盖安装。</Text>
+          {Platform.OS === 'android' ? <Text className="text-[10px] leading-4 text-[#7B8798] dark:text-[#9EABC0]">Android 会在 App 内下载 APK 并显示进度，完成后由系统安装程序确认安装；签名不一致时需要先卸载旧版。App 无法静默覆盖安装。</Text> : null}
         </AdminSection>
 
-        <AdminSection title="Expo 在线更新" detail="仅更新 JavaScript 与资源；原生依赖、权限或 Expo SDK 变化仍需安装新 APK。">
+        <AdminSection title="Expo 在线更新" detail="仅更新 JavaScript 与资源；原生依赖、权限或 Expo SDK 变化仍需安装新版应用。">
           <View className="flex-row items-start gap-3 rounded-2xl bg-[#EAF2FF] p-3 dark:bg-[#172C55]">
             <RefreshCw size={19} color="#2F6DF6" />
             <Text className="flex-1 text-xs leading-5 text-[#315B9C] dark:text-[#AFC9F7]">正式包启用 EAS Update 后，可以在这里下载在线更新并重启应用完成升级。</Text>
@@ -199,8 +203,8 @@ export default function AboutScreen() {
         </AdminSection>
 
         <AdminSection title="开源项目" detail="代码、发布版本、问题反馈与许可证信息。">
-          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/sub2api-mate" url={APP_REPOSITORY_URL} />
-          <ExternalRow icon={Download} title="版本与 APK" detail="查看全部 GitHub Releases" url={`${APP_REPOSITORY_URL}/releases`} />
+          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/GateNest" url={APP_REPOSITORY_URL} />
+          <ExternalRow icon={Download} title={Platform.OS === 'ios' ? '版本与 IPA' : '版本与 APK'} detail="查看全部 GitHub Releases" url={`${APP_REPOSITORY_URL}/releases`} />
           <ExternalRow icon={CircleAlert} title="问题反馈" detail="提交 Bug、建议或兼容性问题" url={`${APP_REPOSITORY_URL}/issues`} />
           <ExternalRow icon={FileText} title="Apache License 2.0" detail="查看本项目开源许可证" url={`${APP_REPOSITORY_URL}/blob/main/LICENSE`} />
           <ExternalRow icon={Code2} title="灵感来源" detail="感谢 ckken/sub2api-mobile 的开源成果" url="https://github.com/ckken/sub2api-mobile" />
@@ -209,7 +213,7 @@ export default function AboutScreen() {
         <AdminSection title="更新与安全说明">
           <View className="flex-row items-start gap-3">
             <ShieldCheck size={19} color="#20A66A" />
-            <Text className="flex-1 text-xs leading-5 text-[#5F6C80] dark:text-[#AAB6C8]">请只从本项目 GitHub Releases 或你信任的构建渠道安装 APK。更新前建议保留服务器地址与登录信息。</Text>
+            <Text className="flex-1 text-xs leading-5 text-[#5F6C80] dark:text-[#AAB6C8]">请只从本项目 GitHub Releases 或你信任的构建渠道安装应用。更新前建议保留服务器地址与登录信息。</Text>
           </View>
           <Pressable onPress={() => void open(`${APP_REPOSITORY_URL}/blob/main/SECURITY.md`)} className="flex-row items-center justify-center gap-2 rounded-2xl bg-[#F1F5FA] py-3 dark:bg-[#182235]">
             <Info size={16} color="#2F6DF6" />

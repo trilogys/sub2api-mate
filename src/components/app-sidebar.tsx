@@ -20,6 +20,7 @@ import {
   Network,
   RadioTower,
   RefreshCw,
+  Repeat2,
   ScrollText,
   Settings2,
   Shield,
@@ -35,10 +36,15 @@ import { Uniwind } from 'uniwind';
 
 import { queryClient } from '@/src/lib/query-client';
 import { getServerRootUrl } from '@/src/lib/server-url';
+import { getSub2APIReleaseUrl } from '@/src/lib/sub2api-release';
+import { useModalActions } from '@/src/hooks/use-modal-actions';
+import { ModalSafeAreaView } from '@/src/components/modal-safe-area-view';
 import { checkSystemUpdates } from '@/src/services/admin';
 import { APP_UPDATE_CHECK_INTERVAL_MS, getLatestAppRelease, isNewerAppVersion } from '@/src/services/app-release';
 import { adminConfigState, isAdminSession, logoutAdminAccount } from '@/src/store/admin-config';
+import { cliProxyConfigState, hydrateCLIProxyConfig } from '@/src/store/cliproxy-config';
 import { applyAppLanguage, defaultUIPreferences, loadUIPreferences, normalizeUIPreferences, saveUIPreferences, type UIPreferences } from '@/src/store/ui-preferences';
+import { setWorkspaceMode } from '@/src/store/workspace-mode';
 import { Text, localizedAlert } from '@/src/components/localized-text';
 
 const { useSnapshot } = require('valtio/react');
@@ -72,7 +78,8 @@ const items: MenuItem[] = [
 export function AppSidebar() {
   const path = usePathname();
   const config = useSnapshot(adminConfigState);
-  const [expanded, setExpanded] = useState(false);
+  useSnapshot(cliProxyConfigState);
+  const { visible: expanded, setVisible: setExpanded, runAfterClose, onDismiss } = useModalActions();
   const [customizing, setCustomizing] = useState(false);
   const [selectedId, setSelectedId] = useState<string>();
   const [draggingId, setDraggingId] = useState<string>();
@@ -168,7 +175,7 @@ export function AppSidebar() {
     && !prefs.dismissedServerUpdateVersions.includes(latestServerVersion),
   );
   const latestAppVersion = appReleaseQuery.data?.tag_name;
-  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.4.0'));
+  const hasAppUpdate = Boolean(latestAppVersion && isNewerAppVersion(latestAppVersion, Constants.expoConfig?.version ?? '1.8.3'));
   const appUpdateWarningVisible = Boolean(
     hasAppUpdate
     && !prefs.appUpdatePromptsDisabled
@@ -197,16 +204,22 @@ export function AppSidebar() {
     update({ ...prefsRef.current, language: nextLanguage });
   };
 
-  const openServerVersionDetails = () => {
+  const openServerVersionDetails = () => runAfterClose(() => {
     const latest = latestServerVersion || currentServerVersion;
+    const releaseUrl = getSub2APIReleaseUrl(serverVersionQuery.data);
+    const releaseButtons = releaseUrl ? [{
+      text: '查看更新内容',
+      onPress: () => void Linking.openURL(releaseUrl).catch(() => localizedAlert('无法打开链接', releaseUrl)),
+    }] : [];
     const message = `当前版本：${currentServerVersion}\n最新版本：${latest}\n更新状态：${hasServerUpdate ? '发现新版本' : '当前已是最新版本'}`;
     if (!hasServerUpdate) {
-      localizedAlert('服务端版本', message);
+      localizedAlert('服务端版本', message, [{ text: '确定' }, ...releaseButtons]);
       return;
     }
     if (prefs.serverUpdatePromptsDisabled) {
       localizedAlert('服务端版本', `${message}\n\n所有版本的升级提示已关闭。`, [
         { text: '取消', style: 'cancel' },
+        ...releaseButtons,
         { text: '重新开启提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: false, dismissedServerUpdateVersions: [] }) },
       ]);
       return;
@@ -214,16 +227,18 @@ export function AppSidebar() {
     if (latestServerVersion && prefs.dismissedServerUpdateVersions.includes(latestServerVersion)) {
       localizedAlert('服务端版本', `${message}\n\n此版本的升级提示已忽略。`, [
         { text: '取消', style: 'cancel' },
+        ...releaseButtons,
         { text: '恢复此版本提示', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: prefsRef.current.dismissedServerUpdateVersions.filter((version) => version !== latestServerVersion) }) },
       ]);
       return;
     }
     localizedAlert('服务端版本', message, [
       { text: '取消', style: 'cancel' },
+      ...releaseButtons,
       { text: '忽略此版本', onPress: () => update({ ...prefsRef.current, dismissedServerUpdateVersions: [...prefsRef.current.dismissedServerUpdateVersions, latest] }) },
       { text: '关闭全部提示', onPress: () => update({ ...prefsRef.current, serverUpdatePromptsDisabled: true }) },
     ]);
-  };
+  });
 
   const refreshServerVersion = async () => {
     if (serverVersionRefreshing) return;
@@ -232,7 +247,7 @@ export function AppSidebar() {
       const data = await checkSystemUpdates(true);
       queryClient.setQueryData(['system-version', config.activeAccountId], data);
     } catch (error) {
-      localizedAlert('刷新失败', error instanceof Error ? error.message : '暂时无法刷新服务端版本');
+      runAfterClose(() => localizedAlert('刷新失败', error instanceof Error ? error.message : '暂时无法刷新服务端版本'));
     } finally {
       setServerVersionRefreshing(false);
     }
@@ -248,7 +263,7 @@ export function AppSidebar() {
     }
   };
 
-  const requestLogout = () => {
+  const requestLogout = () => runAfterClose(() => {
     localizedAlert('退出当前账号？', '退出后将返回登录页；已记住的账号仍可在登录页快速选择，未记住的信息会被清除。', [
       { text: '取消', style: 'cancel' },
       {
@@ -262,6 +277,26 @@ export function AppSidebar() {
         },
       },
     ]);
+  });
+
+  const confirmSwitchToCLIProxy = () => runAfterClose(() => localizedAlert(
+    '切换到 CLIProxyAPI？',
+    '将离开当前 Sub2API 工作区并只显示 CLIProxyAPI 页面。两边的连接信息和数据都会保留。',
+    [
+      { text: '取消', style: 'cancel' },
+      { text: '确认切换', onPress: () => void switchToCLIProxy().catch((error) => localizedAlert('切换失败', error instanceof Error ? error.message : '无法保存工作区设置')) },
+    ],
+  ));
+
+  const switchToCLIProxy = async () => {
+    await hydrateCLIProxyConfig();
+    await setWorkspaceMode('cliproxy');
+    setExpanded(false);
+    if (cliProxyConfigState.baseUrl && cliProxyConfigState.managementKey) {
+      router.replace('/cliproxy');
+      return;
+    }
+    router.replace('/login');
   };
 
   const navigateTo = (item: MenuItem) => {
@@ -463,19 +498,20 @@ export function AppSidebar() {
             return <Pressable key={item.id} accessibilityLabel={item.title} onPress={() => navigateTo(item)} onLongPress={() => { setExpanded(true); setCustomizing(true); setSelectedId(item.id); }} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, marginBottom: 4, backgroundColor: showActiveBackground ? (dark ? '#172C55' : '#E8F0FF') : 'transparent' }}><Icon size={19} color={showAppUpdate ? '#D88A18' : showActiveBackground ? (dark ? '#69A0FF' : '#2F6DF6') : dark ? '#9EABC0' : '#607086'} />{showAppUpdate ? <Text style={{ position: 'absolute', right: 2, top: 2, borderRadius: 999, backgroundColor: dark ? '#4A3513' : '#FFF0C2', paddingHorizontal: 3, paddingVertical: 1, fontSize: 6, fontWeight: '900', color: dark ? '#FFD66B' : '#946321' }}>NEW</Text> : prefs.defaultMenuId === item.id ? <View style={{ position: 'absolute', right: 5, top: 6, width: 5, height: 5, borderRadius: 3, backgroundColor: '#2F6DF6' }} /> : null}</Pressable>;
           })}</ScrollView>
           <View style={{ borderTopWidth: 1, borderTopColor: dark ? '#273449' : '#E1E8F2', paddingHorizontal: 5, paddingTop: 7 }}>
+            <Pressable accessibilityLabel="切换到 CLIProxyAPI" onPress={confirmSwitchToCLIProxy} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><Repeat2 size={19} color="#2F6DF6" /></Pressable>
             <Pressable accessibilityLabel="退出账号" onPress={requestLogout} style={{ height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 13 }}><LogOut size={19} color="#D9475C" /></Pressable>
             <Pressable accessibilityLabel="展开侧边菜单" onPress={() => setExpanded(true)} style={{ height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronRight size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /></Pressable>
           </View>
         </SafeAreaView>
       </View>
 
-      <Modal visible={expanded} transparent animationType="fade" onRequestClose={() => setExpanded(false)}>
+      <Modal visible={expanded} transparent animationType="fade" onDismiss={onDismiss} onRequestClose={() => setExpanded(false)}>
         <Pressable onPress={() => setExpanded(false)} style={{ flex: 1, backgroundColor: 'rgba(5,10,20,.52)' }}>
           <Pressable onPress={(event) => event.stopPropagation()} style={{ width: '76%', maxWidth: 310, height: '100%', backgroundColor: dark ? '#0F1726' : '#F7F9FD' }}>
-            <SafeAreaView edges={['top', 'bottom']} style={{ flex: 1 }}>
+            <ModalSafeAreaView>
               <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: dark ? '#273449' : '#E1E8F2' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>Sub2API Mate</Text>
+                  <Text style={{ flex: 1, fontSize: 18, fontWeight: '800', color: dark ? '#F4F7FB' : '#172033' }}>GateNest · Sub2API</Text>
                   <Pressable accessibilityRole="link" accessibilityLabel="在浏览器打开当前服务器" onPress={() => void openWebsite()} style={{ marginRight: 2, flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 10, backgroundColor: dark ? '#172C55' : '#EAF2FF', paddingHorizontal: 8, paddingVertical: 7 }}><Globe2 size={13} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ fontSize: 9, fontWeight: '800', color: dark ? '#8BB4FF' : '#2F6DF6' }}>WEBSITE</Text></Pressable>
                   <Pressable accessibilityLabel="自定义菜单" onPress={() => { setCustomizing((value) => !value); setSelectedId(undefined); }} style={{ padding: 9 }}><Settings2 size={19} color={customizing ? '#69A0FF' : dark ? '#9EABC0' : '#738095'} /></Pressable>
                 </View>
@@ -530,10 +566,11 @@ export function AppSidebar() {
                   {selectedId ? <Pressable onPress={() => update({ ...prefsRef.current, defaultMenuId: prefs.defaultMenuId === selectedId ? null : selectedId })} style={{ alignItems: 'center', borderRadius: 13, backgroundColor: prefs.defaultMenuId === selectedId ? '#FFF0F3' : dark ? '#172C55' : '#EAF2FF', paddingVertical: 9 }}><Text style={{ fontSize: 11, fontWeight: '800', color: prefs.defaultMenuId === selectedId ? '#D9475C' : dark ? '#8BB4FF' : '#2F6DF6' }}>{prefs.defaultMenuId === selectedId ? '取消默认启动页面' : '设为默认启动页面'}</Text></Pressable> : null}
                   <Text style={{ marginTop: 7, textAlign: 'center', fontSize: 10, lineHeight: 15, color: dark ? '#9EABC0' : '#7B8798' }}>长按菜单并拖到目标位置，松手后自动保存。</Text>
                 </View> : null}
+                <Pressable onPress={confirmSwitchToCLIProxy} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><Repeat2 size={17} color="#2F6DF6" /><Text style={{ color: '#2F6DF6', fontSize: 12, fontWeight: '800' }}>切换到 CLIProxyAPI</Text></Pressable>
                 <Pressable onPress={requestLogout} style={{ height: 42, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, borderRadius: 13 }}><LogOut size={17} color="#D9475C" /><Text style={{ color: '#D9475C', fontSize: 12, fontWeight: '800' }}>退出账号</Text></Pressable>
                 <Pressable accessibilityLabel="收起侧边菜单" onPress={() => setExpanded(false)} style={{ height: 46, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 7, borderRadius: 13, backgroundColor: dark ? '#172C55' : '#EAF2FF' }}><ChevronLeft size={22} color={dark ? '#8BB4FF' : '#2F6DF6'} /><Text style={{ color: dark ? '#8BB4FF' : '#2F6DF6', fontSize: 12, fontWeight: '800' }}>收起菜单</Text></Pressable>
               </View>
-            </SafeAreaView>
+            </ModalSafeAreaView>
           </Pressable>
         </Pressable>
       </Modal>

@@ -1,31 +1,31 @@
 [**English**](README.md) | [简体中文](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="Sub2API Mate app icon" width="120" />
+  <img src="assets/icon.png" alt="GateNest app icon" width="120" />
 </p>
 
-<h1 align="center">Sub2API Mate</h1>
+<h1 align="center">GateNest</h1>
 
 <p align="center">
-  An independent mobile companion and administration console for Sub2API, built with Expo SDK 54 and React Native.
+  One mobile control plane for isolated Sub2API and CLIProxyAPI workspaces, built with Expo SDK 54 and React Native.
 </p>
 
 > [!IMPORTANT]
 > **Inspiration and thanks.** This project was inspired by [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile). We sincerely thank ckken for publishing the original open-source work. The upstream project is licensed under the MIT License, and this repository preserves its original copyright and complete license text in [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt). The extensive mobile UI, administration coverage, AI assistant, build center, and automation in this repository are independently maintained by the trilogys contributors. No endorsement by the upstream author is implied.
 
-The maintained repository is [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
+The maintained repository is [trilogys/GateNest](https://github.com/trilogys/GateNest). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
 
 ## Overview
 
-Sub2API Mate brings the day-to-day administration, diagnostics, and build workflows of a Sub2API deployment to Android, iOS, and the web. It is an independently maintained community companion rather than an official Sub2API client. It provides role-aware access, a responsive blue-and-white card interface, full access to generated administration routes, mobile-friendly dedicated pages, an optional AI assistant, and cloud APK builds that can be started from a phone.
+GateNest brings day-to-day administration, diagnostics, quotas, routing, plugins, and build workflows for Sub2API and CLIProxyAPI to Android, iOS, and the web. The two services remain isolated workspaces with separate credentials, navigation, and data. GateNest is independently maintained and is not an official client of either upstream project.
 
 > [!NOTE]
 > **Testing scope:** The current release has only been tested on Android. Expo includes iOS and Web targets, but those targets have not yet been fully verified.
 
-Generated API coverage currently contains **382 administration routes**:
+Generated API coverage currently contains **388 administration routes**:
 
-- **132** routes have dedicated mobile service wrappers.
-- **250** additional routes are available through the universal API console.
+- **388** routes have dedicated application service coverage.
+- **0** routes depend only on the universal API console.
 - **0** discovered routes are uncovered.
 
 ## Screenshots
@@ -103,6 +103,7 @@ Admin Key authentication does not carry a current-user identity. Personal key CR
 - Display key status, group, limits, validity windows, and compatible endpoint information returned by the server.
 - User and group CRUD, user key inspection, account grouping, and role-aware administration.
 - Proxy CRUD with connectivity and quality-test actions available directly from the proxy list.
+- A top-level workspace switcher shows either Sub2API or CLIProxyAPI login, navigation, and pages at a time. The CLIProxy workspace includes OAuth and JSON credential management, client keys, live quotas, logs and usage statistics, runtime/YAML settings, the plugin store, and a single-instance Group Router enforcing `key → CLI group → credential pool` isolation. See the [CLIProxyAPI management and grouping guide](docs/CLIPROXYAPI_INTEGRATION.md).
 - IP allow-list and block-list management; IP Management is hidden from the default menu but remains available for administrators.
 
 ### Usage records
@@ -117,7 +118,7 @@ Admin Key authentication does not carry a current-user identity. Personal key CR
 
 The More Management section consolidates the current server/session information, language, appearance, account switching, and advanced administration entry points. It intentionally does not add arbitrary server records; use logout and the remembered-account selector to switch deployments.
 
-Advanced pages include redeem codes, subscriptions, channels, risk control, compliance, audit logs, announcements, promotion codes, prompt audits, backups, system maintenance, user attributes, traffic policies, scheduled tests, channel monitors, affiliates, the operations center, OAuth, the universal API console, GitHub settings, and build controls.
+Advanced pages include redeem codes, subscriptions, channels, risk control, compliance, audit logs, announcements, promotion codes, prompt audits, backups, system maintenance, user attributes, traffic policies, scheduled tests, channel monitors, affiliates, the operations center, OAuth, independent CLIProxyAPI management, the universal API console, GitHub settings, and build controls.
 
 ### API discovery and coverage
 
@@ -144,7 +145,7 @@ The optional floating assistant can be enabled from the AI Assistant page. Long-
 
 ### Controlled GitHub repair workflow
 
-GitHub settings default to `trilogys/sub2api-mate` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
+GitHub settings default to `trilogys/GateNest` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
 
 - Contents: read and write
 - Pull requests: read and write
@@ -156,6 +157,8 @@ AI-generated fixes are proposals, not verified releases. Review the diff and run
 
 ## Android APK builds
 
+Official releases include Android APKs and the iOS IPA under the same version. **GateNest Android and iOS Release** builds both platforms from one commit and publishes only when all packages and checks succeed. Push a matching `vX.Y.Z` tag to run it; individual platform workflows remain available for diagnostic artifacts. See the [release guide](docs/EXPO_RELEASE.md).
+
 The Build Center defaults to **GitHub Native Build**. EAS Build remains available as an alternative.
 
 ### GitHub native build (default)
@@ -165,7 +168,7 @@ The Build Center defaults to **GitHub Native Build**. EAS Build remains availabl
 From GitHub:
 
 1. Open **Actions**.
-2. Select **Native Android APK**.
+2. Select **GateNest Android APK**.
 3. Select **Run workflow**.
 4. Choose `release` for a standalone APK or `debug` for development diagnostics.
 5. Download the APK from the run's **Artifacts** section after the workflow completes.
@@ -182,14 +185,16 @@ From the app, configure a GitHub token with Actions permission, choose the repos
 - Approximate progress calculated from completed steps
 - APK artifact availability, size, expiration, and download entry point
 
-The target repository can be changed in the app; `trilogys/sub2api-mate` is the default.
+The target repository can be changed in the app; `trilogys/GateNest` is the default.
+
+Published releases use the title `GateNest vX.Y.Z`; architecture-specific APK assets use names such as `gatenest-vX.Y.Z-arm64-v8a.apk`.
 
 ### EAS preview APK
 
 The `preview` profile in `eas.json` uses internal distribution and `android.buildType: apk`.
 
 ```powershell
-cd D:\Project\node\sub2api-mobile
+cd GateNest
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview
@@ -200,6 +205,14 @@ The first build is best completed on a computer so the Expo project and Android 
 To start EAS through GitHub Actions, add `EXPO_TOKEN` under **Settings → Secrets and variables → Actions**, then run `.github/workflows/eas-build.yml`. The native GitHub workflow does not use this secret.
 
 See [docs/EXPO_RELEASE.md](docs/EXPO_RELEASE.md) for the detailed release guide.
+
+## iOS 16+ IPA builds
+
+`.github/workflows/ios-native-build.yml` (**GateNest iOS IPA**) uses a macOS runner to build a standalone Release IPA for arm64 iPhones and iPads running iOS 16.0 or later. The application uses the same screens, services, and stored settings as the Android target. The JavaScript bundle is embedded, so Metro is not required.
+
+Run the workflow from **Actions** and download its `gatenest-vX.Y.Z` artifact. The IPA is unsigned: use ESign or i4Tools with your P12 certificate (including its private key), password, and matching `.mobileprovision` profile to sign it before installation. P12 alone does not establish device eligibility. No signing credentials are needed by this build workflow.
+
+See the [iOS signing and installation guide](docs/IOS_INSTALL.zh-CN.md). Native compilation does not replace physical-device testing. iOS application upgrades require re-signing and installation; Android's APK installer is platform-specific.
 
 ## Local development
 

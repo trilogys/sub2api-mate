@@ -1,4 +1,4 @@
-# Contributing to sub2api-mobile
+# Contributing to GateNest
 
 Thanks for your interest in contributing.
 

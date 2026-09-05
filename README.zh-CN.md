@@ -1,31 +1,31 @@
 [English](README.md) | [**简体中文**](README.zh-CN.md)
 
 <p align="center">
-  <img src="assets/icon.png" alt="Sub2API Mate 应用图标" width="120" />
+  <img src="assets/icon.png" alt="GateNest 应用图标" width="120" />
 </p>
 
-<h1 align="center">Sub2API Mate</h1>
+<h1 align="center">GateNest</h1>
 
 <p align="center">
-  基于 Expo SDK 54 和 React Native 构建的 Sub2API 独立移动管理助手与控制台。
+  基于 Expo SDK 54 和 React Native 构建的 Sub2API / CLIProxyAPI 双工作区移动控制台。
 </p>
 
 > [!IMPORTANT]
 > **灵感来源与致谢。** 本项目的灵感来自 [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile)。衷心感谢 ckken 发布原始开源成果。上游项目使用 MIT License，本仓库在 [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt) 中完整保留了原作者版权声明和许可证正文。本仓库大幅扩展的移动端界面、管理功能覆盖、AI 助手、构建中心和自动化由 trilogys contributors 独立维护；这不表示原作者对本项目提供背书。
 
-当前维护仓库为 [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
+当前维护仓库为 [trilogys/GateNest](https://github.com/trilogys/GateNest)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
 
 ## 项目简介
 
-Sub2API Mate 把 Sub2API 部署的日常管理、诊断和构建流程带到 Android、iOS 与 Web。它是由社区独立维护的移动伴侣，并非 Sub2API 官方客户端。项目提供按角色区分的权限、适配手机的蓝白卡片界面、完整的管理接口入口、移动端专用页面、可选 AI 助手，以及可以在手机上触发的云端 APK 构建。
+GateNest 把 Sub2API 与 CLIProxyAPI 的日常管理、诊断、配额、路由、插件和构建流程带到 Android、iOS 与 Web。两套服务使用相互隔离的工作区、凭据、导航和数据。GateNest 由社区独立维护，不是任一上游项目的官方客户端。
 
 > [!NOTE]
 > **测试范围：** 当前版本仅在 Android 平台进行了测试。项目通过 Expo 包含 iOS 和 Web 目标，但这两个平台尚未经过完整验证。
 
-当前生成的 API 覆盖报告包含 **382 条管理路由**：
+当前生成的 API 覆盖报告包含 **388 条管理路由**：
 
-- **132** 条已有移动端专用服务封装。
-- 另外 **250** 条可通过通用 API 控制台访问。
+- **388** 条已有应用服务覆盖。
+- 仅依赖通用 API 控制台的路由为 **0**。
 - 已发现但无法访问的路由为 **0**。
 
 ## 界面预览
@@ -104,6 +104,7 @@ Admin Key 本身不包含“当前用户”身份，因此个人密钥增删改�
 - 支持用户与分组增删改查、用户密钥查看、账号分组和角色权限管理。
 - 代理支持增删改查，列表外层可直接进行连通测试和质量检测。
 - 支持 IP 白名单和黑名单；IP 管理默认不显示在菜单中，但管理员仍可添加。
+- 顶层可在 Sub2API 与 CLIProxyAPI 工作区之间切换，一次只显示当前工作区的登录、导航和页面。CLIProxyAPI 支持 OAuth 账号池、凭据 JSON 导入导出、Client Key、实时配额、日志统计、运行参数、完整 YAML、插件商店与单实例 Group Router 强制分组。完整说明见 [CLIProxyAPI 独立管理与分组指南](docs/CLIPROXYAPI_INTEGRATION.md)。
 
 ### 使用记录
 
@@ -117,7 +118,7 @@ Admin Key 本身不包含“当前用户”身份，因此个人密钥增删改�
 
 “更多管理”集中展示当前服务器和会话信息、语言、外观、账号切换及高级管理入口。这里不再新增任意服务器；需要切换部署时，请退出并在登录页选择已记住的账号。
 
-高级页面包括兑换码、订阅、渠道、风控、合规确认、审计日志、公告、优惠码、提示词审计、备份恢复、系统维护、用户自定义属性、流量策略、定时测试、渠道监控、推广返利、运维中心、OAuth、通用 API 控制台、GitHub 设置和构建中心。
+高级页面包括兑换码、订阅、渠道、风控、合规确认、审计日志、公告、优惠码、提示词审计、备份恢复、系统维护、用户自定义属性、流量策略、定时测试、渠道监控、推广返利、运维中心、OAuth、独立 CLIProxyAPI 管理、通用 API 控制台、GitHub 设置和构建中心。
 
 ### API 检索与覆盖
 
@@ -144,7 +145,7 @@ AI 助手页面可以开启悬浮助手。长按可移动，靠边时可以部�
 
 ### 受控的 GitHub 修复流程
 
-GitHub 设置默认仓库为 `trilogys/sub2api-mate`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
+GitHub 设置默认仓库为 `trilogys/GateNest`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
 
 - Contents：读写
 - Pull requests：读写
@@ -156,6 +157,8 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 
 ## Android APK 构建
 
+正式版本将 Android APK 与 iOS IPA 放在同一个 Release 中。**GateNest Android and iOS Release** 从同一提交构建两端，等三个 Android 架构和 iOS 包全部成功并通过检查后，才一起公开发布。推送匹配的 `vX.Y.Z` Tag 即可触发；单独的平台工作流只用于生成测试产物。详见 [发布指南](docs/EXPO_RELEASE.md)。
+
 构建中心默认选择 **GitHub 原生构建**，EAS Build 作为可切换的另一种方式。
 
 ### GitHub 原生构建（默认）
@@ -165,7 +168,7 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 在 GitHub 网页中：
 
 1. 打开 **Actions**。
-2. 选择 **Native Android APK**。
+2. 选择 **GateNest Android APK**。
 3. 点击 **Run workflow**。
 4. `release` 用于可独立安装的 APK，`debug` 用于开发排错。
 5. 构建完成后从运行页面的 **Artifacts** 下载 APK。
@@ -182,14 +185,16 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 - 根据已完成步骤计算的近似百分比
 - APK Artifact 是否可下载、大小、过期时间和下载入口
 
-目标仓库可以切换，默认是 `trilogys/sub2api-mate`。
+目标仓库可以切换，默认是 `trilogys/GateNest`。
+
+正式 Release 标题统一使用 `GateNest vX.Y.Z`，分架构 APK 使用 `gatenest-vX.Y.Z-arm64-v8a.apk` 等名称。
 
 ### EAS Preview APK
 
 `eas.json` 的 `preview` 使用 internal distribution，并配置 `android.buildType: apk`。
 
 ```powershell
-cd D:\Project\node\sub2api-mobile
+cd GateNest
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview
@@ -200,6 +205,14 @@ npx eas-cli@latest build --platform android --profile preview
 若通过 GitHub Actions 启动 EAS，请在 **Settings → Secrets and variables → Actions** 添加 `EXPO_TOKEN`，然后运行 `.github/workflows/eas-build.yml`。GitHub 原生构建不使用该 Secret。
 
 完整发布说明见 [docs/EXPO_RELEASE.md](docs/EXPO_RELEASE.md)。
+
+## iOS 16+ IPA 构建
+
+`.github/workflows/ios-native-build.yml`（**GateNest iOS IPA**）在 macOS Runner 上构建可独立运行的 Release IPA，支持 iOS 16.0 及以上的 arm64 iPhone 和 iPad。iOS 使用相同的业务页面、服务和配置，包内包含 JavaScript 资源，无需 Metro 开发服务器。
+
+从 **Actions** 运行工作流，下载 `gatenest-vX.Y.Z` Artifact 并解压。IPA 为未签名包，需要在全能签或爱思助手中使用包含私钥的 P12、密码及匹配的 `.mobileprovision` 描述文件重签后安装；仅有 P12 不能保证设备有安装资格。构建本身不需要上传任何签名证书。
+
+具体步骤见 [iOS 签名与安装指南](docs/IOS_INSTALL.zh-CN.md)。原生编译通过不代表已经完成真机测试；iOS 应用升级需要重新签名安装，Android 的 APK 安装入口仅用于 Android。
 
 ## 本地开发
 

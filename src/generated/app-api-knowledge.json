@@ -4,8 +4,8 @@
   "counts": {
     "routes": 388,
     "services": 413,
-    "types": 101,
-    "screens": 55,
+    "types": 135,
+    "screens": 68,
     "upstream_services": 297,
     "upstream_types": 266,
     "upstream_backend_types": 148,
@@ -310,7 +310,7 @@
       "placeholders": [
         "Expo access token",
         "main",
-        "trilogys/sub2api-mate"
+        "trilogys/GateNest"
       ]
     },
     {
@@ -356,6 +356,224 @@
     },
     {
       "kind": "screen",
+      "title": "CLIProxy 凭据",
+      "app_route": "/cliproxy-auth-files",
+      "fields": [
+        "搜索",
+        "Vertex Location",
+        "显示名称",
+        "备注",
+        "Project ID"
+      ],
+      "sections": [
+        "凭据文件操作",
+        "账号文件列表"
+      ],
+      "placeholders": [
+        "名称、邮箱、提供商",
+        "us-central1",
+        "例如：Codex 主账号",
+        "账号用途",
+        "可选"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxy 分组管理",
+      "app_route": "/cliproxy-groups",
+      "fields": [
+        "分组名称",
+        "专用 Client Key"
+      ],
+      "sections": [
+        "插件状态",
+        "选择可用的分组实现",
+        "CLIProxy 分组列表"
+      ],
+      "placeholders": [
+        "例如：Codex Team A",
+        "cpa_grp_…"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "中心信息",
+      "app_route": "/cliproxy-hub",
+      "fields": [],
+      "sections": [
+        "当前实例",
+        "版本信息"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "CPA Key Policy",
+      "app_route": "/cliproxy-key-policy",
+      "fields": [
+        "Key ID",
+        "显示名称",
+        "RPM（0 不限制）",
+        "每日 USD",
+        "每周 USD",
+        "Alias",
+        "输入 / 1M",
+        "输出 / 1M",
+        "缓存 / 1M",
+        "每次 USD",
+        "规则名称",
+        "匹配字段",
+        "目标组",
+        "Go 正则表达式"
+      ],
+      "sections": [
+        "插件状态",
+        "请立即保存新 Key",
+        "Keys",
+        "Aliases",
+        "Classification Rules"
+      ],
+      "placeholders": [
+        "team-a",
+        "Team A",
+        "fast",
+        "team-codex",
+        "filename",
+        "vip",
+        "(?i)team|business"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "OAuth 登录",
+      "app_route": "/cliproxy-oauth",
+      "fields": [
+        "OAuth 回调 URL"
+      ],
+      "sections": [
+        "选择登录提供商",
+        "当前授权会话"
+      ],
+      "placeholders": [
+        "粘贴浏览器最终回调 URL"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxy 日志与统计",
+      "app_route": "/cliproxy-observability",
+      "fields": [
+        "筛选日志"
+      ],
+      "sections": [
+        "观测设置",
+        "API Key 使用统计",
+        "运行日志",
+        "请求错误日志"
+      ],
+      "placeholders": [
+        "请求 ID、模型、错误文本"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "插件商店",
+      "app_route": "/cliproxy-plugin-store",
+      "fields": [],
+      "sections": [
+        "商店源",
+        "可用插件"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "插件管理",
+      "app_route": "/cliproxy-plugins",
+      "fields": [],
+      "sections": [
+        "插件运行状态"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "AI 提供商",
+      "app_route": "/cliproxy-providers",
+      "fields": [],
+      "sections": [
+        "选择 Provider"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "快速开始",
+      "app_route": "/cliproxy-quick-start",
+      "fields": [],
+      "sections": [
+        "选择 Client Key",
+        "通用 OpenAI 兼容客户端",
+        "接口测试"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "配额管理",
+      "app_route": "/cliproxy-quotas",
+      "fields": [],
+      "sections": [
+        "刷新策略",
+        "实时配额"
+      ],
+      "placeholders": []
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxy 系统设置",
+      "app_route": "/cliproxy-system",
+      "fields": [
+        "全局代理 URL",
+        "请求重试次数",
+        "最大重试间隔（秒）",
+        "日志总大小 MiB",
+        "错误日志保留数"
+      ],
+      "sections": [
+        "运行状态",
+        "常用运行参数",
+        "插件商店",
+        "完整 config.yaml"
+      ],
+      "placeholders": [
+        "http://127.0.0.1:7890 或 socks5://…"
+      ]
+    },
+    {
+      "kind": "screen",
+      "title": "CLIProxyAPI 管理",
+      "app_route": "/cliproxy",
+      "fields": [
+        "CLIProxyAPI 服务地址",
+        "Management Key",
+        "OAuth 回调 URL（远程/无自动回调时）"
+      ],
+      "sections": [
+        "1. 连接 CLIProxyAPI",
+        "2. CLIProxy 分组与 Client Key",
+        "3. CLI 账号授权",
+        "4. 配额与自动刷新",
+        "5. CLIProxyAPI 账号池"
+      ],
+      "placeholders": [
+        "例如：http://192.168.1.10:8317",
+        "remote-management.secret-key",
+        "http://localhost/…?code=…&state=…"
+      ]
+    },
+    {
+      "kind": "screen",
       "title": "部署合规确认",
       "app_route": "/compliance",
       "fields": [],
@@ -379,7 +597,7 @@
         "保存"
       ],
       "placeholders": [
-        "trilogys/sub2api-mate",
+        "trilogys/GateNest",
         "main",
         "github_pat_..."
       ]
@@ -415,6 +633,7 @@
       "fields": [],
       "sections": [],
       "placeholders": [
+        "http://192.168.1.10:8317",
         "https://sub2api.example.com",
         "name@example.com",
         "••••••••"
@@ -5468,6 +5687,7 @@
         "model",
         "upstream_model?",
         "service_tier?",
+        "reasoning_effort?",
         "inbound_endpoint?",
         "upstream_endpoint?",
         "request_path?",
@@ -5887,6 +6107,434 @@
         "auth_url",
         "session_id",
         "state?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyConnection",
+      "fields": [
+        "baseUrl",
+        "managementKey"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyRequestBucket",
+      "fields": [
+        "time",
+        "success",
+        "failed"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyAuthFile",
+      "fields": [
+        "id?",
+        "auth_index?",
+        "name",
+        "provider?",
+        "type?",
+        "label?",
+        "status?",
+        "status_message?",
+        "disabled?",
+        "unavailable?",
+        "runtime_only?",
+        "source?",
+        "size?",
+        "modtime?",
+        "success?",
+        "failed?",
+        "recent_requests?",
+        "email?",
+        "account_type?",
+        "account?",
+        "plan_type?",
+        "tier?",
+        "created_at?",
+        "updated_at?",
+        "last_refresh?",
+        "next_retry_after?",
+        "project_id?",
+        "priority?",
+        "weight?",
+        "note?",
+        "request_retry?",
+        "id_token?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyOAuthSession",
+      "fields": [
+        "status",
+        "url",
+        "state",
+        "flow?",
+        "user_code?",
+        "expires_in?",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyOAuthStatus",
+      "fields": [
+        "status",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyModel",
+      "fields": [
+        "id",
+        "object?",
+        "created?",
+        "owned_by?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyConnectionTest",
+      "fields": [
+        "credentialCount",
+        "availableCredentialCount",
+        "apiKeyCount"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyQuotaWindow",
+      "fields": [
+        "id",
+        "label",
+        "remainingPercent",
+        "usedPercent?",
+        "resetAt?",
+        "exhausted"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyQuotaReport",
+      "fields": [
+        "provider",
+        "name",
+        "authIndex",
+        "planType?",
+        "status",
+        "windows",
+        "fetchedAt",
+        "error?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginEntry",
+      "fields": [
+        "id",
+        "path?",
+        "configured?",
+        "registered?",
+        "enabled?",
+        "effective_enabled?",
+        "supports_oauth?",
+        "oauth_provider?",
+        "logo?",
+        "config_fields?",
+        "menus?",
+        "metadata?",
+        "name?",
+        "version?",
+        "author?",
+        "github_repository?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginConfigField",
+      "fields": [
+        "name",
+        "type?",
+        "enum_values?",
+        "description?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginMenu",
+      "fields": [
+        "id?",
+        "name?",
+        "title?",
+        "label?",
+        "path?",
+        "url?",
+        "href?",
+        "type?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginList",
+      "fields": [
+        "plugins_enabled",
+        "plugins_dir",
+        "plugins"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyGroup",
+      "fields": [
+        "id",
+        "name",
+        "enabled",
+        "strategy",
+        "api_keys",
+        "auth_ids"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyGroupRouterConfig",
+      "fields": [
+        "enabled",
+        "deny_unmapped",
+        "allow_shared_auths",
+        "groups"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyLogResult",
+      "fields": [
+        "lines",
+        "lineCount",
+        "latestTimestamp",
+        "nextCursor?",
+        "cursorReset?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyRequestErrorLog",
+      "fields": [
+        "name",
+        "size",
+        "modified"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyAPIKeyUsageEntry",
+      "fields": [
+        "provider",
+        "identity",
+        "baseUrl",
+        "maskedKey",
+        "success",
+        "failed",
+        "recentRequests"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginStoreEntry",
+      "fields": [
+        "store_id",
+        "source_id",
+        "source_name?",
+        "id",
+        "name",
+        "description?",
+        "author?",
+        "version?",
+        "installed?",
+        "installed_version?",
+        "enabled?",
+        "effective_enabled?",
+        "update_available?",
+        "auth_required?",
+        "auth_configured?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyPluginStore",
+      "fields": [
+        "plugins_enabled",
+        "plugins_dir",
+        "sources",
+        "plugins"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasTarget",
+      "fields": [
+        "provider",
+        "target_model",
+        "group?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAlias",
+      "fields": [
+        "alias",
+        "targets",
+        "dispatch",
+        "billing_mode",
+        "input_price_per_million?",
+        "output_price_per_million?",
+        "cache_read_price_per_million?",
+        "per_call_usd?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasRef",
+      "fields": [
+        "alias",
+        "input_price_per_million?",
+        "output_price_per_million?",
+        "cache_read_price_per_million?",
+        "per_call_usd?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyUsageSummary",
+      "fields": [
+        "daily_usd",
+        "weekly_usd",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "daily_reset_at?",
+        "weekly_reset_at?",
+        "daily_call_count?",
+        "weekly_call_count?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKey",
+      "fields": [
+        "id",
+        "name",
+        "enabled",
+        "key_preview",
+        "rpm",
+        "aliases",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "allow_models_endpoint?",
+        "usage",
+        "created_at?",
+        "updated_at?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeyWrite",
+      "fields": [
+        "id",
+        "name?",
+        "enabled?",
+        "key?",
+        "rpm?",
+        "aliases?",
+        "daily_limit_usd?",
+        "weekly_limit_usd?",
+        "allow_models_endpoint?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeySecret",
+      "fields": [
+        "key",
+        "plain_key",
+        "generated"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyClassifyRule",
+      "fields": [
+        "name",
+        "field",
+        "pattern",
+        "group",
+        "enabled"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyPreview",
+      "fields": [
+        "groups",
+        "group_counts"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyCatalogEntry",
+      "fields": [
+        "provider",
+        "group?",
+        "models"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyUsageWindow",
+      "fields": [
+        "total_usd",
+        "window_start?",
+        "cache_read_tokens?",
+        "cache_cost_usd?",
+        "input_tokens?",
+        "output_tokens?",
+        "call_count?"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyAliasUsage",
+      "fields": [
+        "alias",
+        "provider?",
+        "target_model?",
+        "billing_mode?",
+        "per_call_usd?",
+        "in_config",
+        "daily",
+        "weekly"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyKeyUsage",
+      "fields": [
+        "key_id",
+        "key_name",
+        "daily_limit_usd",
+        "weekly_limit_usd",
+        "aliases"
+      ]
+    },
+    {
+      "kind": "type",
+      "name": "CLIProxyKeyPolicyStatus",
+      "fields": [
+        "enabled",
+        "state_file",
+        "key_count",
+        "rpm_usage?"
       ]
     },
     {

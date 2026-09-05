@@ -1,0 +1,127 @@
+name: GateNest Android and iOS Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish both platforms together after all builds pass
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.app.outputs.version }}
+      tag: ${{ steps.app.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate release version
+        id: app
+        env:
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const app = JSON.parse(fs.readFileSync('app.json')).expo;
+          const pkg = JSON.parse(fs.readFileSync('package.json'));
+          const lock = JSON.parse(fs.readFileSync('package-lock.json'));
+          assert(/^\d+\.\d+\.\d+$/.test(app.version), 'Use a stable X.Y.Z app version');
+          assert.equal(pkg.version, app.version);
+          assert.equal(lock.version, app.version);
+          assert.equal(lock.packages[''].version, app.version);
+          const tag = `v${app.version}`;
+          if (process.env.REF_TYPE === 'tag') assert.equal(process.env.REF_NAME, tag);
+          fs.appendFileSync(process.env.GITHUB_OUTPUT, `version=${app.version}\ntag=${tag}\n`);
+          JS
+
+  android:
+    needs: version
+    uses: ./.github/workflows/android-native-build.yml
+    with:
+      variant: release
+
+  ios:
+    needs: version
+    uses: ./.github/workflows/ios-native-build.yml
+
+  release:
+    name: Verify both platforms and publish together
+    needs: [version, android, ios]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RELEASE_TAG: ${{ needs.version.outputs.tag }}
+      SOURCE_SHA: ${{ github.sha }}
+      PUBLISH: ${{ github.event_name == 'push' || inputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Download Android packages from this run
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gatenest-release-*-apk-${{ github.run_number }}
+          path: build/mobile-artifacts/android
+      - name: Download iOS package from this run
+        uses: actions/download-artifact@v4
+        with:
+          name: gatenest-v${{ needs.version.outputs.version }}
+          path: build/mobile-artifacts/ios
+      - name: Verify and stage complete release
+        run: node .github/scripts/prepare-mobile-release.mjs build/mobile-artifacts build/mobile-release
+      - name: Upload complete release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatenest-v${{ needs.version.outputs.version }}-release
+          path: build/mobile-release/
+          if-no-files-found: error
+          retention-days: 30
+      - name: Publish complete release
+        if: env.PUBLISH == 'true'
+        run: |
+          set -euo pipefail
+          if git show-ref --verify --quiet "refs/tags/$RELEASE_TAG"; then
+            test "$(git rev-list -n 1 "$RELEASE_TAG")" = "$SOURCE_SHA"
+          fi
+          if gh release view "$RELEASE_TAG" --json isDraft > build/existing-release.json 2> build/release-error.log; then
+            node -e "if (!require('./build/existing-release.json').isDraft) throw new Error('This version is already published; bump the version instead of replacing its binaries')"
+          else
+            gh release create "$RELEASE_TAG" --draft --target "$SOURCE_SHA" --title "GateNest $RELEASE_TAG" --notes-file build/mobile-release/release-notes.md
+          fi
+          gh release upload "$RELEASE_TAG" build/mobile-release/*.apk build/mobile-release/*.ipa build/mobile-release/*.sha256 --clobber
+          gh release view "$RELEASE_TAG" --json assets > build/uploaded-assets.json
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          import fs from 'node:fs';
+          const files = fs.readdirSync('build/mobile-release').filter(name => /\.(apk|ipa|sha256)$/.test(name));
+          const assets = JSON.parse(fs.readFileSync('build/uploaded-assets.json')).assets;
+          for (const name of files) {
+            const asset = assets.find(item => item.name === name);
+            assert(asset && asset.state === 'uploaded', `Missing uploaded asset: ${name}`);
+            assert.equal(asset.size, fs.statSync(`build/mobile-release/${name}`).size);
+          }
+          JS
+          gh release edit "$RELEASE_TAG" --draft=false --latest
