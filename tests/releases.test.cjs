@@ -14,7 +14,7 @@ test('Sub2API uses the exact release URL and supports older version-only respons
 });
 
 test('iOS selects IPA assets and Android still selects its matching APK', () => {
-  const release = { assets: [{ name: 'source.zip' }, { name: 'gatenest-v1.8.2.ipa.sha256' }, { name: 'gatenest-v1.8.2.ipa' }, { name: 'gatenest-v1.8.2-arm64-v8a.apk' }] };
+  const release = { assets: [{ name: 'source.zip' }, { name: 'gatenest-v1.8.2-unsigned.ipa.sha256' }, { name: 'gatenest-v1.8.2-unsigned.ipa' }, { name: 'gatenest-v1.8.2-arm64-v8a.apk' }] };
   assert.equal(findIOSIpa(release), release.assets[2]);
   assert.equal(findAndroidApk(release, ['arm64']), release.assets[3]);
   assert.equal(findIOSIpa({ assets: [{ name: 'source.zip' }] }), null);
@@ -57,13 +57,13 @@ function downloadMocks({ status = 200, size = 100, available = true, nativeError
   return { ...service, deleted, shared, sessions, streamed, isHandleClosed: () => handleClosed };
 }
 
-const asset = { id: 12, name: 'gatenest-v1.8.2.ipa', browser_download_url: 'https://github.com/trilogys/GateNest/releases/download/v1.8.2/gatenest-v1.8.2.ipa', size: 100 };
+const asset = { id: 12, name: 'gatenest-v1.8.2-unsigned.ipa', browser_download_url: 'https://github.com/trilogys/GateNest/releases/download/v1.8.2/gatenest-v1.8.2-unsigned.ipa', size: 100 };
 
 test('iOS downloads the actual IPA and shares it with the IPA file type', async () => {
   const service = downloadMocks();
   const progress = [];
   const uri = await service.downloadIOSIpa(asset, (value) => progress.push(value));
-  assert(uri.endsWith('/12/gatenest-v1.8.2.ipa'));
+  assert(uri.endsWith('/12/gatenest-v1.8.2-unsigned.ipa'));
   assert.deepEqual(progress.at(-1), { downloadedBytes: 100, totalBytes: 100 });
   await service.shareIOSIpa(uri);
   assert.equal(service.shared[0][0], uri);
@@ -91,7 +91,7 @@ test('iOS cannot-create-file error falls back to direct byte streaming and close
   const service = downloadMocks({ nativeError: new Error('NSURLErrorDomain Code=-3000 Cannot create file https://example.com/?signature=private') });
   const progress = [];
   const uri = await service.downloadIOSIpa(asset, value => progress.push(value));
-  assert(uri.endsWith('gatenest-v1.8.2.ipa'));
+  assert(uri.endsWith('gatenest-v1.8.2-unsigned.ipa'));
   assert.deepEqual(service.sessions, [1]);
   assert.equal(service.streamed.reduce((sum, bytes) => sum + bytes.byteLength, 0), 100);
   assert(service.isHandleClosed());

@@ -2,12 +2,12 @@
 
 ## 安装包
 
-- 文件：`gatenest-v1.8.3.ipa`（文件名版本随构建更新）。
+- 文件：`gatenest-v1.8.3-unsigned.ipa`（文件名版本随构建更新）。
 - 设备：iOS / iPadOS 16.0 及以上的 arm64 iPhone、iPad。
 - 应用名称：GateNest。
 - 默认 Bundle ID：`com.ppx.sub2apimate`。
 - 类型：真机 Release 包，已包含运行所需的 JavaScript、图标和原生模块，不需要 Expo Go 或 Metro。
-- 签名状态：未签名，必须签名后才能安装。文件名只保留应用名称和版本。
+- 签名状态：未签名，必须签名后才能安装。文件名保留应用名称、版本和 `unsigned`，不附加系统版本。
 
 iOS 与 Android 使用同一套业务代码，保留 Sub2API、CLIProxyAPI、账号管理、分组、配额、日志、AI 助手、导入导出和 GitHub 构建等功能。Android 的 APK 自动安装属于系统专用功能，iOS 的原生升级通过下载新 IPA、重新签名安装完成。
 

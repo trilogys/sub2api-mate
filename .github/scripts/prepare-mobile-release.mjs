@@ -39,7 +39,7 @@ export function prepareMobileRelease({ input, output, app, sourceCommit, changel
 
   const iosFiles = filesUnder(path.join(input, 'ios'));
   const ipa = only(iosFiles, '.ipa');
-  const name = `gatenest-v${app.version}.ipa`;
+  const name = `gatenest-v${app.version}-unsigned.ipa`;
   assert.equal(path.basename(ipa), name);
   const report = JSON.parse(fs.readFileSync(only(iosFiles, 'ios-verification.json'), 'utf8'));
   assert.equal(report.version, app.version);

@@ -16,7 +16,7 @@ if [[ -z "$workspace" ]]; then
 fi
 scheme=$(basename "$workspace" .xcworkspace)
 version=$(node -p "require('./app.json').expo.version")
-ipa="gatenest-v${version}.ipa"
+ipa="gatenest-v${version}-unsigned.ipa"
 
 xcodebuild archive \
   -workspace "$workspace" \

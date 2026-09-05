@@ -26,8 +26,8 @@ function fixture(t) {
     metadataFiles.push(write(`${prefix}/output-metadata.json`, JSON.stringify(androidMetadata)));
   }
   const ipa = Buffer.from('IPA fixture');
-  write('ios/build/ios/gatenest-v1.8.3.ipa', ipa);
-  write('ios/build/ios/gatenest-v1.8.3.ipa.sha256', `${createHash('sha256').update(ipa).digest('hex')}  gatenest-v1.8.3.ipa\n`);
+  write('ios/build/ios/gatenest-v1.8.3-unsigned.ipa', ipa);
+  write('ios/build/ios/gatenest-v1.8.3-unsigned.ipa.sha256', `${createHash('sha256').update(ipa).digest('hex')}  gatenest-v1.8.3-unsigned.ipa\n`);
   const report = { version: app.version, buildNumber: app.ios.buildNumber, bundleIdentifier: app.ios.bundleIdentifier, sourceCommit, platform: 'iphoneos', architectures: ['arm64'] };
   const reportFile = write('ios/build/ios/ios-verification.json', JSON.stringify(report));
   return { input, output, app, sourceCommit, changelog: '## [1.8.3] - 2026-09-06\n\nSafe area fix.\n\n## [1.8.2]\nOld notes.', write, metadataFiles, report, reportFile, androidMetadata };
@@ -38,7 +38,7 @@ test('combined release stages exactly three APKs and one IPA with checksums', as
   const data = fixture(t);
   const names = prepareMobileRelease(data);
   assert.equal(names.length, 4);
-  assert(names.includes('gatenest-v1.8.3.ipa'));
+  assert(names.includes('gatenest-v1.8.3-unsigned.ipa'));
   for (const name of names) {
     const bytes = fs.readFileSync(path.join(data.output, name));
     const checksum = fs.readFileSync(path.join(data.output, `${name}.sha256`), 'utf8');
@@ -78,7 +78,7 @@ test('IPA from a different commit prevents any release output', async t => {
 test('damaged IPA prevents any release output', async t => {
   const { prepareMobileRelease } = await import('../.github/scripts/prepare-mobile-release.mjs');
   const data = fixture(t);
-  data.write('ios/build/ios/gatenest-v1.8.3.ipa', 'truncated');
+  data.write('ios/build/ios/gatenest-v1.8.3-unsigned.ipa', 'truncated');
   assert.throws(() => prepareMobileRelease(data));
   assert(!fs.existsSync(data.output));
 });

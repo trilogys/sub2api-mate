@@ -17,6 +17,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Changed
 
 - Android and iOS are built from the same commit and published in one Release only after all three APK architectures and the IPA pass the version and artifact checks.
+- iOS packages use `gatenest-vX.Y.Z-unsigned.ipa`, retaining the signing status without a system-version suffix.
 
 ## [1.8.2] - 2026-09-06
 
