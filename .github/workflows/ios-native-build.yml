@@ -1,0 +1,80 @@
+name: GateNest iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - dev
+    paths:
+      - app.json
+      - .github/workflows/ios-native-build.yml
+      - .github/scripts/build-ios-ipa.sh
+      - .github/scripts/verify-ios-app.mjs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build iOS 16+ IPA for re-signing
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Check Xcode
+        run: xcodebuild -version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: Generate iOS project
+        run: npx expo prebuild --platform ios --no-install
+
+      - name: Install CocoaPods
+        working-directory: ios
+        run: pod install
+
+      - name: Build and verify IPA
+        run: bash .github/scripts/build-ios-ipa.sh
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatenest-ios16-unsigned-ipa-${{ github.run_number }}
+          path: |
+            build/ios/*.ipa
+            build/ios/*.sha256
+            build/ios/ios-verification.json
+            docs/IOS_INSTALL.zh-CN.md
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gatenest-ios-build-logs-${{ github.run_number }}
+          path: |
+            build/ios/xcodebuild.log
+            ios/Podfile.lock
+            ios/Podfile.properties.json
+          if-no-files-found: ignore
+          retention-days: 7

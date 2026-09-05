@@ -1,4 +1,4 @@
-# GateNest Expo and Android Release Guide
+# GateNest Mobile Release Guide
 
 [English README](../README.md) | [中文 README](../README.zh-CN.md)
 
@@ -22,6 +22,7 @@ The in-app Build Center defaults to the GitHub native workflow. Use EAS when man
 | Method | Queue | Required secret | Output | Best use |
 | --- | --- | --- | --- | --- |
 | GitHub native | GitHub Actions | None on the website; an Actions-capable GitHub token when triggered from the app | Android APK artifact | Default release/debug APK builds |
+| GitHub native iOS | GitHub Actions macOS | None | Unsigned iOS 16+ device IPA | Re-sign with ESign or i4Tools using P12 and provisioning profile |
 | EAS CLI | EAS Build | Interactive Expo login or local Expo token | APK for `preview` | First-time setup and managed credentials |
 | EAS through GitHub | EAS Build | `EXPO_TOKEN` repository secret | APK and build URL | Automated Expo-hosted builds |
 
@@ -42,12 +43,31 @@ The workflow runs Node setup, dependency installation, Expo Prebuild, Java/Gradl
 
 When triggered from the app, GitHub Jobs API data is used to show each step's waiting, running, successful, or failed state, an approximate completion percentage, and APK availability.
 
+## GitHub native iOS IPA
+
+Run **GateNest iOS IPA** (`.github/workflows/ios-native-build.yml`) from Actions. Changes to its build scripts or `app.json` on `dev` also trigger a build. The workflow generates the iOS project, installs CocoaPods, archives a Release device application without signing credentials, verifies the bundle, and packages `Payload/*.app` as an IPA.
+
+The artifact contains `gatenest-vX.Y.Z-ios16-unsigned.ipa`, a SHA-256 checksum, a verification report, and the [signing guide](IOS_INSTALL.zh-CN.md). Artifacts are retained for 30 days. The report checks the application identity, iOS 16.0 minimum, arm64 device executable, iPhone/iPad support, and embedded JavaScript. A successful build still requires re-signing and physical-device verification.
+
+For local compilation, use a Mac with Xcode 16.1 or later and CocoaPods:
+
+```bash
+npm ci
+npx expo prebuild --platform ios --no-install
+cd ios
+pod install
+cd ..
+npm run ios:build:unsigned
+```
+
+Windows can download and re-sign the IPA but cannot run Xcode compilation. Use the macOS Actions workflow from Windows. P12 and provisioning profiles stay on the signing device and are never needed by the unsigned workflow.
+
 ## First EAS preview APK
 
 Run the first EAS build on a computer so project ownership and Android signing credentials can be confirmed:
 
 ```powershell
-cd sub2api-mate
+cd GateNest
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest whoami
@@ -69,7 +89,6 @@ EXPO_TOKEN
 Then run the **GateNest EAS Android Build** workflow from `.github/workflows/eas-build.yml` and choose:
 
 - `profile`: `preview` or `production`
-- `platform`: `android`, `ios`, or `all`
 
 The workflow waits for EAS and uploads a preview Android APK when a direct build URL is available. Preview APK artifacts are retained for 30 days.
 
@@ -77,6 +96,7 @@ The workflow waits for EAS and uploads a preview Android APK when a direct build
 
 - Release title: `GateNest vX.Y.Z`
 - Android APKs: `gatenest-vX.Y.Z-arm64-v8a.apk`, `gatenest-vX.Y.Z-armeabi-v7a.apk`, and `gatenest-vX.Y.Z-x86_64.apk`
+- iOS IPA: `gatenest-vX.Y.Z-ios16-unsigned.ipa`
 - GitHub Actions artifacts: `gatenest-<variant>-<architecture>-apk-<run-number>`
 - CLIProxy Group Router keeps its independent plugin name and asset naming.
 
@@ -129,6 +149,7 @@ npx tsc --noEmit
 npm run audit:api-coverage
 npx expo config --type public
 npx expo export --platform android
+npx expo export --platform ios
 ```
 
 Also confirm that:

@@ -1,4 +1,4 @@
-export const APP_REPOSITORY = 'trilogys/sub2api-mate';
+export const APP_REPOSITORY = 'trilogys/GateNest';
 export const APP_REPOSITORY_URL = `https://github.com/${APP_REPOSITORY}`;
 export const APP_UPDATE_CHECK_INTERVAL_MS = 5 * 60_000;
 

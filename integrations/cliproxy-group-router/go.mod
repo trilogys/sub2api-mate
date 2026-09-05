@@ -1,4 +1,4 @@
-module github.com/trilogys/sub2api-mate/integrations/cliproxy-group-router
+module github.com/trilogys/GateNest/integrations/cliproxy-group-router
 
 go 1.26.0
 

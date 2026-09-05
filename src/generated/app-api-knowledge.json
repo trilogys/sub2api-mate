@@ -310,7 +310,7 @@
       "placeholders": [
         "Expo access token",
         "main",
-        "trilogys/sub2api-mate"
+        "trilogys/GateNest"
       ]
     },
     {
@@ -597,7 +597,7 @@
         "保存"
       ],
       "placeholders": [
-        "trilogys/sub2api-mate",
+        "trilogys/GateNest",
         "main",
         "github_pat_..."
       ]

@@ -13,7 +13,7 @@
 > [!IMPORTANT]
 > **Inspiration and thanks.** This project was inspired by [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile). We sincerely thank ckken for publishing the original open-source work. The upstream project is licensed under the MIT License, and this repository preserves its original copyright and complete license text in [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt). The extensive mobile UI, administration coverage, AI assistant, build center, and automation in this repository are independently maintained by the trilogys contributors. No endorsement by the upstream author is implied.
 
-The maintained repository is [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
+The maintained repository is [trilogys/GateNest](https://github.com/trilogys/GateNest). It does not automatically merge or synchronize source code from other Sub2API Mobile forks. Its scheduled synchronization reads API metadata from the Sub2API server project only.
 
 ## Overview
 
@@ -145,7 +145,7 @@ The optional floating assistant can be enabled from the AI Assistant page. Long-
 
 ### Controlled GitHub repair workflow
 
-GitHub settings default to `trilogys/sub2api-mate` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
+GitHub settings default to `trilogys/GateNest` but can be changed and saved. A fine-grained token should be restricted to the selected repository and only the required permissions:
 
 - Contents: read and write
 - Pull requests: read and write
@@ -183,7 +183,7 @@ From the app, configure a GitHub token with Actions permission, choose the repos
 - Approximate progress calculated from completed steps
 - APK artifact availability, size, expiration, and download entry point
 
-The target repository can be changed in the app; `trilogys/sub2api-mate` is the default.
+The target repository can be changed in the app; `trilogys/GateNest` is the default.
 
 Published releases use the title `GateNest vX.Y.Z`; architecture-specific APK assets use names such as `gatenest-vX.Y.Z-arm64-v8a.apk`.
 
@@ -192,7 +192,7 @@ Published releases use the title `GateNest vX.Y.Z`; architecture-specific APK as
 The `preview` profile in `eas.json` uses internal distribution and `android.buildType: apk`.
 
 ```powershell
-cd sub2api-mate
+cd GateNest
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview
@@ -203,6 +203,14 @@ The first build is best completed on a computer so the Expo project and Android 
 To start EAS through GitHub Actions, add `EXPO_TOKEN` under **Settings → Secrets and variables → Actions**, then run `.github/workflows/eas-build.yml`. The native GitHub workflow does not use this secret.
 
 See [docs/EXPO_RELEASE.md](docs/EXPO_RELEASE.md) for the detailed release guide.
+
+## iOS 16+ IPA builds
+
+`.github/workflows/ios-native-build.yml` (**GateNest iOS IPA**) uses a macOS runner to build a standalone Release IPA for arm64 iPhones and iPads running iOS 16.0 or later. The application uses the same screens, services, and stored settings as the Android target. The JavaScript bundle is embedded, so Metro is not required.
+
+Run the workflow from **Actions** and download its `gatenest-ios16-unsigned-ipa-*` artifact. The IPA is unsigned: use ESign or i4Tools with your P12 certificate (including its private key), password, and matching `.mobileprovision` profile to sign it before installation. P12 alone does not establish device eligibility. No signing credentials are needed by this build workflow.
+
+See the [iOS signing and installation guide](docs/IOS_INSTALL.zh-CN.md). Native compilation does not replace physical-device testing. iOS application upgrades require re-signing and installation; Android's APK installer is platform-specific.
 
 ## Local development
 

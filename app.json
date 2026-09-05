@@ -18,7 +18,11 @@
       "bundleIdentifier": "com.ppx.sub2apimate",
       "buildNumber": "14",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        },
+        "NSLocalNetworkUsageDescription": "GateNest connects to the Sub2API and CLIProxyAPI servers you configure on your local network."
       }
     },
     "android": {
@@ -44,6 +48,9 @@
       [
         "expo-build-properties",
         {
+          "ios": {
+            "deploymentTarget": "16.0"
+          },
           "android": {
             "usesCleartextTraffic": true,
             "enableMinifyInReleaseBuilds": true,

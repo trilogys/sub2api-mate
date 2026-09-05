@@ -199,7 +199,7 @@ export default function AboutScreen() {
         </AdminSection>
 
         <AdminSection title="开源项目" detail="代码、发布版本、问题反馈与许可证信息。">
-          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/sub2api-mate" url={APP_REPOSITORY_URL} />
+          <ExternalRow icon={Github} title="开源仓库" detail="trilogys/GateNest" url={APP_REPOSITORY_URL} />
           <ExternalRow icon={Download} title="版本与 APK" detail="查看全部 GitHub Releases" url={`${APP_REPOSITORY_URL}/releases`} />
           <ExternalRow icon={CircleAlert} title="问题反馈" detail="提交 Bug、建议或兼容性问题" url={`${APP_REPOSITORY_URL}/issues`} />
           <ExternalRow icon={FileText} title="Apache License 2.0" detail="查看本项目开源许可证" url={`${APP_REPOSITORY_URL}/blob/main/LICENSE`} />

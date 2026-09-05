@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/trilogys/sub2api-mate/integrations/cliproxy-group-router/router"
+	"github.com/trilogys/GateNest/integrations/cliproxy-group-router/router"
 	"gopkg.in/yaml.v3"
 )
 
@@ -138,7 +138,7 @@ func pluginRegistration() registration {
 			Name:             "CLIProxy Group Router",
 			Version:          "0.1.0",
 			Author:           "trilogys contributors",
-			GitHubRepository: "https://github.com/trilogys/sub2api-mate",
+			GitHubRepository: "https://github.com/trilogys/GateNest",
 			ConfigFields: []configField{
 				{Name: "deny_unmapped", Type: "boolean", Description: "Reject client keys that are not assigned to a CLIProxy group."},
 				{Name: "allow_shared_auths", Type: "boolean", Description: "Allow one upstream credential to be assigned to multiple groups."},

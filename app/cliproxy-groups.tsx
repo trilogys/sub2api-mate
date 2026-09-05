@@ -279,7 +279,7 @@ export default function CLIProxyGroupsScreen() {
             <View className="gap-2 rounded-2xl border border-[#E2E9F3] bg-[#F8FAFD] p-3 dark:border-[#273449] dark:bg-[#152033]">
               <Text className="text-xs font-bold text-[#172033] dark:text-[#F4F7FB]">GateNest Group Router（精确选择 auth IDs）</Text>
               <Text className="text-[10px] leading-5 text-[#6B778C] dark:text-[#9EABC0]">适合必须在 GateNest 中逐个勾选凭据、强制一个凭据只属于一个组的场景。它尚未进入 CLIProxy 官方商店，需要把 Release 中的 `.so` 放入服务端插件目录并重启。</Text>
-              <View className="flex-row gap-2"><View className="flex-1"><AdminButton label="打开 GateNest Release" tone="muted" onPress={() => void Linking.openURL('https://github.com/trilogys/sub2api-mate/releases/latest')} /></View><View className="flex-1"><AdminButton label="复制 Docker 安装命令" tone="muted" onPress={() => void copyWithFeedback('unzip cliproxy-group-router-linux-amd64.zip -d cliproxy-group-router\ndocker cp cliproxy-group-router/cliproxy-group-router.so <container>:/CLIProxyAPI/plugins/\ndocker restart <container>', 'Group Router 安装命令')} /></View></View>
+              <View className="flex-row gap-2"><View className="flex-1"><AdminButton label="打开 GateNest Release" tone="muted" onPress={() => void Linking.openURL('https://github.com/trilogys/GateNest/releases/latest')} /></View><View className="flex-1"><AdminButton label="复制 Docker 安装命令" tone="muted" onPress={() => void copyWithFeedback('unzip cliproxy-group-router-linux-amd64.zip -d cliproxy-group-router\ndocker cp cliproxy-group-router/cliproxy-group-router.so <container>:/CLIProxyAPI/plugins/\ndocker restart <container>', 'Group Router 安装命令')} /></View></View>
             </View>
           </AdminSection>
         ) : null}

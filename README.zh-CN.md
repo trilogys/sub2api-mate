@@ -13,7 +13,7 @@
 > [!IMPORTANT]
 > **灵感来源与致谢。** 本项目的灵感来自 [ckken/sub2api-mobile](https://github.com/ckken/sub2api-mobile)。衷心感谢 ckken 发布原始开源成果。上游项目使用 MIT License，本仓库在 [LICENSES/MIT-ckken.txt](LICENSES/MIT-ckken.txt) 中完整保留了原作者版权声明和许可证正文。本仓库大幅扩展的移动端界面、管理功能覆盖、AI 助手、构建中心和自动化由 trilogys contributors 独立维护；这不表示原作者对本项目提供背书。
 
-当前维护仓库为 [trilogys/sub2api-mate](https://github.com/trilogys/sub2api-mate)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
+当前维护仓库为 [trilogys/GateNest](https://github.com/trilogys/GateNest)。本仓库不会自动合并或同步其他 Sub2API Mobile Fork 的源代码；定时同步功能只读取 Sub2API 服务端的 API 元数据。
 
 ## 项目简介
 
@@ -145,7 +145,7 @@ AI 助手页面可以开启悬浮助手。长按可移动，靠边时可以部�
 
 ### 受控的 GitHub 修复流程
 
-GitHub 设置默认仓库为 `trilogys/sub2api-mate`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
+GitHub 设置默认仓库为 `trilogys/GateNest`，也支持修改并保存。Fine-grained Token 应只授权目标仓库和必要权限：
 
 - Contents：读写
 - Pull requests：读写
@@ -183,7 +183,7 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 - 根据已完成步骤计算的近似百分比
 - APK Artifact 是否可下载、大小、过期时间和下载入口
 
-目标仓库可以切换，默认是 `trilogys/sub2api-mate`。
+目标仓库可以切换，默认是 `trilogys/GateNest`。
 
 正式 Release 标题统一使用 `GateNest vX.Y.Z`，分架构 APK 使用 `gatenest-vX.Y.Z-arm64-v8a.apk` 等名称。
 
@@ -192,7 +192,7 @@ AI 生成的是待审核建议，不代表已经通过测试。合并前仍需�
 `eas.json` 的 `preview` 使用 internal distribution，并配置 `android.buildType: apk`。
 
 ```powershell
-cd sub2api-mate
+cd GateNest
 npm ci
 npx eas-cli@latest login
 npx eas-cli@latest build --platform android --profile preview
@@ -203,6 +203,14 @@ npx eas-cli@latest build --platform android --profile preview
 若通过 GitHub Actions 启动 EAS，请在 **Settings → Secrets and variables → Actions** 添加 `EXPO_TOKEN`，然后运行 `.github/workflows/eas-build.yml`。GitHub 原生构建不使用该 Secret。
 
 完整发布说明见 [docs/EXPO_RELEASE.md](docs/EXPO_RELEASE.md)。
+
+## iOS 16+ IPA 构建
+
+`.github/workflows/ios-native-build.yml`（**GateNest iOS IPA**）在 macOS Runner 上构建可独立运行的 Release IPA，支持 iOS 16.0 及以上的 arm64 iPhone 和 iPad。iOS 使用相同的业务页面、服务和配置，包内包含 JavaScript 资源，无需 Metro 开发服务器。
+
+从 **Actions** 运行工作流，下载 `gatenest-ios16-unsigned-ipa-*` Artifact 并解压。IPA 为未签名包，需要在全能签或爱思助手中使用包含私钥的 P12、密码及匹配的 `.mobileprovision` 描述文件重签后安装；仅有 P12 不能保证设备有安装资格。构建本身不需要上传任何签名证书。
+
+具体步骤见 [iOS 签名与安装指南](docs/IOS_INSTALL.zh-CN.md)。原生编译通过不代表已经完成真机测试；iOS 应用升级需要重新签名安装，Android 的 APK 安装入口仅用于 Android。
 
 ## 本地开发
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/trilogys/sub2api-mate/integrations/cliproxy-group-router/router"
+	"github.com/trilogys/GateNest/integrations/cliproxy-group-router/router"
 )
 
 func configureTestPlugin(t *testing.T) {

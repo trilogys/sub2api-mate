@@ -6,6 +6,7 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
+    "ios:build:unsigned": "bash .github/scripts/build-ios-ipa.sh",
     "web": "expo start --web",
     "proxy": "node server/index.js",
     "dev:web-proxy": "concurrently -n proxy,web -c green,blue \"npm run proxy\" \"npm run web\"",
